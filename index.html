@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Dev - Poll UI</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="bundle.js"></script>
+
+    <style>
+        /* Optional: Center the phone on desktop for realistic preview */
+        body { background: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #phone-wrapper { width: 375px; height: 812px; background: white; position: relative; overflow: hidden; border-radius: 40px; box-shadow: 0 0 0 10px #000; }
+    </style>
+</head>
+<body>
+
+    <div id="phone-wrapper">
+        <div id="poll-root"></div>
+    </div>
+
+    <script>
+        // --- A. Mock the Bubble Bridge ---
+        // This stops the code from crashing when it tries to call Bubble
+        window.bubble_fn_submit_poll = (data) => console.log("🟢 [Mock Bubble] Vote Submitted:", data);
+        window.bubble_fn_close_poll = () => console.log("🔴 [Mock Bubble] Close Requested");
+        window.bubble_fn_start_planning = (data) => console.log("🔵 [Mock Bubble] Start Planning:", data);
+
+        // --- B. The Data (What Bubble would send) ---
+        const mockPollData = {
+            category: "Time Together",
+            userName: "Local Dev User",
+            credits: 42,
+            question: "How much intentional one-on-one time do you have in a typical week?",
+            options: [
+                { text: "Less than 1 hour", percent: 15 },
+                { text: "1-3 hours", percent: 60 }, 
+                { text: "4-7 hours", percent: 20 },
+                { text: "More than 7 hours", percent: 5 }
+            ]
+        };
+
+        // --- C. The Render Loop (Same as in Bubble) ---
+        const renderPoll = setInterval(() => {
+            if (window.appUI && window.appUI.poll) {
+                clearInterval(renderPoll);
+                console.log("🚀 Render Initialized");
+                
+                // Render the UI
+                document.getElementById('poll-root').innerHTML = 
+                    window.appUI.poll.render(mockPollData);
+            }
+        }, 50);
+    </script>
+
+</body>
+</html>
