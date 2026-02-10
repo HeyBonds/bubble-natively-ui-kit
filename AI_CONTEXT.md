@@ -1,29 +1,81 @@
-# AI Context: Hybrid Bubble/Natively Architecture
+# Headless Bubble Protocol
+**Project:** `bubble-natively-ui-kit`  
+**Stack:** Bubble.io (Backend) + Tailwind/JS (Frontend) + Natively (Native Wrapper)
 
-## 🎯 Objective
-We are building a **High-Performance Hybrid App**.
-* **Avoid**: Standard Bubble visual elements (too heavy, limited design control).
-* **Use**: Raw HTML/JS strings injected into a single Bubble HTML Element.
+---
 
-## ⚙️ Technical Constraints (Strict Rules)
-1.  **Tailwind CSS**: Must use **arbitrary values** (e.g., `bg-[#FF2258]`) or standard utility classes. Do not rely on external stylesheets unless injected via JS.
-2.  **Explicit Borders**: Bubble resets CSS aggressively. Always use `border-solid` when defining borders (e.g., `border border-solid border-white/50`).
-3.  **Fonts**: We use **Plus Jakarta Sans** (Headings/Data) and **Poppins** (Body). These are injected dynamically in `bundle.js`.
-4.  **Glassmorphism**: Heavy use of `bg-white/5`, `backdrop-blur`, and transparent gradients.
-5.  **Native Bridge**:
-    * **In**: Data is passed from Bubble -> `window.appUI.component.render(props)`.
-    * **Out**: Actions are sent via `BubbleBridge.send('bubble_fn_name', data)`.
+## 1. Philosophy
+We treat Bubble strictly as a **Headless Backend**. The Visual Editor is abandoned for UI development to solve performance bottlenecks and design limitations.
+* **Performance:** Eliminate "div soup" to achieve 60fps native feel.
+* **Fidelity:** Precise control over Glassmorphism and animations via Tailwind JIT.
+* **DX:** Local coding in VS Code, version control via GitHub, and deployment via CDN.
 
-## 🎨 Design System
-* **Brand Color**: `#FF2258` (Radical Red/Pink) - Used for Credits & Active States.
-* **Gradient**: Purple (`#AD256C`) to Orange (`#E76B0C`) vertical gradient.
-* **Components**:
-    * `topBar(credits)`: Fixed header with Close button and Credits Badge.
-    * `poll.render(props)`: Full-screen voting UI with 2-stage interaction (Vote -> Result).
+---
 
-## 🔄 Workflow for AI
-When asking AI to generate a new component:
-1.  Provide the HTML structure.
-2.  Ask to wrap it in a `window.appUI.componentName` function.
-3.  Ensure all click events use `onclick="BubbleBridge.send(...)"`.
-4.  Ensure all dynamic data is passed via function arguments (`props`).
+## 2. Technical Stack
+| Layer | Technology | Responsibility |
+| :--- | :--- | :--- |
+| **Backend** | Bubble.io | Database, Workflows, API Connector |
+| **Frontend** | Vanilla JS / Tailwind | Rendering, DOM Logic, State Management |
+| **Styling** | Tailwind CSS (JIT) | Brand-specific UI/UX |
+| **Distribution** | jsDelivr | CDN for `bundle.js` served from GitHub |
+| **Wrapper** | Natively | Biometrics, Haptics, Push Notifications |
+
+---
+
+## 3. Design System Tokens
+### Colors & Effects
+* **Primary Brand:** `#FF2258` (Radical Red/Pink)
+* **Brand Gradient:** `bg-gradient-to-b from-[#AD256C] to-[#E76B0C]`
+* **Glassmorphism:**
+    * **Background:** `bg-white/5`
+    * **Border:** `border border-solid border-white/50`
+    * **Blur:** `backdrop-blur-md`
+
+### Typography
+* **Headings / Data:** `Plus Jakarta Sans` (`font-jakarta`)
+* **Body / UI:** `Poppins` (`font-poppins`)
+
+---
+
+## 4. Technical Constraints
+
+### A. The "BubbleBridge" Pattern
+Never use `console.log` for core logic. All JS-to-Bubble communication must trigger named Bubble workflows via the bridge.
+```javascript
+// Example Interaction
+onclick="BubbleBridge.send('bubble_fn_submit_vote', { value: 'Option A' })"
+```
+### B. Tailwind Implementation Rules
+* **Strict Borders:** Always include `border-solid`. Bubble’s CSS reset often hides borders unless explicitly declared.
+* **Arbitrary Values:** Use JIT syntax for specific brand values.
+    * **YES:** `w-[315px]`, `bg-[#FF2258]`
+    * **NO:** `bg-red-500`
+* **Injected Styles:** No external `.css` files. Styles must be Tailwind classes or injected via `document.createElement('style')` in `bundle.js`.
+
+---
+
+## 5. Component Architecture
+All features must be encapsulated within the `window.appUI` object to maintain a clean namespace and allow Bubble to trigger renders.
+
+```javascript
+window.appUI = {
+  featureName: {
+    // 1. Returns HTML String with dynamic props
+    render: (props) => { 
+      return `
+        <div class="font-jakarta border border-solid border-white/50 bg-white/5 backdrop-blur-md rounded-xl p-4">
+          <h1 class="text-[#FF2258]">\${props.title}</h1>
+          <button onclick="appUI.featureName.handleAction(this, '\${props.id}')">Click Me</button>
+        </div>
+      `; 
+    },
+    
+    // 2. Handles Interaction & Optimistic UI updates
+    handleAction: (element, id) => { 
+      // Update DOM immediately then call Bubble
+      BubbleBridge.send('bubble_fn_trigger', { id: id });
+    }
+  }
+}
+```

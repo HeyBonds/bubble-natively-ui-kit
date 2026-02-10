@@ -12,7 +12,7 @@ This repository hosts raw JavaScript, HTML, and Tailwind CSS components that are
 ## 📂 File Structure
 * `bundle.js`: The main production file containing `window.appUI` components.
 * `index.html`: A local development harness (mocks Bubble environment).
-* `README.md`: Project documentation.
+* `AI_CONTEXT.md`: Context file for AI assistants to understand the architecture.
 
 ## 🛠️ Development Workflow
 1.  **Edit Locally**: Modify `bundle.js` and test changes in `index.html`.
@@ -21,6 +21,7 @@ This repository hosts raw JavaScript, HTML, and Tailwind CSS components that are
 
 ## 🔌 Bubble Integration
 Paste this into **Settings > SEO / Metatags > Script in the body**:
+
 ```html
 <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
 <script>
