@@ -79,7 +79,7 @@ window.appUI = {
                 </button>
 
                 <div class="absolute top-4 -right-[95px] z-10">
-                  <div class="relative w-[180px] h-10 border border-solid border-white/50 rounded-full flex items-center">
+                  <div class="relative w-[180px] h-10 rounded-full flex items-center" style="border: 1px solid rgba(255, 255, 255, 0.5);">
                     <div id="creditsCircle" class="absolute left-[6px] top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center transition-transform duration-300">
                       <span id="creditsNumber" class="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">${credits}</span>
                     </div>
