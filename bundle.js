@@ -68,7 +68,29 @@ window.appUI = {
     
     // --- FEATURE: Poll Screen ---
     poll: {
-        render: (props) => {
+        topBar: (credits) => {
+        return `
+            <div class="absolute top-0 left-0 w-full z-20 pointer-events-none">
+                <button onclick="BubbleBridge.send('bubble_fn_close_poll')" 
+                        class="pointer-events-auto absolute top-[18px] left-[18px] w-8 h-8 flex items-center justify-center hover:opacity-80 transition-opacity z-20">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M13.6675 1.99162C14.1108 1.53601 14.1108 0.79732 13.6675 0.341709C13.2243 -0.113903 12.5056 -0.113903 12.0623 0.341709L7 5.54491L1.9377 0.341709C1.49442 -0.113903 0.775732 -0.113903 0.332457 0.341708C-0.110818 0.79732 -0.110818 1.53601 0.332457 1.99162L5.20521 7L0.332456 12.0084C-0.110819 12.464 -0.110819 13.2027 0.332456 13.6583C0.77573 14.1139 1.49442 14.1139 1.93769 13.6583L7 8.45509L12.0623 13.6583C12.5056 14.1139 13.2243 14.1139 13.6675 13.6583C14.1108 13.2027 14.1108 12.464 13.6675 12.0084L8.79479 7L13.6675 1.99162Z" fill="white"/>
+                  </svg>
+                </button>
+
+                <div class="absolute top-4 -right-[95px] z-10">
+                  <div class="relative w-[180px] h-10 border border-solid border-white/50 rounded-full flex items-center">
+                    <div id="creditsCircle" class="absolute left-[6px] top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center transition-transform duration-300">
+                      <span id="creditsNumber" class="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">${credits}</span>
+                    </div>
+                    <span class="absolute left-[42px] top-1/2 translate-y-[6px] font-jakarta font-medium text-[10px] text-white tracking-wide leading-none">Credits</span>
+                  </div>
+                </div>
+            </div>
+        `;
+    },
+
+    render: (props) => {
             // Generate Options
             const optionsHTML = props.options.map((opt, index) => `
                 <div class="poll-option relative w-full max-w-[315px] h-9 bg-white/5 rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10"
@@ -88,21 +110,7 @@ window.appUI = {
             return `
                 <div class="relative w-full min-h-screen overflow-hidden gradient-purple-orange font-poppins">
                     
-                    <button onclick="BubbleBridge.send('bubble_fn_close_poll')" 
-                            class="absolute top-[18px] left-[18px] w-8 h-8 flex items-center justify-center hover:opacity-80 transition-opacity z-20">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M13.6675 1.99162C14.1108 1.53601 14.1108 0.79732 13.6675 0.341709C13.2243 -0.113903 12.5056 -0.113903 12.0623 0.341709L7 5.54491L1.9377 0.341709C1.49442 -0.113903 0.775732 -0.113903 0.332457 0.341708C-0.110818 0.79732 -0.110818 1.53601 0.332457 1.99162L5.20521 7L0.332456 12.0084C-0.110819 12.464 -0.110819 13.2027 0.332456 13.6583C0.77573 14.1139 1.49442 14.1139 1.93769 13.6583L7 8.45509L12.0623 13.6583C12.5056 14.1139 13.2243 14.1139 13.6675 13.6583C14.1108 13.2027 14.1108 12.464 13.6675 12.0084L8.79479 7L13.6675 1.99162Z" fill="white"/>
-                      </svg>
-                    </button>
-
-                    <div class="absolute top-4 -right-[95px] z-10">
-                      <div class="relative w-[180px] h-10 border border-white/50 rounded-full flex items-center">
-                        <div id="creditsCircle" class="absolute left-[6px] top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center transition-transform duration-300">
-                          <span id="creditsNumber" class="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">${props.credits}</span>
-                        </div>
-                        <span class="absolute left-[42px] top-1/2 translate-y-[6px] font-jakarta font-medium text-[10px] text-white tracking-wide leading-none">Credits</span>
-                      </div>
-                    </div>
+                    ${window.appUI.poll.topBar(props.credits)}
 
                     <div class="px-9 pt-[78px] max-w-[375px] mx-auto relative z-10">
                       
