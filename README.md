@@ -1,7 +1,7 @@
 # Bubble x Natively UI Kit 🚀
 
 A "Headless" UI Component Library for Bubble.io apps wrapped with Natively.
-This repository hosts raw JavaScript, HTML, and Tailwind CSS components that are injected into Bubble via CDN (jsDelivr).
+This repository hosts the raw JavaScript and Tailwind CSS that powers the app's UI. We treat Bubble as a backend-only platform, rendering the UI entirely via this `bundle.js` to achieve native-like performance and aesthetics.
 
 ## 🌟 Architecture
 * **Host**: Bubble.io (Database, Backend Logic, Page Routing).

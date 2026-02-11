@@ -80,7 +80,7 @@ window.appUI = {
 
                 <div class="absolute top-4 -right-[95px] z-10">
                   <div class="relative w-[180px] h-10 rounded-full flex items-center" style="border: 1px solid rgba(255, 255, 255, 0.5);">
-                    <div id="creditsCircle" class="absolute left-[6px] top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center transition-transform duration-300">
+                    <div id="creditsCircle" class="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center transition-transform duration-700">
                       <span id="creditsNumber" class="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">${credits}</span>
                     </div>
                     <span class="absolute left-[42px] top-1/2 translate-y-[6px] font-jakarta font-medium text-[10px] text-white tracking-wide leading-none">Credits</span>
@@ -178,11 +178,11 @@ window.appUI = {
             const currentCreds = parseInt(creditsNumEl.innerText);
             
             setTimeout(() => {
-                creditsCircle.style.transform = "scale(1.2) translateY(-50%)"; // Pop effect
+                creditsCircle.style.transform = "translateY(-50%) scale(1.2)"; // Pop effect
                 setTimeout(() => {
                     creditsNumEl.innerText = currentCreds + 1;
-                    creditsCircle.style.transform = "scale(1.0) translateY(-50%)";
-                }, 200);
+                    creditsCircle.style.transform = "translateY(-50%) scale(1.0)";
+                }, 700);
             }, 800);
 
             // 5. Swap Footer (Text -> Button)

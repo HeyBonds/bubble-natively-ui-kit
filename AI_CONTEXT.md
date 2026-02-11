@@ -6,9 +6,16 @@
 
 ## 1. Philosophy
 We treat Bubble strictly as a **Headless Backend**. The Visual Editor is abandoned for UI development to solve performance bottlenecks and design limitations.
-* **Performance:** Eliminate "div soup" to achieve 60fps native feel.
-* **Fidelity:** Precise control over Glassmorphism and animations via Tailwind JIT.
-* **DX:** Local coding in VS Code, version control via GitHub, and deployment via CDN.
+*   **Performance:** Eliminate "div soup" to achieve 60fps native feel.
+*   **Fidelity:** Precise control over Glassmorphism and animations via Tailwind JIT.
+*   **DX:** Local coding in VS Code, version control via GitHub, and deployment via CDN.
+*   **Architecture:** Single `bundle.js` artifact. We explicitly avoid splitting into multiple files to prevent Bubble integration issues (no module loader, cache-busting complexity).
+
+## 2. The "UI Kit" Philosophy
+This project is a **Component Library**, not a Web App.
+-   **Goal:** Build reusable, isolated components (e.g., `appUI.poll`, `appUI.profile`) that can be triggered independently by Bubble.
+-   **Structure:** All components are namespaced under `window.appUI`.
+-   **Integration:** Bubble workflows trigger UI changes; UI events trigger Bubble workflows via `BubbleBridge`.
 
 ---
 
@@ -38,7 +45,19 @@ We treat Bubble strictly as a **Headless Backend**. The Visual Editor is abandon
 
 ---
 
-## 4. Technical Constraints
+---
+
+## 4. Critical Technical Decisions & Fixes (History)
+*   **Caching Strategy:** Browsers/WebViews aggressively cache the CDN file.
+    *   *Fix:* Manually increment `bundle.js?v=X` in Bubble SEO settings on every update.
+*   **CSS Resets:** Bubble's default CSS reset removes borders.
+    *   *Fix:* All Tailwind borders must use `border-solid` explicitly (e.g., `border border-solid border-white/50`).
+*   **Script Loading:** Scripts in `<head>` cannot access `body` immediately.
+    *   *Fix:* Use `defer` or inject via `document.body.appendChild`.
+*   **Design Shift:** Moved from "Clean Web" to **"Dark/Glassmorphism"**.
+    *   *Tokens:* `#FF2258` (Brand), `bg-white/5` (Glass), `backdrop-blur-md`.
+
+## 5. Technical Constraints
 
 ### A. The "BubbleBridge" Pattern
 Never use `console.log` for core logic. All JS-to-Bubble communication must trigger named Bubble workflows via the bridge.
