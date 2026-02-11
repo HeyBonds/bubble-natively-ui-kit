@@ -2,7 +2,7 @@
 
 // Load UI Kit from CDN
 (function() {
-  var src = "https://cdn.jsdelivr.net/gh/HeyBonds/bubble-natively-ui-kit@130fb91/bundle.js";
+  var src = "../bundle.js";
   
   var script = document.createElement('script');
   script.src = src;

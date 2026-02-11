@@ -58,6 +58,34 @@ function initGlobals() {
             box-shadow: 0 1px rgba(0,0,0,0.15) !important;
             transform: translateY(3px) !important;
         }
+
+        /* Credit Animation Keyframes */
+        @keyframes creditFadeInScale {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+
+        /* creditMoveToCorner is now handled dynamically via JavaScript */
+
+        .credit-overlay {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .credit-center-animation {
+            animation: creditFadeInScale 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .credit-move-animation {
+            transition: all 600ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
     `;
     document.head.appendChild(style);
 
@@ -184,18 +212,105 @@ window.appUI = {
                 }, 100);
             });
 
-            // 4. Update Credits (Animation)
+            // 4. Update Credits (Enhanced Center Animation)
             const creditsNumEl = document.getElementById('creditsNumber');
             const creditsCircle = document.getElementById('creditsCircle');
             const currentCreds = parseInt(creditsNumEl.innerText);
             
             setTimeout(() => {
-                creditsCircle.style.transform = "translateY(-50%) scale(1.2)"; // Pop effect
+                // Create overlay credit circle in center
+                const overlay = document.createElement('div');
+                overlay.className = 'credit-overlay credit-center-animation';
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 9999;
+                    pointer-events: none;
+                `;
+                
+                overlay.innerHTML = `
+                    <div class="w-24 h-24 bg-[#FF2258] rounded-full flex items-center justify-center shadow-2xl">
+                        <span id="overlayCreditsNumber" class="font-jakarta font-extrabold text-4xl text-white tracking-wide leading-none">
+                            ${currentCreds}
+                        </span>
+                    </div>
+                `;
+                
+                document.body.appendChild(overlay);
+                
+                // Step 1: Fade in and scale (600ms)
+                // (handled by CSS animation)
+                
+                // Step 2: Increment number (600ms duration, starts at 600ms)
                 setTimeout(() => {
+                    const overlayNum = document.getElementById('overlayCreditsNumber');
+                    let start = currentCreds;
+                    let end = currentCreds + 1;
+                    let duration = 600;
+                    let startTime = null;
+                    
+                    function animateNumber(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / duration, 1);
+                        
+                        // Easing function for smooth increment
+                        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                        const current = Math.round(start + (end - start) * easeOutQuart);
+                        
+                        overlayNum.innerText = current;
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animateNumber);
+                        }
+                    }
+                    
+                    requestAnimationFrame(animateNumber);
+                }, 600);
+                
+                // Step 3: Move to corner (600ms duration, starts at 1200ms)
+                setTimeout(() => {
+                    overlay.classList.remove('credit-center-animation');
+                    overlay.classList.add('credit-move-animation');
+                    
+                    // Force a reflow to ensure the transition class is applied
+                    overlay.offsetHeight;
+                    
+                    // Get the actual position of the credit circle
+                    const targetRect = creditsCircle.getBoundingClientRect();
+                    
+                    // Move overlay to match the target position
+                    overlay.style.top = targetRect.top + 'px';
+                    overlay.style.left = targetRect.left + 'px';
+                    overlay.style.transform = 'scale(1)';
+                    
+                    // Update the overlay size to match target
+                    const overlayCircle = overlay.querySelector('div');
+                    overlayCircle.style.transition = 'all 600ms cubic-bezier(0.4, 0, 0.2, 1)';
+                    overlayCircle.style.width = '32px';
+                    overlayCircle.style.height = '32px';
+                    overlayCircle.querySelector('span').style.fontSize = '0.75rem';
+                }, 1200);
+                
+                // Step 4: Cleanup and update original (at 1800ms)
+                setTimeout(() => {
+                    // Update the original credit display
                     creditsNumEl.innerText = currentCreds + 1;
-                    creditsCircle.style.transform = "translateY(-50%) scale(1.0)";
-                }, 700);
-            }, 800);
+                    
+                    // Add a subtle pulse to the original
+                    creditsCircle.style.transition = 'transform 0.3s ease';
+                    creditsCircle.style.transform = 'translateY(-50%) scale(1.2)';
+                    
+                    setTimeout(() => {
+                        creditsCircle.style.transform = 'translateY(-50%) scale(1)';
+                    }, 300);
+                    
+                    // Remove overlay
+                    overlay.remove();
+                }, 1800);
+                
+            }, 2000); // Start 2 seconds after answer selection
 
             // 5. Swap Footer (Text -> Button)
             setTimeout(() => {
