@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Preview</title>
+    <link rel="stylesheet" href="mobile-preview.css">
+    <style>
+        #component-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+        #component-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="component-selector">
+        <label for="component-select">Component:</label>
+        <select id="component-select" onchange="loadComponent(this.value)">
+            <option value="">Select a component...</option>
+        </select>
+    </div>
+
+    <div id="phone-wrapper"></div>
+
+    <script src="bubble-seo.js"></script>
+    <script src="components.js"></script>
+
+    <script>
+        // Populate dropdown
+        const select = document.getElementById('component-select');
+        Object.keys(window.COMPONENTS).forEach(key => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = window.COMPONENTS[key].name;
+            select.appendChild(option);
+        });
+
+        // Load component from file
+        function loadComponent(componentKey) {
+            if (!componentKey) return;
+            
+            const component = window.COMPONENTS[componentKey];
+            const wrapper = document.getElementById('phone-wrapper');
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', component.path, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    wrapper.innerHTML = xhr.responseText;
+                    // Execute scripts in loaded content
+                    const scripts = wrapper.getElementsByTagName('script');
+                    for (let script of scripts) {
+                        eval(script.innerHTML);
+                    }
+                } else {
+                    wrapper.innerHTML = '<p style="color: red; padding: 20px;">Failed to load component</p>';
+                }
+            };
+            xhr.send();
+        }
+
+        // Auto-load first component
+        const firstKey = Object.keys(window.COMPONENTS)[0];
+        if (firstKey) {
+            select.value = firstKey;
+            loadComponent(firstKey);
+        }
+    </script>
+</body>
+</html>

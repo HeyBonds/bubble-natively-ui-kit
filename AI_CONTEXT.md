@@ -74,6 +74,13 @@ onclick="BubbleBridge.send('bubble_fn_submit_vote', { value: 'Option A' })"
 
 ---
 
+## 📂 File Structure
+* `bundle.js`: The main production file containing `window.appUI` components.
+* `bubble-html-component/`: Pure Bubble component files (source of truth).
+* `preview/`: Local preview system with component selector.
+* `preview-server.sh`: Quick start script for local preview server.
+* `AI_CONTEXT.md`: Context file for AI assistants to understand the architecture.
+
 ## 5. Component Architecture
 All features must be encapsulated within the `window.appUI` object to maintain a clean namespace and allow Bubble to trigger renders.
 
