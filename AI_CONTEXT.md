@@ -9,7 +9,9 @@ We treat Bubble strictly as a **Headless Backend**. The Visual Editor is abandon
 *   **Performance:** Eliminate "div soup" to achieve 60fps native feel.
 *   **Fidelity:** Precise control over Glassmorphism and animations via Tailwind JIT.
 *   **DX:** Local coding in VS Code, version control via GitHub, and deployment via CDN.
-*   **Architecture:** Single `bundle.js` artifact. We explicitly avoid splitting into multiple files to prevent Bubble integration issues (no module loader, cache-busting complexity).
+*   **Architecture:** Modular development in `src/` compiled into a single `bundle.js`.
+    *   **Modular Sources:** Components are split into numbered files (e.g., `10-daily-question.js`, `20-main-app.js`) for organization and load order control.
+    *   **Build System:** `build.js` concatenates these into one artifact to ensure Bubble compatibility (no module loader complexity).
 
 ## 2. The "UI Kit" Philosophy
 This project is a **Component Library**, not a Web App.

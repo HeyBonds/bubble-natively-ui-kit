@@ -17,4 +17,8 @@
 // Load Tailwind CSS
 var tailwind = document.createElement('script');
 tailwind.src = "https://cdn.tailwindcss.com";
+tailwind.onload = function() {
+    window.TAILWIND_LOADED = true;
+    console.log("✅ Tailwind CSS Loaded");
+};
 document.head.appendChild(tailwind);

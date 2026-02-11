@@ -1,0 +1,227 @@
+/* =========================================
+   HOME SECTION
+   ========================================= */
+window.appUI = window.appUI || {};
+
+window.appUI.home = {
+    render: (props) => {
+        // props: { userName, userAvatar, credits, journeys, quickSteps }
+        const userName = props.userName || 'Jonathan';
+        const userAvatar = props.userAvatar || 'https://i.pravatar.cc/150?img=12';
+        const credits = props.credits || 23;
+        
+        // Default journey data
+        const currentJourney = props.currentJourney || {
+            title: 'Intimacy',
+            description: 'Exploring how being wanted and desired intersects with sexual fulfilment together'
+        };
+        
+        return `
+            <div class="relative w-full pb-8">
+                
+                <!-- User Profile Header -->
+                ${window.appUI.home._renderHeader(userName, userAvatar, credits)}
+                
+                <!-- Personalized Journeys Section -->
+                <div class="px-4 mt-8">
+                    <h2 class="font-jakarta font-semibold text-xs text-white/70 tracking-[0.1em] uppercase mb-4">
+                        PERSONALIZED JOURNEYS
+                    </h2>
+                    ${window.appUI.home._renderJourneyCard(currentJourney)}
+                </div>
+                
+                <!-- Quick Steps Section -->
+                <div class="px-4 mt-8">
+                    <h2 class="font-jakarta font-semibold text-xs text-white/70 tracking-[0.1em] uppercase mb-4">
+                        QUICK STEPS
+                    </h2>
+                    ${window.appUI.home._renderQuickSteps()}
+                </div>
+                
+            </div>
+        `;
+    },
+    
+    _renderHeader: (userName, userAvatar, credits) => {
+        return `
+            <div class="relative w-full px-4 pt-6 pb-4 bg-gradient-to-b from-[#2E2740] to-transparent">
+                <div class="flex items-center justify-between">
+                    
+                    <!-- User Info -->
+                    <div class="flex items-center gap-3">
+                        <img src="${userAvatar}" 
+                             alt="${userName}" 
+                             class="w-12 h-12 rounded-full border-2 border-solid border-white/20" />
+                        <span class="font-jakarta font-semibold text-lg text-white">${userName}</span>
+                    </div>
+                    
+                    <!-- Action Icons -->
+                    <div class="flex items-center gap-3">
+                        <!-- Send Icon -->
+                        <button onclick="BubbleBridge.send('bubble_fn_send_action')" 
+                                class="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                        
+                        <!-- Chat Icon -->
+                        <button onclick="BubbleBridge.send('bubble_fn_chat_action')" 
+                                class="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Notifications Icon with Badge -->
+                        <button onclick="BubbleBridge.send('bubble_fn_notifications_action')" 
+                                class="relative w-10 h-10 rounded-full bg-[#FF2258] flex items-center justify-center hover:bg-[#FF2258]/90 transition-all">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-[#FF2258] border-2 border-solid border-[#2E2740] rounded-full flex items-center justify-center">
+                                <span class="font-jakarta font-bold text-[10px] text-white">${credits}</span>
+                            </span>
+                        </button>
+                    </div>
+                    
+                </div>
+            </div>
+        `;
+    },
+    
+    _renderJourneyCard: (journey) => {
+        return `
+            <div class="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-[#AD256C] to-[#8B1F57] p-6 shadow-lg">
+                
+                <!-- Navigation Arrows -->
+                <button onclick="window.appUI.home.previousJourney()" 
+                        class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-all z-10">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                
+                <button onclick="window.appUI.home.nextJourney()" 
+                        class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-all z-10">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+                
+                <!-- Journey Content -->
+                <div class="px-8">
+                    <h3 class="font-jakarta font-bold text-2xl text-white mb-4 text-center">
+                        ${journey.title}
+                    </h3>
+                    
+                    <!-- Description Box -->
+                    <div class="bg-[#2E2740] rounded-xl p-4 mb-6">
+                        <p class="font-poppins text-sm text-white/90 leading-relaxed">
+                            ${journey.description}
+                        </p>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-center gap-3">
+                        <button onclick="BubbleBridge.send('bubble_fn_select_journey', { journey: '${journey.title}' })" 
+                                class="px-8 py-3 bg-[#FF2258] rounded-full font-jakarta font-semibold text-sm text-white hover:bg-[#FF2258]/90 transition-all btn-pressed">
+                            Select
+                        </button>
+                        
+                        <button onclick="BubbleBridge.send('bubble_fn_change_topic')" 
+                                class="px-6 py-3 border border-solid border-white/50 rounded-full font-jakarta font-medium text-sm text-white hover:bg-white/10 transition-all flex items-center gap-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <polyline points="23 20 23 14 17 14"></polyline>
+                                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                            </svg>
+                            Topic
+                        </button>
+                    </div>
+                </div>
+                
+            </div>
+        `;
+    },
+    
+    _renderQuickSteps: () => {
+        return `
+            <div class="space-y-4">
+                
+                <!-- Conversation Coach Card (with NEW badge) -->
+                <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#6D6987] to-[#4A4660] p-6 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
+                     onclick="BubbleBridge.send('bubble_fn_conversation_coach')">
+                    
+                    <!-- NEW Badge -->
+                    <div class="absolute -top-1 -right-1 w-20 h-20 overflow-hidden">
+                        <div class="absolute top-4 -right-8 w-32 bg-[#E76B0C] text-white text-center font-jakarta font-bold text-xs py-1 transform rotate-45 shadow-lg">
+                            NEW
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <!-- Icon -->
+                        <div class="w-12 h-12 rounded-full bg-[#E76B0C] flex items-center justify-center flex-shrink-0">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        
+                        <!-- Text -->
+                        <div>
+                            <h3 class="font-jakarta font-bold text-lg text-white">Conversation</h3>
+                            <h3 class="font-jakarta font-bold text-lg text-white">Coach</h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Action Cards Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    
+                    <!-- Practical Actions -->
+                    <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-[#AD256C] to-[#8B1F57] p-5 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
+                         onclick="BubbleBridge.send('bubble_fn_practical_actions')">
+                        <div class="flex flex-col items-start gap-2">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                    <polyline points="9 11 12 14 22 4"></polyline>
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                            </div>
+                            <h3 class="font-jakarta font-bold text-base text-white leading-tight">Practical<br/>Actions</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- Ask a Question -->
+                    <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-[#4A7C9E] to-[#3A5F7D] p-5 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
+                         onclick="BubbleBridge.send('bubble_fn_ask_question')">
+                        <div class="flex flex-col items-start gap-2">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                            </div>
+                            <h3 class="font-jakarta font-bold text-base text-white leading-tight">Ask a<br/>Question</h3>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+        `;
+    },
+    
+    // Journey navigation handlers
+    previousJourney: () => {
+        BubbleBridge.send('bubble_fn_previous_journey');
+    },
+    
+    nextJourney: () => {
+        BubbleBridge.send('bubble_fn_next_journey');
+    }
+};

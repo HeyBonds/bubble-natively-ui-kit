@@ -11,7 +11,7 @@ body {
 #phone-wrapper { 
     width: 375px; 
     height: 812px; 
-    background: white; 
+    background: #1F1A2E; 
     overflow: hidden; 
     border-radius: 40px; 
     box-shadow: 0 0 0 10px #000; 

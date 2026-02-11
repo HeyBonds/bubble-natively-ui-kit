@@ -10,18 +10,20 @@ This repository hosts the raw JavaScript and Tailwind CSS that powers the app's 
 * **Bridge**: `window.BubbleBridge` communicates between this JS Bundle and Bubble's "JavaScript to Bubble" plugin.
 
 ## 📂 File Structure
-* `bundle.js`: The main production file containing `window.appUI` components.
-* `index.html`: Development harness for testing `bundle.js` directly.
-* `bubble-html-component/`: Pure Bubble component files (paste into Bubble.io).
+* `src/`: **NEW** Modular source files for components (`00-globals.js`, `20-main-app.js`, etc.).
+* `build.js`: **NEW** Node.js build script to concatenate source files into `bundle.js`.
+* `bundle.js`: The main production file containing `window.appUI` components (Generated - DO NOT EDIT).
 * `preview/`: Local preview system for testing individual components.
 * `preview-server.sh`: Quick start script for component preview.
 * `AI_CONTEXT.md`: Context file for AI assistants to understand the architecture.
 
 ## 🛠️ Development Workflow
-1.  **Edit Locally**: Modify `bundle.js` and test changes in the preview system.
-2.  **Preview Components**: Run `./preview-server.sh` to test components locally.
-3.  **Push**: Commit changes to GitHub (`main` branch).
-4.  **Update Bubble**: Increment the version query param in Bubble's SEO Settings (e.g., `bundle.js?v=5`) to bust the cache.
+1.  **Edit Source**: Modify files in `src/`.
+2.  **Auto-Build**: Run `npm run dev` to watch for changes and start the preview server.
+    - This runs `node build.js --watch` and starts a local server.
+3.  **Preview**: Open `http://localhost:8000/preview/index.html` to see changes.
+4.  **Push**: Commit changes to GitHub (`main` branch).
+5.  **Update Bubble**: Increment the version query param in Bubble's SEO Settings (e.g., `bundle.js?v=5`) to bust the cache.
 
 ## 🔍 Preview System
 Test components locally before deploying to Bubble:
