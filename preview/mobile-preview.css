@@ -1,0 +1,18 @@
+/* Mobile Preview Wrapper - Reusable */
+body { 
+    background: #333; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    margin: 0; 
+}
+
+#phone-wrapper { 
+    width: 375px; 
+    height: 812px; 
+    background: white; 
+    overflow: hidden; 
+    border-radius: 40px; 
+    box-shadow: 0 0 0 10px #000; 
+}
