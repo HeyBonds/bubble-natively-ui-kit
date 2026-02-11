@@ -47,6 +47,17 @@ function initGlobals() {
         .option-bar { transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
         .percentage { transition: opacity 0.3s ease 0.6s; }
         .selected-option { background: rgba(255, 255, 255, 0.15) !important; box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.15); }
+
+        /* 3D Pressed Button Effect - Subtle */
+        .btn-pressed {
+            transition: all 0.1s ease;
+            box-shadow: 0 4px rgba(0,0,0,0.15);
+            transform: translateY(0);
+        }
+        .btn-pressed:active {
+            box-shadow: 0 1px rgba(0,0,0,0.15) !important;
+            transform: translateY(3px) !important;
+        }
     `;
     document.head.appendChild(style);
 
@@ -66,12 +77,12 @@ initGlobals();
    ========================================= */
 window.appUI = {
     
-    // --- FEATURE: Poll Screen ---
-    poll: {
+    // --- FEATURE: Daily Question Screen ---
+    dailyQuestion: {
         topBar: (credits) => {
         return `
             <div class="absolute top-0 left-0 w-full z-20 pointer-events-none">
-                <button onclick="BubbleBridge.send('bubble_fn_close_poll')" 
+                <button onclick="BubbleBridge.send('bubble_fn_close_daily_question')" 
                         class="pointer-events-auto absolute top-[18px] left-[18px] w-8 h-8 flex items-center justify-center hover:opacity-80 transition-opacity z-20">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M13.6675 1.99162C14.1108 1.53601 14.1108 0.79732 13.6675 0.341709C13.2243 -0.113903 12.5056 -0.113903 12.0623 0.341709L7 5.54491L1.9377 0.341709C1.49442 -0.113903 0.775732 -0.113903 0.332457 0.341708C-0.110818 0.79732 -0.110818 1.53601 0.332457 1.99162L5.20521 7L0.332456 12.0084C-0.110819 12.464 -0.110819 13.2027 0.332456 13.6583C0.77573 14.1139 1.49442 14.1139 1.93769 13.6583L7 8.45509L12.0623 13.6583C12.5056 14.1139 13.2243 14.1139 13.6675 13.6583C14.1108 13.2027 14.1108 12.464 13.6675 12.0084L8.79479 7L13.6675 1.99162Z" fill="white"/>
@@ -93,10 +104,10 @@ window.appUI = {
     render: (props) => {
             // Generate Options
             const optionsHTML = props.options.map((opt, index) => `
-                <div class="poll-option relative w-full max-w-[315px] h-9 bg-white/5 rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10"
+                <div class="daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
                      data-value="${opt.text}" 
                      data-percent="${opt.percent}"
-                     onclick="window.appUI.poll.handleVote(this, ${index}, '${opt.text}')">
+                     onclick="window.appUI.dailyQuestion.handleVote(this, ${index}, '${opt.text}')">
                      
                      <div class="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" style="width: 0%"></div>
                      
@@ -110,7 +121,7 @@ window.appUI = {
             return `
                 <div class="relative w-full min-h-screen overflow-hidden gradient-purple-orange font-poppins">
                     
-                    ${window.appUI.poll.topBar(props.credits)}
+                    ${window.appUI.dailyQuestion.topBar(props.credits)}
 
                     <div class="px-9 pt-[78px] max-w-[375px] mx-auto relative z-10">
                       
@@ -122,22 +133,23 @@ window.appUI = {
                         ${props.question}
                       </div>
 
-                      <div id="poll-options-container" class="space-y-[19px] mb-16">
+                      <div id="daily-question-options-container" class="space-y-[19px] mb-16">
                         ${optionsHTML}
                       </div>
 
                       <div id="footer-area" class="min-h-[100px] flex flex-col items-center justify-start">
                           
                           <div id="footerBefore" class="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px]">
-                            Vote and see the live poll results and also gain 1 credits
+                            Vote and see the live results and also gain 1 credits
                           </div>
 
                           <div id="footerAfter" class="hidden font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in">
                             <span class="font-bold">${props.userName}</span>, we would love to plan with you that first step to creating more 'you time'
                           </div>
 
-                          <button id="startBtn" onclick="window.appUI.poll.handleStart()" class="hidden px-10 py-3 bg-white rounded-[64px] shadow-[0px_3px_36px_1px_rgba(0,0,0,0.2)] backdrop-blur-[11px] transition-transform active:scale-95 animate-fade-in">
-                            <span class="font-jakarta font-semibold text-[17px] text-[#E76B0C] tracking-[0.7px]">Start</span>
+                          <button id="startBtn" onclick="window.appUI.dailyQuestion.handleStart()" 
+                                  class="hidden px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto">
+                            <span class="font-jakarta font-semibold text-[17px] text-[#E76B0C] tracking-[0.7px] pointer-events-none">Start</span>
                           </button>
 
                       </div>
@@ -149,10 +161,10 @@ window.appUI = {
         handleVote: (element, index, answerText) => {
             if (element.classList.contains('voted')) return;
             
-            const container = document.getElementById('poll-options-container');
+            const container = document.getElementById('daily-question-options-container');
             
             // 1. Lock UI
-            const allOptions = container.querySelectorAll('.poll-option');
+            const allOptions = container.querySelectorAll('.daily-question-option');
             allOptions.forEach(opt => opt.classList.add('voted', 'pointer-events-none')); // Disable clicks
 
             // 2. Visual Selected State
@@ -193,7 +205,7 @@ window.appUI = {
             }, 800);
 
             // 6. Send to Bubble
-            BubbleBridge.send('bubble_fn_poll_vote', {
+            BubbleBridge.send('bubble_fn_daily_question_vote', {
                 answer: answerText,
                 index: index
             });

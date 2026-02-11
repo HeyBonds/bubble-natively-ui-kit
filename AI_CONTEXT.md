@@ -13,7 +13,7 @@ We treat Bubble strictly as a **Headless Backend**. The Visual Editor is abandon
 
 ## 2. The "UI Kit" Philosophy
 This project is a **Component Library**, not a Web App.
--   **Goal:** Build reusable, isolated components (e.g., `appUI.poll`, `appUI.profile`) that can be triggered independently by Bubble.
+-   **Goal:** Build reusable, isolated components (e.g., `appUI.dailyQuestion`, `appUI.profile`) that can be triggered independently by Bubble.
 -   **Structure:** All components are namespaced under `window.appUI`.
 -   **Integration:** Bubble workflows trigger UI changes; UI events trigger Bubble workflows via `BubbleBridge`.
 
