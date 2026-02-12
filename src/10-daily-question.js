@@ -7,7 +7,7 @@ window.appUI.dailyQuestion = {
     topBar: (credits) => {
         return `
             <div class="absolute top-0 left-0 w-full z-20 pointer-events-none">
-                <button onclick="BubbleBridge.send('bubble_fn_close_daily_question')" 
+                <button onclick="BubbleBridge.send('bubble_fn_daily_question', { action: 'close' })" 
                         class="pointer-events-auto absolute top-[18px] left-[18px] w-8 h-8 flex items-center justify-center hover:opacity-80 transition-opacity z-20">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M13.6675 1.99162C14.1108 1.53601 14.1108 0.79732 13.6675 0.341709C13.2243 -0.113903 12.5056 -0.113903 12.0623 0.341709L7 5.54491L1.9377 0.341709C1.49442 -0.113903 0.775732 -0.113903 0.332457 0.341708C-0.110818 0.79732 -0.110818 1.53601 0.332457 1.99162L5.20521 7L0.332456 12.0084C-0.110819 12.464 -0.110819 13.2027 0.332456 13.6583C0.77573 14.1139 1.49442 14.1139 1.93769 13.6583L7 8.45509L12.0623 13.6583C12.5056 14.1139 13.2243 14.1139 13.6675 13.6583C14.1108 13.2027 14.1108 12.464 13.6675 12.0084L8.79479 7L13.6675 1.99162Z" fill="white"/>
@@ -27,21 +27,36 @@ window.appUI.dailyQuestion = {
     },
 
     render: (props) => {
+
+        // Check if user has already voted
+        const selectedAnswer = props.selectedAnswer; // Can be index (number) or text (string)
+        const hasVoted = selectedAnswer !== undefined && selectedAnswer !== null && selectedAnswer !== "";
+        
         // Generate Options
-        const optionsHTML = props.options.map((opt, index) => `
-            <div class="daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+        const optionsHTML = props.options.map((opt, index) => {
+            const isSelected = (typeof selectedAnswer === 'number' && selectedAnswer === index) || 
+                               (typeof selectedAnswer === 'string' && selectedAnswer === opt.text);
+            
+            const wrapperClass = `daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ${hasVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`;
+            
+            const barStyle = hasVoted ? `width: ${opt.percent}%` : `width: 0%`;
+            const pctClass = `percentage font-poppins text-xs text-[#F8F8F8] tracking-[0.02em] ${hasVoted ? '' : 'opacity-0'}`;
+            const pctStyle = isSelected ? 'font-weight: bold;' : '';
+
+            return `
+            <div class="${wrapperClass}"
                  data-value="${opt.text}" 
                  data-percent="${opt.percent}"
                  onclick="window.appUI.dailyQuestion.handleVote(this, ${index}, '${opt.text}')">
                  
-                 <div class="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" style="width: 0%"></div>
+                 <div class="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" style="${barStyle}"></div>
                  
                  <div class="relative flex items-center justify-between h-full px-[42px] z-10">
                     <span class="font-poppins font-bold text-sm text-[#F8F8F8] tracking-[0.02em]">${opt.text}</span>
-                    <span class="percentage font-poppins text-xs text-[#F8F8F8] tracking-[0.02em] opacity-0">${opt.percent}%</span>
+                    <span class="${pctClass}" style="${pctStyle}">${opt.percent}%</span>
                  </div>
             </div>
-        `).join('');
+        `}).join('');
 
         return `
             <div class="relative w-full min-h-screen overflow-hidden gradient-purple-orange font-poppins">
@@ -64,16 +79,16 @@ window.appUI.dailyQuestion = {
 
                   <div id="footer-area" class="min-h-[100px] flex flex-col items-center justify-start">
                       
-                      <div id="footerBefore" class="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px]">
+                      <div id="footerBefore" class="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px] ${hasVoted ? 'hidden' : ''}">
                         Vote and see the live results and also gain 1 credits
                       </div>
 
-                      <div id="footerAfter" class="hidden font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in">
+                      <div id="footerAfter" class="${hasVoted ? '' : 'hidden'} font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in">
                         <span class="font-bold">${props.userName}</span>, we would love to plan with you that first step to creating more 'you time'
                       </div>
 
                       <button id="startBtn" onclick="window.appUI.dailyQuestion.handleStart()" 
-                              class="hidden px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto">
+                              class="${hasVoted ? '' : 'hidden'} px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto">
                         <span class="font-jakarta font-semibold text-[17px] text-[#E76B0C] tracking-[0.7px] pointer-events-none">Start</span>
                       </button>
 
@@ -232,13 +247,14 @@ window.appUI.dailyQuestion = {
         }, 800);
 
         // 6. Send to Bubble
-        BubbleBridge.send('bubble_fn_daily_question_vote', {
+        BubbleBridge.send('bubble_fn_daily_question', {
+            action: 'vote',
             answer: answerText,
             index: index
         });
     },
 
     handleStart: () => {
-        BubbleBridge.send('bubble_fn_start_planning', { timestamp: new Date() });
+        BubbleBridge.send('bubble_fn_daily_question', { action: 'start_planning', timestamp: new Date() });
     }
 };

@@ -5,12 +5,14 @@ const AppConfig = {
     fonts: [
         "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
     ],
-    // Primary gradient colors for reference
     colors: {
         start: "#AD256C", 
         end: "#E76B0C"
     }
 };
+
+// Initialize Global Namespace
+window.appUI = window.appUI || {};
 
 function initGlobals() {
     // 1. Inject Fonts

@@ -9,12 +9,14 @@ const AppConfig = {
     fonts: [
         "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
     ],
-    // Primary gradient colors for reference
     colors: {
         start: "#AD256C", 
         end: "#E76B0C"
     }
 };
+
+// Initialize Global Namespace
+window.appUI = window.appUI || {};
 
 function initGlobals() {
     // 1. Inject Fonts
@@ -141,6 +143,75 @@ initGlobals();
 
 
 /* ========================================= */
+/* SOURCE: 05-welcome-screen.js */
+/* ========================================= */
+(function() {
+    window.appUI.welcome = {
+        render: (props) => {
+            const bgImage = 'https://0fc323560b9c4d8afc3a7d487716abb6.cdn.bubble.io/f1744960311608x780031988693140400/BG%20%281%29.png?_gl=1*1sjnvjs*_gcl_au*MTI1MTA4NjA5OS4xNzY0NjcxNTYy*_ga*MTkwNzcwNjAyMy4xNzY0MTUwMzM2*_ga_BFPVR2DEE2*czE3NzA4ODE1ODYkbzYyJGcxJHQxNzcwODk2MDU5JGoyMyRsMCRoMA..';
+            
+            return `
+                <div class="relative w-full h-full min-h-screen bg-black font-jakarta overflow-hidden">
+                    
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0">
+                        <img src="${bgImage}" class="w-full h-full object-cover opacity-80" alt="Couple">
+                        <!-- Gradient Overlay (Group 39812 equivalent) -->
+                        <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90"></div>
+                    </div>
+
+                    <!-- Content Container -->
+                    <div class="relative z-10 flex flex-col h-full px-6 pb-12 pt-20">
+                        
+                        <!-- Logo / Icon (Vector/Union from specs) -->
+                        <div class="mx-auto mb-auto">
+                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M32 0C14.3269 0 0 14.3269 0 32C0 49.6731 14.3269 64 32 64C49.6731 64 64 49.6731 64 32C64 14.3269 49.6731 0 32 0Z" fill="white"/>
+                                <path d="M19 19H45V45H19V19Z" fill="#FF2258"/>
+                            </svg>
+                            <!-- Placeholder Logo Text if needed -->
+                            <div class="text-white text-center mt-2 font-bold tracking-widest text-xs">BONDS</div>
+                        </div>
+
+                        <!-- Main Text: Your Relationship Superpower -->
+                        <div class="mb-8">
+                            <h1 class="text-white text-[34px] leading-[40px] font-normal mb-4">
+                                Your Relationship<br>
+                                Superpower
+                            </h1>
+                            <p class="text-white/80 text-lg font-light">
+                                We learn your dynamics and tailor expert built, AI powered insights & actions
+                            </p>
+                        </div>
+
+                        <!-- Action Button: LET'S GO -->
+                        <button onclick="BubbleBridge.send('bubble_fn_welcome', { action: 'go' })"
+                                class="w-full h-[60px] rounded-[40px] bg-gradient-to-l from-[#B900B0] to-[#D8003F] flex items-center justify-center mb-6 shadow-lg transform transition active:scale-95">
+                            <span class="font-jakarta font-semibold text-[20px] text-white tracking-[3px] uppercase">
+                                LET’S GO
+                            </span>
+                        </button>
+
+                        <!-- Sign In Link -->
+                        <div class="text-center">
+                            <span class="font-jakarta text-[17px] text-white tracking-[0.2px]">
+                                Got an account? 
+                                <button onclick="BubbleBridge.send('bubble_fn_welcome', { action: 'signin' })" 
+                                        class="font-bold border-b border-white hover:opacity-80 transition">
+                                    Sign In here
+                                </button>
+                            </span>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        }
+    };
+})();
+
+
+/* ========================================= */
 /* SOURCE: 10-daily-question.js */
 /* ========================================= */
 /* =========================================
@@ -152,7 +223,7 @@ window.appUI.dailyQuestion = {
     topBar: (credits) => {
         return `
             <div class="absolute top-0 left-0 w-full z-20 pointer-events-none">
-                <button onclick="BubbleBridge.send('bubble_fn_close_daily_question')" 
+                <button onclick="BubbleBridge.send('bubble_fn_daily_question', { action: 'close' })" 
                         class="pointer-events-auto absolute top-[18px] left-[18px] w-8 h-8 flex items-center justify-center hover:opacity-80 transition-opacity z-20">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M13.6675 1.99162C14.1108 1.53601 14.1108 0.79732 13.6675 0.341709C13.2243 -0.113903 12.5056 -0.113903 12.0623 0.341709L7 5.54491L1.9377 0.341709C1.49442 -0.113903 0.775732 -0.113903 0.332457 0.341708C-0.110818 0.79732 -0.110818 1.53601 0.332457 1.99162L5.20521 7L0.332456 12.0084C-0.110819 12.464 -0.110819 13.2027 0.332456 13.6583C0.77573 14.1139 1.49442 14.1139 1.93769 13.6583L7 8.45509L12.0623 13.6583C12.5056 14.1139 13.2243 14.1139 13.6675 13.6583C14.1108 13.2027 14.1108 12.464 13.6675 12.0084L8.79479 7L13.6675 1.99162Z" fill="white"/>
@@ -172,21 +243,36 @@ window.appUI.dailyQuestion = {
     },
 
     render: (props) => {
+
+        // Check if user has already voted
+        const selectedAnswer = props.selectedAnswer; // Can be index (number) or text (string)
+        const hasVoted = selectedAnswer !== undefined && selectedAnswer !== null && selectedAnswer !== "";
+        
         // Generate Options
-        const optionsHTML = props.options.map((opt, index) => `
-            <div class="daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+        const optionsHTML = props.options.map((opt, index) => {
+            const isSelected = (typeof selectedAnswer === 'number' && selectedAnswer === index) || 
+                               (typeof selectedAnswer === 'string' && selectedAnswer === opt.text);
+            
+            const wrapperClass = `daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ${hasVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`;
+            
+            const barStyle = hasVoted ? `width: ${opt.percent}%` : `width: 0%`;
+            const pctClass = `percentage font-poppins text-xs text-[#F8F8F8] tracking-[0.02em] ${hasVoted ? '' : 'opacity-0'}`;
+            const pctStyle = isSelected ? 'font-weight: bold;' : '';
+
+            return `
+            <div class="${wrapperClass}"
                  data-value="${opt.text}" 
                  data-percent="${opt.percent}"
                  onclick="window.appUI.dailyQuestion.handleVote(this, ${index}, '${opt.text}')">
                  
-                 <div class="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" style="width: 0%"></div>
+                 <div class="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" style="${barStyle}"></div>
                  
                  <div class="relative flex items-center justify-between h-full px-[42px] z-10">
                     <span class="font-poppins font-bold text-sm text-[#F8F8F8] tracking-[0.02em]">${opt.text}</span>
-                    <span class="percentage font-poppins text-xs text-[#F8F8F8] tracking-[0.02em] opacity-0">${opt.percent}%</span>
+                    <span class="${pctClass}" style="${pctStyle}">${opt.percent}%</span>
                  </div>
             </div>
-        `).join('');
+        `}).join('');
 
         return `
             <div class="relative w-full min-h-screen overflow-hidden gradient-purple-orange font-poppins">
@@ -209,16 +295,16 @@ window.appUI.dailyQuestion = {
 
                   <div id="footer-area" class="min-h-[100px] flex flex-col items-center justify-start">
                       
-                      <div id="footerBefore" class="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px]">
+                      <div id="footerBefore" class="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px] ${hasVoted ? 'hidden' : ''}">
                         Vote and see the live results and also gain 1 credits
                       </div>
 
-                      <div id="footerAfter" class="hidden font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in">
+                      <div id="footerAfter" class="${hasVoted ? '' : 'hidden'} font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in">
                         <span class="font-bold">${props.userName}</span>, we would love to plan with you that first step to creating more 'you time'
                       </div>
 
                       <button id="startBtn" onclick="window.appUI.dailyQuestion.handleStart()" 
-                              class="hidden px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto">
+                              class="${hasVoted ? '' : 'hidden'} px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto">
                         <span class="font-jakarta font-semibold text-[17px] text-[#E76B0C] tracking-[0.7px] pointer-events-none">Start</span>
                       </button>
 
@@ -377,14 +463,15 @@ window.appUI.dailyQuestion = {
         }, 800);
 
         // 6. Send to Bubble
-        BubbleBridge.send('bubble_fn_daily_question_vote', {
+        BubbleBridge.send('bubble_fn_daily_question', {
+            action: 'vote',
             answer: answerText,
             index: index
         });
     },
 
     handleStart: () => {
-        BubbleBridge.send('bubble_fn_start_planning', { timestamp: new Date() });
+        BubbleBridge.send('bubble_fn_daily_question', { action: 'start_planning', timestamp: new Date() });
     }
 };
 
@@ -588,7 +675,7 @@ window.appUI.home = {
                     <!-- Action Icons -->
                     <div class="flex items-center gap-3">
                         <!-- Send Icon -->
-                        <button onclick="BubbleBridge.send('bubble_fn_send_action')" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'send' })" 
                                 class="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -597,7 +684,7 @@ window.appUI.home = {
                         </button>
                         
                         <!-- Chat Icon -->
-                        <button onclick="BubbleBridge.send('bubble_fn_chat_action')" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'chat' })" 
                                 class="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -605,7 +692,7 @@ window.appUI.home = {
                         </button>
                         
                         <!-- Notifications Icon with Badge -->
-                        <button onclick="BubbleBridge.send('bubble_fn_notifications_action')" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'notifications' })" 
                                 class="relative w-10 h-10 rounded-full bg-[#FF2258] flex items-center justify-center hover:bg-[#FF2258]/90 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -656,12 +743,12 @@ window.appUI.home = {
                     
                     <!-- Action Buttons -->
                     <div class="flex items-center justify-center gap-3">
-                        <button onclick="BubbleBridge.send('bubble_fn_select_journey', { journey: '${journey.title}' })" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'select_journey', journey: '${journey.title}' })" 
                                 class="px-8 py-3 bg-[#FF2258] rounded-full font-jakarta font-semibold text-sm text-white hover:bg-[#FF2258]/90 transition-all btn-pressed">
                             Select
                         </button>
                         
-                        <button onclick="BubbleBridge.send('bubble_fn_change_topic')" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'change_topic' })" 
                                 class="px-6 py-3 border border-solid border-white/50 rounded-full font-jakarta font-medium text-sm text-white hover:bg-white/10 transition-all flex items-center gap-2">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="1 4 1 10 7 10"></polyline>
@@ -683,7 +770,7 @@ window.appUI.home = {
                 
                 <!-- Conversation Coach Card (with NEW badge) -->
                 <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#6D6987] to-[#4A4660] p-6 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                     onclick="BubbleBridge.send('bubble_fn_conversation_coach')">
+                     onclick="BubbleBridge.send('bubble_fn_home', { action: 'conversation_coach' })">
                     
                     <!-- NEW Badge -->
                     <div class="absolute -top-1 -right-1 w-20 h-20 overflow-hidden">
@@ -713,7 +800,7 @@ window.appUI.home = {
                     
                     <!-- Practical Actions -->
                     <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-[#AD256C] to-[#8B1F57] p-5 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                         onclick="BubbleBridge.send('bubble_fn_practical_actions')">
+                         onclick="BubbleBridge.send('bubble_fn_home', { action: 'practical_actions' })">
                         <div class="flex flex-col items-start gap-2">
                             <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -727,7 +814,7 @@ window.appUI.home = {
                     
                     <!-- Ask a Question -->
                     <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-[#4A7C9E] to-[#3A5F7D] p-5 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                         onclick="BubbleBridge.send('bubble_fn_ask_question')">
+                         onclick="BubbleBridge.send('bubble_fn_home', { action: 'ask_question' })">
                         <div class="flex flex-col items-start gap-2">
                             <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -748,11 +835,11 @@ window.appUI.home = {
     
     // Journey navigation handlers
     previousJourney: () => {
-        BubbleBridge.send('bubble_fn_previous_journey');
+        BubbleBridge.send('bubble_fn_home', { action: 'previous_journey' });
     },
     
     nextJourney: () => {
-        BubbleBridge.send('bubble_fn_next_journey');
+        BubbleBridge.send('bubble_fn_home', { action: 'next_journey' });
     }
 };
 

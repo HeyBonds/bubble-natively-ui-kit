@@ -1,6 +1,10 @@
 // Component Registry
 // Add new components here by specifying the path to the component file
 window.COMPONENTS = {
+    'welcome-screen': {
+        name: 'Welcome Screen',
+        render: () => window.appUI.welcome.render({})
+    },
     'main-app': {
         name: 'Main App',
         render: () => {

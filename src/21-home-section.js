@@ -58,7 +58,7 @@ window.appUI.home = {
                     <!-- Action Icons -->
                     <div class="flex items-center gap-3">
                         <!-- Send Icon -->
-                        <button onclick="BubbleBridge.send('bubble_fn_send_action')" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'send' })" 
                                 class="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -67,7 +67,7 @@ window.appUI.home = {
                         </button>
                         
                         <!-- Chat Icon -->
-                        <button onclick="BubbleBridge.send('bubble_fn_chat_action')" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'chat' })" 
                                 class="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -75,7 +75,7 @@ window.appUI.home = {
                         </button>
                         
                         <!-- Notifications Icon with Badge -->
-                        <button onclick="BubbleBridge.send('bubble_fn_notifications_action')" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'notifications' })" 
                                 class="relative w-10 h-10 rounded-full bg-[#FF2258] flex items-center justify-center hover:bg-[#FF2258]/90 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -126,12 +126,12 @@ window.appUI.home = {
                     
                     <!-- Action Buttons -->
                     <div class="flex items-center justify-center gap-3">
-                        <button onclick="BubbleBridge.send('bubble_fn_select_journey', { journey: '${journey.title}' })" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'select_journey', journey: '${journey.title}' })" 
                                 class="px-8 py-3 bg-[#FF2258] rounded-full font-jakarta font-semibold text-sm text-white hover:bg-[#FF2258]/90 transition-all btn-pressed">
                             Select
                         </button>
                         
-                        <button onclick="BubbleBridge.send('bubble_fn_change_topic')" 
+                        <button onclick="BubbleBridge.send('bubble_fn_home', { action: 'change_topic' })" 
                                 class="px-6 py-3 border border-solid border-white/50 rounded-full font-jakarta font-medium text-sm text-white hover:bg-white/10 transition-all flex items-center gap-2">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="1 4 1 10 7 10"></polyline>
@@ -153,7 +153,7 @@ window.appUI.home = {
                 
                 <!-- Conversation Coach Card (with NEW badge) -->
                 <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#6D6987] to-[#4A4660] p-6 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                     onclick="BubbleBridge.send('bubble_fn_conversation_coach')">
+                     onclick="BubbleBridge.send('bubble_fn_home', { action: 'conversation_coach' })">
                     
                     <!-- NEW Badge -->
                     <div class="absolute -top-1 -right-1 w-20 h-20 overflow-hidden">
@@ -183,7 +183,7 @@ window.appUI.home = {
                     
                     <!-- Practical Actions -->
                     <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-[#AD256C] to-[#8B1F57] p-5 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                         onclick="BubbleBridge.send('bubble_fn_practical_actions')">
+                         onclick="BubbleBridge.send('bubble_fn_home', { action: 'practical_actions' })">
                         <div class="flex flex-col items-start gap-2">
                             <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -197,7 +197,7 @@ window.appUI.home = {
                     
                     <!-- Ask a Question -->
                     <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-[#4A7C9E] to-[#3A5F7D] p-5 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                         onclick="BubbleBridge.send('bubble_fn_ask_question')">
+                         onclick="BubbleBridge.send('bubble_fn_home', { action: 'ask_question' })">
                         <div class="flex flex-col items-start gap-2">
                             <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -218,10 +218,10 @@ window.appUI.home = {
     
     // Journey navigation handlers
     previousJourney: () => {
-        BubbleBridge.send('bubble_fn_previous_journey');
+        BubbleBridge.send('bubble_fn_home', { action: 'previous_journey' });
     },
     
     nextJourney: () => {
-        BubbleBridge.send('bubble_fn_next_journey');
+        BubbleBridge.send('bubble_fn_home', { action: 'next_journey' });
     }
 };
