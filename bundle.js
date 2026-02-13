@@ -245,13 +245,15 @@ window.appUI.dailyQuestion = {
     render: (props) => {
 
         // Check if user has already voted
-        const selectedAnswer = props.selectedAnswer; // Can be index (number) or text (string)
-        const hasVoted = selectedAnswer !== undefined && selectedAnswer !== null && selectedAnswer !== "";
+        const selectedAnswer = props.selectedAnswer; // Should be index (number)
+        const hasVoted = selectedAnswer !== undefined && selectedAnswer !== null;
         
         // Generate Options
-        const optionsHTML = props.options.map((opt, index) => {
-            const isSelected = (typeof selectedAnswer === 'number' && selectedAnswer === index) || 
-                               (typeof selectedAnswer === 'string' && selectedAnswer === opt.text);
+        const optionsHTML = props.options.map((opt, i) => {
+            // Use provided index or fallback to array index + 1 (1-based)
+            const optIndex = opt.index !== undefined ? opt.index : (i + 1);
+            
+            const isSelected = hasVoted && (selectedAnswer === optIndex);
             
             const wrapperClass = `daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ${hasVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`;
             
@@ -263,7 +265,8 @@ window.appUI.dailyQuestion = {
             <div class="${wrapperClass}"
                  data-value="${opt.text}" 
                  data-percent="${opt.percent}"
-                 onclick="window.appUI.dailyQuestion.handleVote(this, ${index}, '${opt.text}')">
+                 data-index="${optIndex}"
+                 onclick="window.appUI.dailyQuestion.handleVote(this, ${optIndex}, '${opt.text}')">
                  
                  <div class="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" style="${barStyle}"></div>
                  
