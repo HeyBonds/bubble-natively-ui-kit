@@ -1,8 +1,11 @@
-// Exact Bubble SEO Scripts (from Bubble.io settings)
+// Exact Bubble SEO Scripts (mirrored from Bubble.io settings)
 
-// Load UI Kit from CDN
+// 1. Load Custom Font (if not already in bundle.css)
+// (Assuming fonts are imported in CSS or JS)
+
+// 2. Load UI Kit (JS)
 (function() {
-  var src = "../bundle.js";
+  var src = "../bundle.js"; // Local path
   
   var script = document.createElement('script');
   script.src = src;
@@ -14,11 +17,16 @@
   document.body.appendChild(script);
 })();
 
-// Load Tailwind CSS
-var tailwind = document.createElement('script');
-tailwind.src = "https://cdn.tailwindcss.com";
-tailwind.onload = function() {
+// 3. Load Tailwind CSS (Local Bundle)
+// Note: In production you use a <link> tag. Here we inject it to simulate that.
+var tailwindLink = document.createElement('link');
+tailwindLink.rel = 'stylesheet';
+tailwindLink.href = "../bundle.css";
+tailwindLink.onload = function() {
     window.TAILWIND_LOADED = true;
-    console.log("✅ Tailwind CSS Loaded");
+    console.log("✅ Local Tailwind CSS Loaded");
 };
-document.head.appendChild(tailwind);
+tailwindLink.onerror = function() {
+    console.error("❌ Failed to load Local Tailwind CSS");
+};
+document.head.appendChild(tailwindLink);
