@@ -4,12 +4,23 @@
   "description": "Headless UI Component Library for Bubble.io apps wrapped with Natively",
   "main": "bundle.js",
   "scripts": {
-    "build": "node build.js",
+    "build:css": "tailwindcss -i ./src/input.css -o ./bundle.css --minify",
+    "build:js": "node build.js",
+    "build": "npm run build:css && npm run build:js",
     "watch": "node build.js --watch",
     "dev": "npm run build && ./preview-server.sh",
     "preview": "./preview-server.sh"
   },
-  "keywords": ["bubble", "natively", "ui-kit", "headless"],
+  "keywords": [
+    "bubble",
+    "natively",
+    "ui-kit",
+    "headless"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "tailwindcss": "^4.1.18"
+  }
 }
