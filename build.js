@@ -6,7 +6,7 @@ const path = require('path');
 const SRC_DIR = path.join(__dirname, 'src');
 const OUTPUT_FILE = path.join(__dirname, 'bundle.js');
 
-function build() {
+async function build() {
   console.log('🔨 Building bundle.js...');
   
   // Check if src directory exists
@@ -35,13 +35,33 @@ function build() {
     const filePath = path.join(SRC_DIR, file);
     const content = fs.readFileSync(filePath, 'utf8');
     
-    // Add source marker comment for debugging
+    // Add source marker comment for debugging (only if not minifying later, or keep it?)
+    // If minifying, these comments will disappear anyway.
     bundleContent += `\n/* ========================================= */\n`;
     bundleContent += `/* SOURCE: ${file} */\n`;
     bundleContent += `/* ========================================= */\n`;
     bundleContent += content;
     bundleContent += '\n';
   });
+
+  // Check for minify flag
+  if (process.argv.includes('--minify')) {
+    console.log('⚡ Minifying bundle...');
+    try {
+      const { minify } = require('terser');
+      const result = await minify(bundleContent, {
+        sourceMap: false, // Add true if we want source maps later
+        compress: true,
+        mangle: true
+      });
+      if (result.code) {
+        bundleContent = result.code;
+      }
+    } catch (err) {
+      console.error('❌ Minification failed:', err);
+      process.exit(1);
+    }
+  }
   
   // Write to bundle.js
   fs.writeFileSync(OUTPUT_FILE, bundleContent, 'utf8');

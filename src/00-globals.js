@@ -100,7 +100,7 @@ function initGlobals() {
             opacity: 0;
             transition: opacity 600ms ease;
             z-index: 9998; /* Below credit (9999) */
-            pointer-events: none;
+            pointer-events: auto;
         }
         .dim-overlay.active {
             opacity: 1;

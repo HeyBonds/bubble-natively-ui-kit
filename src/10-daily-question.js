@@ -133,6 +133,13 @@ window.appUI.dailyQuestion = {
         const currentCreds = parseInt(creditsNumEl.innerText);
         
         setTimeout(() => {
+            // Disable Start Button during animation
+            const startBtn = document.getElementById('startBtn');
+            if(startBtn) {
+                startBtn.classList.add('pointer-events-none');
+                startBtn.classList.remove('pointer-events-auto');
+            }
+
             // Create overlay credit circle in center
             const overlay = document.createElement('div');
             overlay.className = 'credit-overlay credit-center-animation';
@@ -238,6 +245,12 @@ window.appUI.dailyQuestion = {
                 // Remove overlay
                 overlay.remove();
                 dimOverlay.remove();
+
+                // Re-enable Start Button
+                if(startBtn) {
+                    startBtn.classList.remove('pointer-events-none');
+                    startBtn.classList.add('pointer-events-auto');
+                }
             }, 1800);
             
         }, 2000); // Start 2 seconds after answer selection
