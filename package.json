@@ -31,6 +31,7 @@
     "terser": "^5.46.0"
   },
   "dependencies": {
+    "natively": "^2.24.0",
     "preact": "^10.28.3"
   }
 }

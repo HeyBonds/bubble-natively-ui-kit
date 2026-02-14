@@ -1,13 +1,13 @@
 // Component Registry
 // Add new components here by specifying the path to the component file
 window.COMPONENTS = {
-    'welcome': {
-        name: 'Welcome Screen',
-        renderReact: (container) => window.appUI.mountWelcome(container)
-    },
     'main-app': {
         name: 'Main App',
         renderReact: (container) => window.appUI.mountMainApp(container)
+    },
+    'welcome': {
+        name: 'Welcome Screen',
+        renderReact: (container) => window.appUI.mountWelcome(container)
     },
     'daily-question': {
         name: 'Daily Question',

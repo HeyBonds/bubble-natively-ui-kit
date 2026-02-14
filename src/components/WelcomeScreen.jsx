@@ -10,7 +10,7 @@ const WelcomeScreen = () => {
     };
 
     return (
-        <div className="relative w-full h-full min-h-screen bg-black font-jakarta overflow-hidden">
+        <div className="relative w-full h-full bg-black font-jakarta overflow-hidden">
             
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
@@ -20,45 +20,49 @@ const WelcomeScreen = () => {
             </div>
 
             {/* Content Container */}
-            <div className="relative z-10 flex flex-col h-full px-6 pb-12 pt-20">
+            <div className="relative z-10 flex flex-col h-full px-6 py-10">
                 
                 {/* Logo / Icon */}
-                <div className="mx-auto mb-auto flex flex-col items-center">
-                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <div className="mx-auto flex flex-col items-center">
+                    <svg width="56" height="56" viewBox="0 0 64 64" fill="none">
                         <circle cx="32" cy="32" r="32" fill="white" />
                         <rect x="19" y="19" width="26" height="26" fill="#FF2258" />
                     </svg>
-                    <div className="text-white text-center mt-2 font-bold tracking-widest text-xs">BONDS</div>
+                    <div className="text-white text-center mt-2 font-bold tracking-widest text-[10px]">BONDS</div>
                 </div>
+
+                {/* Spacer to push content down slightly but not too much */}
+                <div className="flex-1 min-h-[20px]"></div>
 
                 {/* Main Text */}
                 <div className="mb-8">
-                    <h1 className="text-white text-[34px] leading-[40px] font-normal mb-4">
+                    <h1 className="text-white text-[32px] leading-[38px] font-normal mb-3">
                         Your Relationship<br />
                         Superpower
                     </h1>
-                    <p className="text-white/80 text-lg font-light">
+                    <p className="text-white/80 text-base font-light leading-relaxed">
                         We learn your dynamics and tailor expert built, AI powered insights & actions
                     </p>
                 </div>
 
-                {/* Action Button */}
-                <button onClick={() => sendToBubble('go')}
-                        className="w-full h-[60px] rounded-[40px] bg-gradient-to-l from-[#B900B0] to-[#D8003F] flex items-center justify-center mb-6 shadow-lg transform transition active:scale-95 btn-pressed">
-                    <span className="font-jakarta font-semibold text-[20px] text-white tracking-[3px] uppercase">
-                        LET’S GO
-                    </span>
-                </button>
+                {/* Action Buttons Container */}
+                <div className="space-y-6">
+                    <button onClick={() => sendToBubble('go')}
+                            className="w-full h-[58px] rounded-[40px] bg-gradient-to-l from-[#B900B0] to-[#D8003F] flex items-center justify-center shadow-lg transform transition active:scale-95 btn-pressed">
+                        <span className="font-jakarta font-semibold text-[18px] text-white tracking-[3px] uppercase">
+                            LET’S GO
+                        </span>
+                    </button>
 
-                {/* Sign In Link */}
-                <div className="text-center">
-                    <span className="font-jakarta text-[17px] text-white tracking-[0.2px]">
-                        Got an account? {' '}
-                        <button onClick={() => sendToBubble('signin')} 
-                                className="font-bold border-b border-white hover:opacity-80 transition">
-                            Sign In here
-                        </button>
-                    </span>
+                    <div className="text-center">
+                        <span className="font-jakarta text-[16px] text-white tracking-[0.2px]">
+                            Got an account? {' '}
+                            <button onClick={() => sendToBubble('signin')} 
+                                    className="font-bold border-b border-white hover:opacity-80 transition">
+                                Sign In here
+                            </button>
+                        </span>
+                    </div>
                 </div>
 
             </div>
