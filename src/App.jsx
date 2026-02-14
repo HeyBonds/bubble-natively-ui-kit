@@ -19,21 +19,18 @@ const App = () => {
     act: ['act'],
     ask: ['ask']
   });
+  const [navAction, setNavAction] = useState(null); // 'push', 'pop', or null
 
-  // Mock Props (would come from Bubble)
+  // Mock Props
   const [userProps, setUserProps] = useState({
     userName: 'Jonathan',
     userAvatar: 'https://i.pravatar.cc/150?img=12',
     credits: 23
   });
 
-  // Global Styles & Effects moved to index.jsx
-  useEffect(() => {
-    // Component specific initialization if any
-  }, []);
-
   // Navigation Logic
   const push = (viewId, props = {}) => {
+    setNavAction('push');
     setStacks(prev => ({
       ...prev,
       [activeTab]: [...prev[activeTab], { id: viewId, ...props }]
@@ -41,9 +38,10 @@ const App = () => {
   };
 
   const pop = () => {
+    setNavAction('pop');
     setStacks(prev => {
       const currentStack = prev[activeTab];
-      if (currentStack.length <= 1) return prev; // Can't pop root
+      if (currentStack.length <= 1) return prev;
       return {
         ...prev,
         [activeTab]: currentStack.slice(0, -1)
@@ -52,39 +50,54 @@ const App = () => {
   };
 
   const switchTab = (tabId) => {
+    setNavAction(null); // No animation for tab switching for now
     setActiveTab(tabId);
   };
 
   // Render Current View
   const currentStack = stacks[activeTab];
-  // A stack item can be a string (id) or object {id, ...props}
   const currentViewItem = currentStack[currentStack.length - 1];
   const currentViewId = typeof currentViewItem === 'string' ? currentViewItem : currentViewItem.id;
   const currentViewProps = typeof currentViewItem === 'object' ? currentViewItem : {};
 
   const renderView = () => {
-    // Common props for all views
     const commonProps = { 
         ...userProps, 
         push, 
         pop,
-        ...currentViewProps // Merge specific props for this view
+        ...currentViewProps
     };
 
+    let content;
     switch (activeTab) {
       case 'home':
-        if (currentViewId === 'home') return <HomeSection {...commonProps} />;
-        if (currentViewId === 'details') return <PlaceholderSection title="Details View (Pushed)" {...commonProps} />;
-        return <PlaceholderSection title="Unknown View" />;
+        if (currentViewId === 'home') content = <HomeSection {...commonProps} />;
+        else if (currentViewId === 'details') content = <PlaceholderSection title="Details View (Pushed)" {...commonProps} />;
+        else content = <PlaceholderSection title="Unknown View" />;
+        break;
       case 'learn':
-        return <PlaceholderSection title="Learn" />;
+        content = <PlaceholderSection title="Learn" />;
+        break;
       case 'act':
-        return <PlaceholderSection title="Act" />;
+        content = <PlaceholderSection title="Act" />;
+        break;
       case 'ask':
-        return <PlaceholderSection title="Ask" />;
+        content = <PlaceholderSection title="Ask" />;
+        break;
       default:
-        return <PlaceholderSection title="Not Found" />;
+        content = <PlaceholderSection title="Not Found" />;
     }
+
+    // Wrap in animated container
+    // The key ensures React recreates the container (triggering CSS animation) on every stack change
+    const animationClass = navAction === 'push' ? 'animate-slide-in-right' : 
+                          navAction === 'pop' ? 'animate-slide-in-left' : '';
+
+    return (
+      <div key={`${activeTab}-${currentStack.length}`} className={`w-full h-full ${animationClass}`}>
+        {content}
+      </div>
+    );
   };
 
   // Navigation Button Component
@@ -115,11 +128,11 @@ const App = () => {
     <div className="relative w-full h-full bg-gradient-to-b from-[#2E2740] to-[#1F1A2E] font-poppins overflow-hidden flex flex-col">
       
       {/* Content Area (Scrollable) */}
-      <div className="flex-1 overflow-y-auto pb-20 scrollbar-hide relative">
+      <div className="flex-1 overflow-y-auto pb-20 scrollbar-hide relative overflow-x-hidden">
          {/* Simple header if deep in stack */}
          {currentStack.length > 1 && (
              <div className="absolute top-4 left-4 z-50">
-                 <button onClick={pop} className="bg-black/20 p-2 rounded-full backdrop-blur-md text-white">
+                 <button onClick={pop} className="bg-black/20 p-2 rounded-full backdrop-blur-md text-white hover:bg-black/40 transition-colors">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
                  </button>
              </div>

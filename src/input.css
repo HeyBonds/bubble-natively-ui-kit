@@ -74,4 +74,27 @@
 
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Stack Navigation Animations */
+  @keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0.5; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+  @keyframes slideInLeft {
+    from { transform: translateX(-20%); opacity: 0.8; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOutLeft {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(-20%); opacity: 0.8; }
+  }
+
+  .animate-slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .animate-slide-out-right { animation: slideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .animate-slide-in-left { animation: slideInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .animate-slide-out-left { animation: slideOutLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 }
