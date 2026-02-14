@@ -5,10 +5,10 @@
   "main": "bundle.js",
   "scripts": {
     "build:css": "tailwindcss -i ./src/input.css -o ./bundle.css --minify",
-    "build:js": "esbuild src/index.jsx --bundle --outfile=bundle.js --minify --loader:.js=jsx",
-    "build:js:dev": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx",
+    "build:js": "esbuild src/index.jsx --bundle --outfile=bundle.js --minify --loader:.js=jsx --alias:react=preact/compat --alias:react-dom=preact/compat",
+    "build:js:dev": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --alias:react=preact/compat --alias:react-dom=preact/compat",
     "build": "npm run build:css && npm run build:js",
-    "watch": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --watch",
+    "watch": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --alias:react=preact/compat --alias:react-dom=preact/compat --watch",
     "dev": "npm run build:js:dev && ./preview-server.sh",
     "preview": "./preview-server.sh"
   },
@@ -28,5 +28,8 @@
     "react-dom": "^19.2.4",
     "tailwindcss": "^3.4.1",
     "terser": "^5.46.0"
+  },
+  "dependencies": {
+    "preact": "^10.28.3"
   }
 }

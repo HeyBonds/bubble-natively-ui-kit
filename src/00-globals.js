@@ -128,10 +128,16 @@ function initGlobals() {
     document.head.appendChild(style);
 
     // 3. Bubble Bridge
+    // 3. Bubble Bridge
     window.BubbleBridge = {
         send: (fnName, data) => {
-            console.log(`📤 Sending to Bubble [${fnName}]:`, data);
-            if (window[fnName]) window[fnName](data); 
+            // Auto-stringify if data is an object (and not null)
+            const payload = (typeof data === 'object' && data !== null) 
+                ? JSON.stringify(data) 
+                : data;
+
+            console.log(`📤 Sending to Bubble [${fnName}]:`, payload);
+            if (window[fnName]) window[fnName](payload); 
         }
     };
 }
