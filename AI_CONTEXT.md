@@ -1,109 +1,64 @@
-# Headless Bubble Protocol
+# Headless Bubble Protocol (React/Preact Edition)
 **Project:** `bubble-natively-ui-kit`  
-**Stack:** Bubble.io (Backend) + Tailwind/JS (Frontend) + Natively (Native Wrapper)
+**Stack:** Bubble.io (Backend) + React/Preact (Frontend) + Tailwind (CSS) + Natively (Wrapper)
 
 ---
 
 ## 1. Philosophy
-We treat Bubble strictly as a **Headless Backend**. The Visual Editor is abandoned for UI development to solve performance bottlenecks and design limitations.
-*   **Performance:** Eliminate "div soup" to achieve 60fps native feel.
-*   **Fidelity:** Precise control over Glassmorphism and animations via Tailwind JIT.
-*   **DX:** Local coding in VS Code, version control via GitHub, and deployment via CDN.
-*   **Architecture:** Modular development in `src/` compiled into a single `bundle.js`.
-    *   **Modular Sources:** Components are split into numbered files (e.g., `10-daily-question.js`, `20-main-app.js`) for organization and load order control.
-    *   **Build System:** `build.js` concatenates these into one artifact to ensure Bubble compatibility (no module loader complexity).
-
-## 2. The "UI Kit" Philosophy
-This project is a **Component Library**, not a Web App.
--   **Goal:** Build reusable, isolated components (e.g., `appUI.dailyQuestion`, `appUI.profile`) that can be triggered independently by Bubble.
--   **Structure:** All components are namespaced under `window.appUI`.
--   **Integration:** Bubble workflows trigger UI changes; UI events trigger Bubble workflows via `BubbleBridge`.
-
----
+We treat Bubble strictly as a **Headless Backend**. The UI is rendered entirely via a React component library optimized with Preact (~44KB).
+*   **Performance:** React-based Virtual DOM ensures 60fps native-like feel.
+*   **Fidelity:** Precise Tailwind control and smooth React-managed animations.
+*   **Stack Navigation:** Custom router handles nested views and browser-like history within a single Bubble page.
 
 ## 2. Technical Stack
 | Layer | Technology | Responsibility |
 | :--- | :--- | :--- |
 | **Backend** | Bubble.io | Database, Workflows, API Connector |
-| **Frontend** | Vanilla JS / Tailwind | Rendering, DOM Logic, State Management |
-| **Styling** | Tailwind CSS (JIT) | Brand-specific UI/UX |
-| **Distribution** | jsDelivr | CDN for `bundle.js` served from GitHub |
-| **Wrapper** | Natively | Biometrics, Haptics, Push Notifications |
+| **Frontend** | React / Preact | Component-based UI, State, Rendering |
+| **Bundler** | esbuild | Fast bundling with Preact aliasing |
+| **Styling** | Tailwind CSS (Compiled) | Production-ready `bundle.css` |
+| **Integration** | `BubbleBridge` | High-level data bridge to Bubble |
 
 ---
 
-## 3. Design System Tokens
-### Colors & Effects
-* **Primary Brand:** `#FF2258` (Radical Red/Pink)
-* **Brand Gradient:** `bg-gradient-to-b from-[#AD256C] to-[#E76B0C]`
-* **Glassmorphism:**
-    * **Background:** `bg-white/5`
-    * **Border:** `border border-solid border-white/50`
-    * **Blur:** `backdrop-blur-md`
+## 3. Architecture & Conventions
 
-### Typography
-* **Headings / Data:** `Plus Jakarta Sans` (`font-jakarta`)
-* **Body / UI:** `Poppins` (`font-poppins`)
-
----
-
----
-
-## 4. Critical Technical Decisions & Fixes (History)
-*   **Caching Strategy:** Browsers/WebViews aggressively cache the CDN file.
-    *   *Fix:* Manually increment `bundle.js?v=X` in Bubble SEO settings on every update.
-*   **CSS Resets:** Bubble's default CSS reset removes borders.
-    *   *Fix:* All Tailwind borders must use `border-solid` explicitly (e.g., `border border-solid border-white/50`).
-*   **Script Loading:** Scripts in `<head>` cannot access `body` immediately.
-    *   *Fix:* Use `defer` or inject via `document.body.appendChild`.
-*   **Design Shift:** Moved from "Clean Web" to **"Dark/Glassmorphism"**.
-    *   *Tokens:* `#FF2258` (Brand), `bg-white/5` (Glass), `backdrop-blur-md`.
-
-## 5. Technical Constraints
-
-### A. The "BubbleBridge" Pattern
-Never use `console.log` for core logic. All JS-to-Bubble communication must trigger named Bubble workflows via the bridge.
+### A. Component Mounting
+Components are exposed via `window.appUI` in `src/index.jsx`. Bubble triggers these functions to render UI into a specific container.
 ```javascript
-// Example Interaction
-onclick="BubbleBridge.send('bubble_fn_submit_vote', { value: 'Option A' })"
+window.appUI.mountDailyQuestion(document.getElementById('container'), { ...props });
 ```
-### B. Tailwind Implementation Rules
-* **Strict Borders:** Always include `border-solid`. Bubble’s CSS reset often hides borders unless explicitly declared.
-* **Arbitrary Values:** Use JIT syntax for specific brand values.
-    * **YES:** `w-[315px]`, `bg-[#FF2258]`
-    * **NO:** `bg-red-500`
-* **Injected Styles:** No external `.css` files. Styles must be Tailwind classes or injected via `document.createElement('style')` in `bundle.js`.
+
+### B. Communication: BubbleBridge
+Always use `BubbleBridge.send` for JS -> Bubble communication. It handles automatic JSON stringification for Bubble's "JavaScript to Bubble" elements.
+```javascript
+BubbleBridge.send('bubble_fn_vote', { answer: 'Option A' });
+```
+
+### C. Styling Rules (Tailwind + Bubble)
+*   **Source:** `src/input.css` contains all custom animations and Tailwind @directives.
+*   **Static Borders:** Bubble's reset hides borders. Always use `border-solid` (e.g., `border border-solid border-white/10`).
+*   **Glassmorphism:** Use `bg-white/5` + `backdrop-blur-md` + `border-white/10` for the brand look.
 
 ---
 
-## 📂 File Structure
-* `bundle.js`: The main production file containing `window.appUI` components.
-* `bubble-html-component/`: Pure Bubble component files (source of truth).
-* `preview/`: Local preview system with component selector.
-* `preview-server.sh`: Quick start script for local preview server.
-* `AI_CONTEXT.md`: Context file for AI assistants to understand the architecture.
+## 4. Design System Tokens
+*   **Primary Brand:** `#FF2258`
+*   **Brand Gradient:** `bg-gradient-to-b from-[#AD256C] to-[#E76B0C]`
+*   **Typography:** `font-jakarta` (Headings) and `font-poppins` (UI/Body).
 
-## 5. Component Architecture
-All features must be encapsulated within the `window.appUI` object to maintain a clean namespace and allow Bubble to trigger renders.
+---
 
-```javascript
-window.appUI = {
-  featureName: {
-    // 1. Returns HTML String with dynamic props
-    render: (props) => { 
-      return `
-        <div class="font-jakarta border border-solid border-white/50 bg-white/5 backdrop-blur-md rounded-xl p-4">
-          <h1 class="text-[#FF2258]">\${props.title}</h1>
-          <button onclick="appUI.featureName.handleAction(this, '\${props.id}')">Click Me</button>
-        </div>
-      `; 
-    },
-    
-    // 2. Handles Interaction & Optimistic UI updates
-    handleAction: (element, id) => { 
-      // Update DOM immediately then call Bubble
-      BubbleBridge.send('bubble_fn_trigger', { id: id });
-    }
-  }
-}
-```
+## 5. Development Workflow
+*   **`npm run dev`**: Watch JS + Preview Server.
+*   **`npm run build`**: Generate minified production `bundle.js` (~44KB) and `bundle.css`.
+*   **Deployment**: jsDelivr serves the files from GitHub `main`.
+*   **Cache Busting**: Increment `?v=X` query param in Bubble's SEO settings.
+
+---
+
+## 6. Directory Structure
+*   `src/components/`: Individual features (WelcomeScreen, DailyQuestion).
+*   `src/App.jsx`: Main shell with Tab Navigation and Stack Routing.
+*   `src/index.jsx`: Entry point and global setup (Font injection, Bridge).
+*   `bundle.js` / `bundle.css`: Build artifacts for Bubble.

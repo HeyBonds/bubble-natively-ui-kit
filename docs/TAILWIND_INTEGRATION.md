@@ -3,7 +3,7 @@
 To resolve the "cdn.tailwindcss.com should not be used in production" warning and improve performance, we have set up a build process to generate a static CSS file.
 
 ## 1. Build the CSS
-The CSS file is generated at `bundle.css`.
+The CSS file is generated at `bundle.css` from the source file `src/input.css` using the Tailwind CLI.
 You can rebuild it at any time by running:
 ```bash
 npm run build:css

@@ -1,0 +1,6 @@
+# Mark generated files as binary to suppress large diffs in IDEs and Git
+bundle.js binary linguist-generated=true
+bundle.css binary linguist-generated=true
+
+# Also mark the package-lock as generated to reduce noise
+package-lock.json linguist-generated=true

@@ -1,53 +1,48 @@
 # Bubble x Natively UI Kit 🚀
 
 A "Headless" UI Component Library for Bubble.io apps wrapped with Natively.
-This repository hosts the raw JavaScript and Tailwind CSS that powers the app's UI. We treat Bubble as a backend-only platform, rendering the UI entirely via this `bundle.js` to achieve native-like performance and aesthetics.
+This repository hosts a React-based UI (optimized with Preact) that powers the app's UI. We treat Bubble as a backend-only platform, rendering the UI entirely via `bundle.js` and `bundle.css` to achieve native-like performance and aesthetics.
 
 ## 🌟 Architecture
 * **Host**: Bubble.io (Database, Backend Logic, Page Routing).
 * **Wrapper**: Natively (Native Shell, Biometrics, Haptics).
-* **UI Engine**: Custom JavaScript (`bundle.js`) + Tailwind CSS (via CDN).
-* **Bridge**: `window.BubbleBridge` communicates between this JS Bundle and Bubble's "JavaScript to Bubble" plugin.
+* **UI Engine**: **React/Preact** component library.
+* **Build System**: **esbuild** (+ Tailwind CLI) to produce a single optimized bundle.
+* **Bridge**: `window.BubbleBridge` handles high-speed communication between JS and Bubble.
 
 ## 📂 File Structure
-* `src/`: **NEW** Modular source files for components (`00-globals.js`, `20-main-app.js`, etc.).
-* `build.js`: **NEW** Node.js build script to concatenate source files into `bundle.js`.
-* `bundle.js`: The main production file containing `window.appUI` components (Generated - DO NOT EDIT).
-* `preview/`: Local preview system for testing individual components.
-* `preview-server.sh`: Quick start script for component preview.
-* `AI_CONTEXT.md`: Context file for AI assistants to understand the architecture.
+* `src/`: React source code.
+    * `components/`: Isolated React components (DailyQuestion, WelcomeScreen, etc.).
+    * `App.jsx`: Main application shell and stack navigation logic.
+    * `index.jsx`: Entry point exposing mount functions to `window.appUI`.
+    * `input.css`: Source CSS with Tailwind directives and custom animations.
+* `bundle.js` & `bundle.css`: Production-ready artifacts (Generated - DO NOT EDIT).
+* `preview/`: Local previewer for testing components in a mobile frame.
+* `AI_CONTEXT.md`: Technical context for AI assistants.
 
 ## 🛠️ Development Workflow
-1.  **Edit Source**: Modify files in `src/`.
-2.  **Auto-Build**: Run `npm run dev` to watch for changes and start the preview server.
-    - This runs `node build.js --watch` and starts a local server.
-3.  **Preview**: Open `http://localhost:8000/preview/index.html` to see changes.
-4.  **Push**: Commit changes to GitHub (`main` branch).
-5.  **Update Bubble**: Increment the version query param in Bubble's SEO Settings (e.g., `bundle.js?v=5`) to bust the cache.
-
-## 🔍 Preview System
-Test components locally before deploying to Bubble:
-
-```bash
-./preview-server.sh
-```
-
-This opens a preview page at `http://localhost:8000/preview/index.html` where you can:
-- Select components from a dropdown
-- Test in a realistic mobile phone preview
-- Verify components work with the exact Bubble SEO scripts
-
-See [preview/README.md](preview/README.md) for details.
+1.  **Install**: `npm install`
+2.  **Dev**: `npm run dev`
+    - Starts the local preview server and watches for JS changes.
+3.  **Preview**: Open `http://localhost:8000/preview/index.html`.
+4.  **Build**: `npm run build`
+    - Generates minified `bundle.js` and `bundle.css`.
+5.  **Push**: Commit changes to GitHub (`main` branch).
+6.  **Refresh Bubble**: Increment the version query param in Bubble's SEO Settings (e.g., `bundle.js?v=6`).
 
 ## 🔌 Bubble Integration
-Paste this into **Settings > SEO / Metatags > Script in the body**:
 
+### Link the Styles (Setting > SEO > Header)
 ```html
-<script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/HeyBonds/bubble-natively-ui-kit@main/bundle.css">
+```
+
+### Link the App (Setting > SEO > Body)
+```html
 <script>
   (function() {
-    var v = "5"; // Increment this to update
-    var src = "[https://cdn.jsdelivr.net/gh/HeyBonds/bubble-natively-ui-kit@main/bundle.js?v=](https://cdn.jsdelivr.net/gh/HeyBonds/bubble-natively-ui-kit@main/bundle.js?v=)" + v;
+    var v = "6"; // Change this to bust cache
+    var src = "https://cdn.jsdelivr.net/gh/HeyBonds/bubble-natively-ui-kit@main/bundle.js?v=" + v;
     var script = document.createElement('script');
     script.src = src;
     script.defer = true;
