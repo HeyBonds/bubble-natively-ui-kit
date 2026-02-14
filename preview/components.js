@@ -1,24 +1,17 @@
 // Component Registry
 // Add new components here by specifying the path to the component file
 window.COMPONENTS = {
-    'welcome-screen': {
+    'welcome': {
         name: 'Welcome Screen',
-        render: () => window.appUI.welcome.render({})
+        renderReact: (container) => window.appUI.mountWelcome(container)
     },
     'main-app': {
         name: 'Main App',
-        mount: (container) => {
-             // Use the new mount function exposed by index.jsx
-             if (window.appUI && window.appUI.mountMainApp) {
-                 return window.appUI.mountMainApp(container);
-             } else {
-                 container.innerHTML = '<p class="text-red-500 p-4">Error: appUI.mountMainApp not found</p>';
-             }
-        }
+        renderReact: (container) => window.appUI.mountMainApp(container)
     },
     'daily-question': {
         name: 'Daily Question',
-        render: () => window.appUI.dailyQuestion.render({
+        renderReact: (container) => window.appUI.mountDailyQuestion(container, {
             credits: 13,
             category: 'Time Together',
             question: 'How much intentional one-on-one time do you have in a typical week?',

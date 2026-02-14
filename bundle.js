@@ -1,401 +1,4 @@
 (() => {
-  // src/00-globals.js
-  var AppConfig = {
-    fonts: [
-      "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
-    ],
-    colors: {
-      start: "#AD256C",
-      end: "#E76B0C"
-    }
-  };
-  window.appUI = window.appUI || {};
-  function initGlobals() {
-    AppConfig.fonts.forEach((url) => {
-      if (!document.querySelector(`link[href="${url}"]`)) {
-        const link = document.createElement("link");
-        link.href = url;
-        link.rel = "stylesheet";
-        document.head.appendChild(link);
-      }
-    });
-    const style = document.createElement("style");
-    style.innerHTML = `
-        .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .font-poppins { font-family: 'Poppins', sans-serif; }
-        
-        /* The missing gradient class */
-        .gradient-purple-orange {
-            background: linear-gradient(180deg, #AD256C 0%, #E76B0C 100%);
-        }
-        
-        /* Animation Utility */
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Option specific transitions */
-        .option-bar { transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-        .percentage { transition: opacity 0.3s ease 0.6s; }
-        .selected-option { background: rgba(255, 255, 255, 0.15) !important; box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.15); }
-
-        /* 3D Pressed Button Effect - Subtle */
-        .btn-pressed {
-            transition: all 0.1s ease;
-            box-shadow: 0 4px rgba(0,0,0,0.15);
-            transform: translateY(0);
-        }
-        .btn-pressed:active {
-            box-shadow: 0 1px rgba(0,0,0,0.15) !important;
-            transform: translateY(3px) !important;
-        }
-
-        /* Credit Animation Keyframes */
-        @keyframes creditFadeInScale {
-            0% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0.5);
-            }
-            100% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.5);
-            }
-        }
-
-        /* creditMoveToCorner is now handled dynamically via JavaScript */
-
-        .credit-overlay {
-            position: fixed;
-            z-index: 9999;
-            pointer-events: none;
-        }
-
-        .credit-center-animation {
-            animation: creditFadeInScale 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        .credit-move-animation {
-            transition: all 600ms cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Dim Overlay */
-        .dim-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.6);
-            opacity: 0;
-            transition: opacity 600ms ease;
-            z-index: 9998; /* Below credit (9999) */
-            pointer-events: auto;
-        }
-        .dim-overlay.active {
-            opacity: 1;
-        }
-
-        /* Hide Scrollbar */
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
-        
-        /* Tab Selection Shimmer */
-        @keyframes shimmer {
-            0% { filter: brightness(100%); transform: scale(1); }
-            50% { filter: brightness(150%) drop-shadow(0 0 5px rgba(255, 34, 88, 0.5)); transform: scale(1.15); }
-            100% { filter: brightness(100%); transform: scale(1.1); }
-        }
-        .active-tab-shimmer {
-            animation: shimmer 0.4s ease-out forwards;
-        }
-    `;
-    document.head.appendChild(style);
-    window.BubbleBridge = {
-      send: (fnName, data) => {
-        const payload = typeof data === "object" && data !== null ? JSON.stringify(data) : data;
-        console.log(`\u{1F4E4} Sending to Bubble [${fnName}]:`, payload);
-        if (window[fnName]) window[fnName](payload);
-      }
-    };
-  }
-  initGlobals();
-
-  // src/05-welcome-screen.js
-  (function() {
-    window.appUI.welcome = {
-      render: (props) => {
-        const bgImage = "https://0fc323560b9c4d8afc3a7d487716abb6.cdn.bubble.io/f1744960311608x780031988693140400/BG%20%281%29.png?_gl=1*1sjnvjs*_gcl_au*MTI1MTA4NjA5OS4xNzY0NjcxNTYy*_ga*MTkwNzcwNjAyMy4xNzY0MTUwMzM2*_ga_BFPVR2DEE2*czE3NzA4ODE1ODYkbzYyJGcxJHQxNzcwODk2MDU5JGoyMyRsMCRoMA..";
-        return `
-                <div class="relative w-full h-full min-h-screen bg-black font-jakarta overflow-hidden">
-                    
-                    <!-- Background Image -->
-                    <div class="absolute inset-0 z-0">
-                        <img src="${bgImage}" class="w-full h-full object-cover opacity-80" alt="Couple">
-                        <!-- Gradient Overlay (Group 39812 equivalent) -->
-                        <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90"></div>
-                    </div>
-
-                    <!-- Content Container -->
-                    <div class="relative z-10 flex flex-col h-full px-6 pb-12 pt-20">
-                        
-                        <!-- Logo / Icon (Vector/Union from specs) -->
-                        <div class="mx-auto mb-auto">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M32 0C14.3269 0 0 14.3269 0 32C0 49.6731 14.3269 64 32 64C49.6731 64 64 49.6731 64 32C64 14.3269 49.6731 0 32 0Z" fill="white"/>
-                                <path d="M19 19H45V45H19V19Z" fill="#FF2258"/>
-                            </svg>
-                            <!-- Placeholder Logo Text if needed -->
-                            <div class="text-white text-center mt-2 font-bold tracking-widest text-xs">BONDS</div>
-                        </div>
-
-                        <!-- Main Text: Your Relationship Superpower -->
-                        <div class="mb-8">
-                            <h1 class="text-white text-[34px] leading-[40px] font-normal mb-4">
-                                Your Relationship<br>
-                                Superpower
-                            </h1>
-                            <p class="text-white/80 text-lg font-light">
-                                We learn your dynamics and tailor expert built, AI powered insights & actions
-                            </p>
-                        </div>
-
-                        <!-- Action Button: LET'S GO -->
-                        <button onclick="BubbleBridge.send('bubble_fn_welcome', { action: 'go' })"
-                                class="w-full h-[60px] rounded-[40px] bg-gradient-to-l from-[#B900B0] to-[#D8003F] flex items-center justify-center mb-6 shadow-lg transform transition active:scale-95">
-                            <span class="font-jakarta font-semibold text-[20px] text-white tracking-[3px] uppercase">
-                                LET\u2019S GO
-                            </span>
-                        </button>
-
-                        <!-- Sign In Link -->
-                        <div class="text-center">
-                            <span class="font-jakarta text-[17px] text-white tracking-[0.2px]">
-                                Got an account? 
-                                <button onclick="BubbleBridge.send('bubble_fn_welcome', { action: 'signin' })" 
-                                        class="font-bold border-b border-white hover:opacity-80 transition">
-                                    Sign In here
-                                </button>
-                            </span>
-                        </div>
-
-                    </div>
-                </div>
-            `;
-      }
-    };
-  })();
-
-  // src/10-daily-question.js
-  window.appUI = window.appUI || {};
-  window.appUI.dailyQuestion = {
-    topBar: (credits) => {
-      return `
-            <div class="absolute top-0 left-0 w-full z-20 pointer-events-none">
-                <button onclick="BubbleBridge.send('bubble_fn_daily_question', { action: 'close' })" 
-                        class="pointer-events-auto absolute top-[18px] left-[18px] w-8 h-8 flex items-center justify-center hover:opacity-80 transition-opacity z-20">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M13.6675 1.99162C14.1108 1.53601 14.1108 0.79732 13.6675 0.341709C13.2243 -0.113903 12.5056 -0.113903 12.0623 0.341709L7 5.54491L1.9377 0.341709C1.49442 -0.113903 0.775732 -0.113903 0.332457 0.341708C-0.110818 0.79732 -0.110818 1.53601 0.332457 1.99162L5.20521 7L0.332456 12.0084C-0.110819 12.464 -0.110819 13.2027 0.332456 13.6583C0.77573 14.1139 1.49442 14.1139 1.93769 13.6583L7 8.45509L12.0623 13.6583C12.5056 14.1139 13.2243 14.1139 13.6675 13.6583C14.1108 13.2027 14.1108 12.464 13.6675 12.0084L8.79479 7L13.6675 1.99162Z" fill="white"/>
-                  </svg>
-                </button>
-
-                <div class="absolute top-4 -right-[95px] z-10">
-                  <div class="relative w-[180px] h-10 rounded-full flex items-center" style="border: 1px solid rgba(255, 255, 255, 0.5);">
-                    <div id="creditsCircle" class="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center transition-transform duration-700">
-                      <span id="creditsNumber" class="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">${credits}</span>
-                    </div>
-                    <span class="absolute left-[42px] top-1/2 translate-y-[6px] font-jakarta font-medium text-[10px] text-white tracking-wide leading-none">Credits</span>
-                  </div>
-                </div>
-            </div>
-        `;
-    },
-    render: (props) => {
-      const selectedAnswer = props.selectedAnswer;
-      const hasVoted = selectedAnswer !== void 0 && selectedAnswer !== null;
-      const optionsHTML = props.options.map((opt, i3) => {
-        const optIndex = opt.index !== void 0 ? opt.index : i3 + 1;
-        const isSelected = hasVoted && selectedAnswer === optIndex;
-        const wrapperClass = `daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden mb-[19px] transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ${hasVoted ? "voted pointer-events-none" : ""} ${isSelected ? "selected-option" : ""}`;
-        const barStyle = hasVoted ? `width: ${opt.percent}%` : `width: 0%`;
-        const pctClass = `percentage font-poppins text-xs text-[#F8F8F8] tracking-[0.02em] ${hasVoted ? "" : "opacity-0"}`;
-        const pctStyle = isSelected ? "font-weight: bold;" : "";
-        return `
-            <div class="${wrapperClass}"
-                 data-value="${opt.text}" 
-                 data-percent="${opt.percent}"
-                 data-index="${optIndex}"
-                 onclick="window.appUI.dailyQuestion.handleVote(this, ${optIndex}, '${opt.text}')">
-                 
-                 <div class="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" style="${barStyle}"></div>
-                 
-                 <div class="relative flex items-center justify-between h-full px-[42px] z-10">
-                    <span class="font-poppins font-bold text-sm text-[#F8F8F8] tracking-[0.02em]">${opt.text}</span>
-                    <span class="${pctClass}" style="${pctStyle}">${opt.percent}%</span>
-                 </div>
-            </div>
-        `;
-      }).join("");
-      return `
-            <div class="relative w-full min-h-screen overflow-hidden gradient-purple-orange font-poppins">
-                
-                ${window.appUI.dailyQuestion.topBar(props.credits)}
-
-                <div class="px-9 pt-[78px] max-w-[375px] mx-auto relative z-10">
-                  
-                  <div class="font-jakarta font-medium text-lg text-white mb-[68px]">
-                    ${props.category || "Time Together"}
-                  </div>
-
-                  <div class="font-poppins font-semibold text-xl text-white leading-[30px] tracking-[0.02em] mb-10 max-w-[303px]">
-                    ${props.question}
-                  </div>
-
-                  <div id="daily-question-options-container" class="space-y-[19px] mb-16">
-                    ${optionsHTML}
-                  </div>
-
-                  <div id="footer-area" class="min-h-[100px] flex flex-col items-center justify-start">
-                      
-                      <div id="footerBefore" class="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px] ${hasVoted ? "hidden" : ""}">
-                        Vote and see the live results and also gain 1 credits
-                      </div>
-
-                      <div id="footerAfter" class="${hasVoted ? "" : "hidden"} font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in">
-                        <span class="font-bold">${props.userName}</span>, we would love to plan with you that first step to creating more 'you time'
-                      </div>
-
-                      <button id="startBtn" onclick="window.appUI.dailyQuestion.handleStart()" 
-                              class="${hasVoted ? "" : "hidden"} px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto">
-                        <span class="font-jakarta font-semibold text-[17px] text-[#E76B0C] tracking-[0.7px] pointer-events-none">Start</span>
-                      </button>
-
-                  </div>
-                </div>
-            </div>
-        `;
-    },
-    handleVote: (element, index, answerText) => {
-      if (element.classList.contains("voted")) return;
-      const container = document.getElementById("daily-question-options-container");
-      const allOptions = container.querySelectorAll(".daily-question-option");
-      allOptions.forEach((opt) => opt.classList.add("voted", "pointer-events-none"));
-      element.classList.add("selected-option");
-      allOptions.forEach((opt) => {
-        const pct = opt.getAttribute("data-percent");
-        const bar = opt.querySelector(".option-bar");
-        const pctText = opt.querySelector(".percentage");
-        setTimeout(() => {
-          bar.style.width = pct + "%";
-          pctText.classList.remove("opacity-0");
-          if (opt === element) pctText.style.fontWeight = "bold";
-        }, 100);
-      });
-      const creditsNumEl = document.getElementById("creditsNumber");
-      const creditsCircle = document.getElementById("creditsCircle");
-      const currentCreds = parseInt(creditsNumEl.innerText);
-      setTimeout(() => {
-        const startBtn = document.getElementById("startBtn");
-        if (startBtn) {
-          startBtn.classList.add("pointer-events-none");
-          startBtn.classList.remove("pointer-events-auto");
-        }
-        const overlay = document.createElement("div");
-        overlay.className = "credit-overlay credit-center-animation";
-        overlay.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                z-index: 9999;
-                pointer-events: none;
-            `;
-        overlay.innerHTML = `
-                <div class="w-24 h-24 bg-[#FF2258] rounded-full flex items-center justify-center shadow-2xl">
-                    <span id="overlayCreditsNumber" class="font-jakarta font-extrabold text-4xl text-white tracking-wide leading-none">
-                        ${currentCreds}
-                    </span>
-                </div>
-            `;
-        document.body.appendChild(overlay);
-        const dimOverlay = document.createElement("div");
-        dimOverlay.className = "dim-overlay";
-        document.body.appendChild(dimOverlay);
-        setTimeout(() => {
-          dimOverlay.classList.add("active");
-        }, 10);
-        setTimeout(() => {
-          const overlayNum = document.getElementById("overlayCreditsNumber");
-          let start = currentCreds;
-          let end = currentCreds + 1;
-          let duration = 600;
-          let startTime = null;
-          function animateNumber(timestamp) {
-            if (!startTime) startTime = timestamp;
-            const progress = Math.min((timestamp - startTime) / duration, 1);
-            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-            const current = Math.round(start + (end - start) * easeOutQuart);
-            overlayNum.innerText = current;
-            if (progress < 1) {
-              requestAnimationFrame(animateNumber);
-            }
-          }
-          requestAnimationFrame(animateNumber);
-        }, 600);
-        setTimeout(() => {
-          overlay.classList.remove("credit-center-animation");
-          overlay.classList.add("credit-move-animation");
-          dimOverlay.classList.remove("active");
-          overlay.offsetHeight;
-          const targetRect = creditsCircle.getBoundingClientRect();
-          overlay.style.top = targetRect.top + "px";
-          overlay.style.left = targetRect.left + "px";
-          overlay.style.transform = "scale(1)";
-          const overlayCircle = overlay.querySelector("div");
-          overlayCircle.style.transition = "all 600ms cubic-bezier(0.4, 0, 0.2, 1)";
-          overlayCircle.style.width = "32px";
-          overlayCircle.style.height = "32px";
-          overlayCircle.querySelector("span").style.fontSize = "0.75rem";
-        }, 1200);
-        setTimeout(() => {
-          creditsNumEl.innerText = currentCreds + 1;
-          creditsCircle.style.transition = "transform 0.3s ease";
-          creditsCircle.style.transform = "translateY(-50%) scale(1.2)";
-          setTimeout(() => {
-            creditsCircle.style.transform = "translateY(-50%) scale(1)";
-          }, 300);
-          overlay.remove();
-          dimOverlay.remove();
-          if (startBtn) {
-            startBtn.classList.remove("pointer-events-none");
-            startBtn.classList.add("pointer-events-auto");
-          }
-        }, 1800);
-      }, 2e3);
-      setTimeout(() => {
-        document.getElementById("footerBefore").classList.add("hidden");
-        document.getElementById("footerAfter").classList.remove("hidden");
-        document.getElementById("startBtn").classList.remove("hidden");
-      }, 800);
-      BubbleBridge.send("bubble_fn_daily_question", {
-        action: "vote",
-        answer: answerText,
-        index
-      });
-    },
-    handleStart: () => {
-      BubbleBridge.send("bubble_fn_daily_question", { action: "start_planning", timestamp: /* @__PURE__ */ new Date() });
-    }
-  };
-
   // node_modules/preact/dist/preact.module.js
   var n;
   var l;
@@ -1372,10 +975,228 @@
   };
   var App_default = App;
 
+  // src/components/WelcomeScreen.jsx
+  var WelcomeScreen = () => {
+    const bgImage = "https://0fc323560b9c4d8afc3a7d487716abb6.cdn.bubble.io/f1744960311608x780031988693140400/BG%20%281%29.png?_gl=1*1sjnvjs*_gcl_au*MTI1MTA4NjA5OS4xNzY0NjcxNTYy*_ga*MTkwNzcwNjAyMy4xNzY0MTUwMzM2*_ga_BFPVR2DEE2*czE3NzA4ODE1ODYkbzYyJGcxJHQxNzcwODk2MDU5JGoyMyRsMCRoMA..";
+    const sendToBubble = (action) => {
+      if (window.BubbleBridge) {
+        window.BubbleBridge.send("bubble_fn_welcome", { action });
+      }
+    };
+    return /* @__PURE__ */ xn.createElement("div", { className: "relative w-full h-full min-h-screen bg-black font-jakarta overflow-hidden" }, /* @__PURE__ */ xn.createElement("div", { className: "absolute inset-0 z-0" }, /* @__PURE__ */ xn.createElement("img", { src: bgImage, className: "w-full h-full object-cover opacity-80", alt: "Couple" }), /* @__PURE__ */ xn.createElement("div", { className: "absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90" })), /* @__PURE__ */ xn.createElement("div", { className: "relative z-10 flex flex-col h-full px-6 pb-12 pt-20" }, /* @__PURE__ */ xn.createElement("div", { className: "mx-auto mb-auto flex flex-col items-center" }, /* @__PURE__ */ xn.createElement("svg", { width: "64", height: "64", viewBox: "0 0 64 64", fill: "none" }, /* @__PURE__ */ xn.createElement("circle", { cx: "32", cy: "32", r: "32", fill: "white" }), /* @__PURE__ */ xn.createElement("rect", { x: "19", y: "19", width: "26", height: "26", fill: "#FF2258" })), /* @__PURE__ */ xn.createElement("div", { className: "text-white text-center mt-2 font-bold tracking-widest text-xs" }, "BONDS")), /* @__PURE__ */ xn.createElement("div", { className: "mb-8" }, /* @__PURE__ */ xn.createElement("h1", { className: "text-white text-[34px] leading-[40px] font-normal mb-4" }, "Your Relationship", /* @__PURE__ */ xn.createElement("br", null), "Superpower"), /* @__PURE__ */ xn.createElement("p", { className: "text-white/80 text-lg font-light" }, "We learn your dynamics and tailor expert built, AI powered insights & actions")), /* @__PURE__ */ xn.createElement(
+      "button",
+      {
+        onClick: () => sendToBubble("go"),
+        className: "w-full h-[60px] rounded-[40px] bg-gradient-to-l from-[#B900B0] to-[#D8003F] flex items-center justify-center mb-6 shadow-lg transform transition active:scale-95 btn-pressed"
+      },
+      /* @__PURE__ */ xn.createElement("span", { className: "font-jakarta font-semibold text-[20px] text-white tracking-[3px] uppercase" }, "LET\u2019S GO")
+    ), /* @__PURE__ */ xn.createElement("div", { className: "text-center" }, /* @__PURE__ */ xn.createElement("span", { className: "font-jakarta text-[17px] text-white tracking-[0.2px]" }, "Got an account? ", " ", /* @__PURE__ */ xn.createElement(
+      "button",
+      {
+        onClick: () => sendToBubble("signin"),
+        className: "font-bold border-b border-white hover:opacity-80 transition"
+      },
+      "Sign In here"
+    )))));
+  };
+  var WelcomeScreen_default = WelcomeScreen;
+
+  // src/components/DailyQuestion.jsx
+  var DailyQuestion = ({ category, question, options, userName, credits: initialCredits, selectedAnswer: initialSelectedAnswer }) => {
+    const [credits, setCredits] = d2(initialCredits || 0);
+    const [selectedAnswer, setSelectedAnswer] = d2(initialSelectedAnswer);
+    const [isVoted, setIsVoted] = d2(initialSelectedAnswer !== void 0 && initialSelectedAnswer !== null);
+    const [showFooterAfter, setShowFooterAfter] = d2(isVoted);
+    const creditsCircleRef = A2(null);
+    const creditsNumberRef = A2(null);
+    const handleVote = (answerText, index) => {
+      if (isVoted) return;
+      setIsVoted(true);
+      setSelectedAnswer(index);
+      setTimeout(() => {
+        setShowFooterAfter(true);
+      }, 800);
+      if (window.BubbleBridge) {
+        window.BubbleBridge.send("bubble_fn_daily_question", {
+          action: "vote",
+          answer: answerText,
+          index
+        });
+      }
+      setTimeout(() => {
+        triggerCreditAnimation();
+      }, 2e3);
+    };
+    const triggerCreditAnimation = () => {
+      const dimOverlay = document.createElement("div");
+      dimOverlay.className = "dim-overlay active";
+      document.body.appendChild(dimOverlay);
+      const overlay = document.createElement("div");
+      overlay.className = "credit-overlay credit-center-animation";
+      overlay.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            pointer-events: none;
+        `;
+      overlay.innerHTML = `
+            <div class="w-24 h-24 bg-[#FF2258] rounded-full flex items-center justify-center shadow-2xl">
+                <span id="overlayCreditsNumber" class="font-jakarta font-extrabold text-4xl text-white tracking-wide leading-none">
+                    ${credits}
+                </span>
+            </div>
+        `;
+      document.body.appendChild(overlay);
+      setTimeout(() => {
+        const overlayNum = document.getElementById("overlayCreditsNumber");
+        let start = credits;
+        let end = credits + 1;
+        let duration = 600;
+        let startTime = null;
+        function animateNumber(timestamp) {
+          if (!startTime) startTime = timestamp;
+          const progress = Math.min((timestamp - startTime) / duration, 1);
+          const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+          const current = Math.round(start + (end - start) * easeOutQuart);
+          if (overlayNum) overlayNum.innerText = current;
+          if (progress < 1) requestAnimationFrame(animateNumber);
+        }
+        requestAnimationFrame(animateNumber);
+      }, 600);
+      setTimeout(() => {
+        overlay.classList.remove("credit-center-animation");
+        overlay.classList.add("credit-move-animation");
+        dimOverlay.classList.remove("active");
+        overlay.offsetHeight;
+        if (creditsCircleRef.current) {
+          const targetRect = creditsCircleRef.current.getBoundingClientRect();
+          overlay.style.top = targetRect.top + "px";
+          overlay.style.left = targetRect.left + "px";
+          overlay.style.transform = "scale(1)";
+          const overlayCircle = overlay.querySelector("div");
+          overlayCircle.style.transition = "all 600ms cubic-bezier(0.4, 0, 0.2, 1)";
+          overlayCircle.style.width = "32px";
+          overlayCircle.style.height = "32px";
+          overlayCircle.querySelector("span").style.fontSize = "0.75rem";
+        }
+      }, 1200);
+      setTimeout(() => {
+        setCredits((prev) => prev + 1);
+        if (creditsCircleRef.current) {
+          creditsCircleRef.current.style.transition = "transform 0.3s ease";
+          creditsCircleRef.current.style.transform = "translateY(-50%) scale(1.2)";
+          setTimeout(() => {
+            if (creditsCircleRef.current) {
+              creditsCircleRef.current.style.transform = "translateY(-50%) scale(1)";
+            }
+          }, 300);
+        }
+        overlay.remove();
+        dimOverlay.remove();
+      }, 1800);
+    };
+    const handleStart = () => {
+      if (window.BubbleBridge) {
+        window.BubbleBridge.send("bubble_fn_daily_question", { action: "start_planning", timestamp: /* @__PURE__ */ new Date() });
+      }
+    };
+    const handleClose = () => {
+      if (window.BubbleBridge) {
+        window.BubbleBridge.send("bubble_fn_daily_question", { action: "close" });
+      }
+    };
+    return /* @__PURE__ */ xn.createElement("div", { className: "relative w-full min-h-screen overflow-hidden gradient-purple-orange font-poppins" }, /* @__PURE__ */ xn.createElement("div", { className: "absolute top-0 left-0 w-full z-20 pointer-events-none" }, /* @__PURE__ */ xn.createElement(
+      "button",
+      {
+        onClick: handleClose,
+        className: "pointer-events-auto absolute top-[18px] left-[18px] w-8 h-8 flex items-center justify-center hover:opacity-80 transition-opacity z-20"
+      },
+      /* @__PURE__ */ xn.createElement("svg", { width: "14", height: "14", viewBox: "0 0 14 14", fill: "none" }, /* @__PURE__ */ xn.createElement("path", { d: "M13.6675 1.99162C14.1108 1.53601 14.1108 0.79732 13.6675 0.341709C13.2243 -0.113903 12.5056 -0.113903 12.0623 0.341709L7 5.54491L1.9377 0.341709C1.49442 -0.113903 0.775732 -0.113903 0.332457 0.341708C-0.110818 0.79732 -0.110818 1.53601 0.332457 1.99162L5.20521 7L0.332456 12.0084C-0.110819 12.464 -0.110819 13.2027 0.332456 13.6583C0.77573 14.1139 1.49442 14.1139 1.93769 13.6583L7 8.45509L12.0623 13.6583C12.5056 14.1139 13.2243 14.1139 13.6675 13.6583C14.1108 13.2027 14.1108 12.464 13.6675 12.0084L8.79479 7L13.6675 1.99162Z", fill: "white" }))
+    ), /* @__PURE__ */ xn.createElement("div", { className: "absolute top-4 -right-[95px] z-10" }, /* @__PURE__ */ xn.createElement("div", { className: "relative w-[180px] h-10 rounded-full flex items-center border border-solid border-white/50" }, /* @__PURE__ */ xn.createElement(
+      "div",
+      {
+        ref: creditsCircleRef,
+        id: "creditsCircle",
+        className: "absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center shadow-lg"
+      },
+      /* @__PURE__ */ xn.createElement("span", { className: "font-jakarta font-extrabold text-xs text-white tracking-wide leading-none" }, credits)
+    ), /* @__PURE__ */ xn.createElement("span", { className: "absolute left-[42px] top-1/2 translate-y-[6px] font-jakarta font-medium text-[10px] text-white tracking-wide leading-none" }, "Credits")))), /* @__PURE__ */ xn.createElement("div", { className: "px-9 pt-[78px] max-w-[375px] mx-auto relative z-10" }, /* @__PURE__ */ xn.createElement("div", { className: "font-jakarta font-medium text-lg text-white mb-[68px]" }, category || "Time Together"), /* @__PURE__ */ xn.createElement("div", { className: "font-poppins font-semibold text-xl text-white leading-[30px] tracking-[0.02em] mb-10 max-w-[303px]" }, question), /* @__PURE__ */ xn.createElement("div", { className: "space-y-[19px] mb-16" }, options.map((opt, i3) => {
+      const optIndex = opt.index !== void 0 ? opt.index : i3 + 1;
+      const isSelected = isVoted && selectedAnswer === optIndex;
+      return /* @__PURE__ */ xn.createElement(
+        "div",
+        {
+          key: optIndex,
+          className: `daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ${isVoted ? "voted pointer-events-none" : ""} ${isSelected ? "selected-option" : ""}`,
+          onClick: () => handleVote(opt.text, optIndex)
+        },
+        /* @__PURE__ */ xn.createElement(
+          "div",
+          {
+            className: "option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg",
+            style: { width: isVoted ? `${opt.percent}%` : "0%" }
+          }
+        ),
+        /* @__PURE__ */ xn.createElement("div", { className: "relative flex items-center justify-between h-full px-[42px] z-10" }, /* @__PURE__ */ xn.createElement("span", { className: "font-poppins font-bold text-sm text-[#F8F8F8] tracking-[0.02em]" }, opt.text), /* @__PURE__ */ xn.createElement(
+          "span",
+          {
+            className: `percentage font-poppins text-xs text-[#F8F8F8] tracking-[0.02em] ${isVoted ? "opacity-100" : "opacity-0"}`,
+            style: { fontWeight: isSelected ? "bold" : "normal" }
+          },
+          opt.percent,
+          "%"
+        ))
+      );
+    })), /* @__PURE__ */ xn.createElement("div", { className: "min-h-[100px] flex flex-col items-center justify-start" }, !showFooterAfter ? /* @__PURE__ */ xn.createElement("div", { className: "font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px]" }, "Vote and see the live results and also gain 1 credits") : /* @__PURE__ */ xn.createElement(xn.Fragment, null, /* @__PURE__ */ xn.createElement("div", { className: "font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in" }, /* @__PURE__ */ xn.createElement("span", { className: "font-bold" }, userName), ", we would love to plan with you that first step to creating more 'you time'"), /* @__PURE__ */ xn.createElement(
+      "button",
+      {
+        onClick: handleStart,
+        className: "px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto"
+      },
+      /* @__PURE__ */ xn.createElement("span", { className: "font-jakarta font-semibold text-[17px] text-[#E76B0C] tracking-[0.7px] pointer-events-none" }, "Start")
+    )))));
+  };
+  var DailyQuestion_default = DailyQuestion;
+
   // src/index.jsx
+  window.appUI = window.appUI || {};
+  var initGlobals = () => {
+    const fonts = [
+      "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
+    ];
+    fonts.forEach((url) => {
+      if (!document.querySelector(`link[href="${url}"]`)) {
+        const link = document.createElement("link");
+        link.href = url;
+        link.rel = "stylesheet";
+        document.head.appendChild(link);
+      }
+    });
+    window.BubbleBridge = {
+      send: (fnName, data) => {
+        const payload = typeof data === "object" && data !== null ? JSON.stringify(data) : data;
+        console.log(`\u{1F4E4} Sending to Bubble [${fnName}]:`, payload);
+        if (window[fnName]) window[fnName](payload);
+      }
+    };
+    console.log("\u{1F30D} Globals Initialized");
+  };
+  initGlobals();
   window.appUI.mountMainApp = (container) => {
     const root = createRoot(container);
     root.render(/* @__PURE__ */ xn.createElement(App_default, null));
+    return root;
+  };
+  window.appUI.mountWelcome = (container, props = {}) => {
+    const root = createRoot(container);
+    root.render(/* @__PURE__ */ xn.createElement(WelcomeScreen_default, { ...props }));
+    return root;
+  };
+  window.appUI.mountDailyQuestion = (container, props = {}) => {
+    const root = createRoot(container);
+    root.render(/* @__PURE__ */ xn.createElement(DailyQuestion_default, { ...props }));
     return root;
   };
   if (!document.getElementById("component-selector")) {

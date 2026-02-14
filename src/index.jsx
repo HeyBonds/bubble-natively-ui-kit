@@ -1,14 +1,57 @@
-import './00-globals.js'; // MUST be first to init window.appUI
-import './05-welcome-screen.js'; // Legacy component
-import './10-daily-question.js'; // Legacy component
+// Initialize Global Namespace
+window.appUI = window.appUI || {};
+
+// --- GLOBAL SETUP (Runs immediately) ---
+const initGlobals = () => {
+    // 1. Inject Fonts
+    const fonts = [
+        "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
+    ];
+    fonts.forEach(url => {
+        if (!document.querySelector(`link[href="${url}"]`)) {
+            const link = document.createElement('link');
+            link.href = url;
+            link.rel = "stylesheet";
+            document.head.appendChild(link);
+        }
+    });
+
+    // 2. Bubble Bridge Setup with Auto-Stringify
+    window.BubbleBridge = {
+        send: (fnName, data) => {
+            const payload = (typeof data === 'object' && data !== null) 
+                ? JSON.stringify(data) 
+                : data;
+            console.log(`📤 Sending to Bubble [${fnName}]:`, payload);
+            if (window[fnName]) window[fnName](payload); 
+        }
+    };
+    console.log('🌍 Globals Initialized');
+};
+initGlobals();
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import WelcomeScreen from './components/WelcomeScreen';
+import DailyQuestion from './components/DailyQuestion';
 
-// Expose mount function for the Previewer / Bubble
+// Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
     const root = createRoot(container);
     root.render(<App />);
+    return root;
+};
+
+window.appUI.mountWelcome = (container, props = {}) => {
+    const root = createRoot(container);
+    root.render(<WelcomeScreen {...props} />);
+    return root;
+};
+
+window.appUI.mountDailyQuestion = (container, props = {}) => {
+    const root = createRoot(container);
+    root.render(<DailyQuestion {...props} />);
     return root;
 };
 

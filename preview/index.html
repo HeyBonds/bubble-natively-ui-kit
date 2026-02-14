@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Component Preview</title>
     <link rel="stylesheet" href="mobile-preview.css">
+    <link rel="stylesheet" href="../bundle.css">
     <style>
         #component-selector {
             position: fixed;
@@ -35,6 +36,7 @@
 
     <div id="phone-wrapper"></div>
 
+    <script src="../bundle.js"></script>
     <script src="bubble-seo.js"></script>
     <script src="components.js"></script>
 
@@ -55,14 +57,31 @@
             const wrapper = document.getElementById('phone-wrapper');
             wrapper.innerHTML = ''; // Clear previous
             
-            // Wait for appUI and Tailwind if component is JS and still loading
-            if (component.render && (!window.appUI || !window.TAILWIND_LOADED)) {
-                console.log('⏳ Waiting for appUI and Tailwind to load...');
+            // Wait for appUI
+            if (!window.appUI) {
+                console.log('⏳ Waiting for appUI to load...');
                 setTimeout(() => loadComponent(componentKey), 100);
                 return;
             }
 
-            // CASE 1: Mountable Component (React/Vue/etc)
+            // Clean up previous React root if exists
+            if (window.currentReactRoot) {
+                window.currentReactRoot.unmount();
+                window.currentReactRoot = null;
+            }
+
+            // CASE 1: React Component
+            if (component.renderReact) {
+                try {
+                    window.currentReactRoot = component.renderReact(wrapper);
+                } catch (e) {
+                    console.error(e);
+                    wrapper.innerHTML = `<p style="color: red; padding: 20px;">Error mounting React component: ${e.message}</p>`;
+                }
+                return;
+            }
+
+            // CASE 2: Mountable Component (Other)
             if (component.mount) {
                 try {
                     // component.mount() function takes container as argument
