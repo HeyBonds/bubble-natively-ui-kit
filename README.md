@@ -18,13 +18,22 @@ This repository hosts a React-based UI (optimized with Preact) that powers the a
     * `input.css`: Source CSS with Tailwind directives and custom animations.
 * `bundle.js` & `bundle.css`: Production-ready artifacts (Generated - DO NOT EDIT).
 * `preview/`: Local previewer for testing components in a mobile frame.
-* `AI_CONTEXT.md`: Technical context for AI assistants.
+*   `src/`: React source code.
+    *   `components/`: Isolated React components (DailyQuestion, WelcomeScreen, etc.).
+    *   `App.jsx`: Main application shell and stack navigation logic.
+    *   `index.jsx`: Entry point exposing mount functions to `window.appUI`.
+    *   `input.css`: Source CSS with Tailwind directives and custom animations.
+*   `bundle.js` & `bundle.css`: Production-ready artifacts (Generated - DO NOT EDIT).
+*   `preview/`: Local previewer for testing components in a mobile frame.
+*   `AI_CONTEXT.md`: Technical context for AI assistants.
 
 ## 🛠️ Development Workflow
 1.  **Install**: `npm install`
 2.  **Dev**: `npm run dev`
-    - Starts the local preview server and watches for JS changes.
-3.  **Preview**: Open `http://localhost:8000/preview/index.html`.
+    - Starts the local preview server with unminified code (better for debugging).
+3.  **Prod Preview**: `npm run prod`
+    - Builds the **minified** bundle and starts the preview server (best for final verification).
+4.  **Preview**: Open `http://localhost:8000/preview/index.html`.
 4.  **Build**: `npm run build`
     - Generates minified `bundle.js` and `bundle.css`.
 5.  **Push**: Commit changes to GitHub (`main` branch).

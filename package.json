@@ -10,6 +10,7 @@
     "build": "npm run build:css && npm run build:js",
     "watch": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --alias:react=preact/compat --alias:react-dom=preact/compat --watch",
     "dev": "npm run build:js:dev && ./preview-server.sh",
+    "prod": "npm run build && ./preview-server.sh",
     "preview": "./preview-server.sh"
   },
   "keywords": [

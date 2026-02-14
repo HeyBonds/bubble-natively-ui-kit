@@ -50,7 +50,8 @@ BubbleBridge.send('bubble_fn_vote', { answer: 'Option A' });
 ---
 
 ## 5. Development Workflow
-*   **`npm run dev`**: Watch JS + Preview Server.
+*   **`npm run dev`**: Watch JS + Preview Server (Unminified).
+*   **`npm run prod`**: Build Production + Preview Server (Minified).
 *   **`npm run build`**: Generate minified production `bundle.js` (~44KB) and `bundle.css`.
 *   **Deployment**: jsDelivr serves the files from GitHub `main`.
 *   **Cache Busting**: Increment `?v=X` query param in Bubble's SEO settings.
