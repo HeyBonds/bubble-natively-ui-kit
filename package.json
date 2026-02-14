@@ -5,11 +5,11 @@
   "main": "bundle.js",
   "scripts": {
     "build:css": "tailwindcss -i ./src/input.css -o ./bundle.css --minify",
-    "build:js": "node build.js --minify",
-    "build:js:dev": "node build.js",
+    "build:js": "esbuild src/index.jsx --bundle --outfile=bundle.js --minify --loader:.js=jsx",
+    "build:js:dev": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx",
     "build": "npm run build:css && npm run build:js",
-    "watch": "node build.js --watch",
-    "dev": "npm run build && ./preview-server.sh",
+    "watch": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --watch",
+    "dev": "npm run build:js:dev && ./preview-server.sh",
     "preview": "./preview-server.sh"
   },
   "keywords": [
@@ -22,7 +22,10 @@
   "license": "ISC",
   "devDependencies": {
     "autoprefixer": "^10.4.24",
+    "esbuild": "^0.27.3",
     "postcss": "^8.5.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "tailwindcss": "^3.4.1",
     "terser": "^5.46.0"
   }

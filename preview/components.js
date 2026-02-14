@@ -7,21 +7,28 @@ window.COMPONENTS = {
     },
     'main-app': {
         name: 'Main App',
-        render: () => {
-             return window.appUI.mainApp.render({
-                userName: 'Jonathan',
-                userAvatar: 'https://i.pravatar.cc/150?img=12', // Placeholder image
-                credits: 23,
-                activeSection: 'home',
-                currentJourney: {
-                    title: 'Intimacy',
-                    description: 'Exploring how being wanted and desired intersects with sexual fulfilment together'
-                }
-            });
+        mount: (container) => {
+             // Use the new mount function exposed by index.jsx
+             if (window.appUI && window.appUI.mountMainApp) {
+                 return window.appUI.mountMainApp(container);
+             } else {
+                 container.innerHTML = '<p class="text-red-500 p-4">Error: appUI.mountMainApp not found</p>';
+             }
         }
     },
     'daily-question': {
         name: 'Daily Question',
-        path: '../bubble-html-component/daily-question.html'
+        render: () => window.appUI.dailyQuestion.render({
+            credits: 13,
+            category: 'Time Together',
+            question: 'How much intentional one-on-one time do you have in a typical week?',
+            userName: 'Danny',
+            options: [
+                { text: 'Less than 1 hour', percent: 10, index: 1 },
+                { text: '1-3 hours', percent: 45, index: 2 },
+                { text: '4-7 hours', percent: 30, index: 3 },
+                { text: 'More than 7 hours', percent: 15, index: 4 }
+            ]
+        })
     }
 };

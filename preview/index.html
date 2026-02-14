@@ -62,7 +62,21 @@
                 return;
             }
 
-            // CASE 1: JS Component (from bundle.js)
+            // CASE 1: Mountable Component (React/Vue/etc)
+            if (component.mount) {
+                try {
+                    // component.mount() function takes container as argument
+                    const instance = component.mount(wrapper);
+                    // Store instance for cleanup if needed
+                    window.currentInstance = instance;
+                } catch (e) {
+                    console.error(e);
+                    wrapper.innerHTML = `<p style="color: red; padding: 20px;">Error mounting component: ${e.message}</p>`;
+                }
+                return;
+            }
+
+            // CASE 2: String Render Component (Legacy JS)
             if (component.render) {
                 try {
                     wrapper.innerHTML = component.render();
