@@ -35,6 +35,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import WelcomeScreen from './components/WelcomeScreen';
 import DailyQuestion from './components/DailyQuestion';
+import OnboardingFlow from './components/onboarding/OnboardingFlow';
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
@@ -55,14 +56,29 @@ window.appUI.mountDailyQuestion = (container, props = {}) => {
     return root;
 };
 
-// Auto-mount only if there's an explicit container for the Main App.
-// Otherwise, just expose mount functions and let Bubble call them.
-const appContainer = document.getElementById('app-content-area');
-if (appContainer) {
-    window.appUI.mountMainApp(appContainer);
-    console.log('🚀 Main App Auto-Mounted into #app-content-area');
-} else if (document.getElementById('component-selector')) {
-    console.log('🛠️ Preview Mode detected: Waiting for manual mount.');
+window.appUI.mountOnboarding = (container, props = {}) => {
+    const root = createRoot(container);
+    root.render(<OnboardingFlow {...props} />);
+    return root;
+};
+
+// Check if we should auto-mount (e.g., in production or standalone)
+// If we are in the previewer, 'component-selector' exists.
+if (!document.getElementById('component-selector')) {
+    // We are likely in Bubble or a standalone page
+    // Try to find a root, or create one
+    let container = document.getElementById('app-content-area');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'react-root';
+        container.style.height = '100%';
+        container.style.width = '100%';
+        document.body.appendChild(container);
+    }
+    
+    // Auto-mount
+    window.appUI.mountMainApp(container);
+    console.log('🚀 Main App Auto-Mounted');
 } else {
-    console.log('📦 UI Kit loaded. Mount functions ready on window.appUI');
+    console.log('🛠️ Preview Mode detected: Waiting for manual mount.');
 }
