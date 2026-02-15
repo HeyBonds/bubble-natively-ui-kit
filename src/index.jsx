@@ -35,6 +35,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import WelcomeScreen from './components/WelcomeScreen';
 import DailyQuestion from './components/DailyQuestion';
+import OnboardingFlow from './components/onboarding/OnboardingFlow';
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
@@ -52,6 +53,12 @@ window.appUI.mountWelcome = (container, props = {}) => {
 window.appUI.mountDailyQuestion = (container, props = {}) => {
     const root = createRoot(container);
     root.render(<DailyQuestion {...props} />);
+    return root;
+};
+
+window.appUI.mountOnboarding = (container, props = {}) => {
+    const root = createRoot(container);
+    root.render(<OnboardingFlow {...props} />);
     return root;
 };
 
