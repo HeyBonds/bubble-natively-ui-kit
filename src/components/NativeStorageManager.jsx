@@ -61,9 +61,18 @@ const NativeStorageManager = () => {
         </p>
 
         <div className="space-y-4">
-          <div className="p-4 bg-black/20 rounded-xl border border-white/10">
-            <span className="text-xs text-white/40 uppercase tracking-wider block mb-1">Current User ID</span>
-            <span className="text-lg font-mono text-white break-all">{currentUserId}</span>
+          <div className="p-4 bg-black/20 rounded-xl border border-white/10 space-y-3">
+            <div>
+                <span className="text-xs text-white/40 uppercase tracking-wider block mb-1">Current User ID</span>
+                <span className="text-sm font-mono text-white break-all">{currentUserId}</span>
+            </div>
+            <div className="pt-3 border-t border-white/5">
+                <span className="text-xs text-[#FF2258] uppercase tracking-wider block mb-1">Device ID (Mixpanel)</span>
+                <span className="text-xs font-mono text-white/80 break-all" id="debug-device-id">
+                    {/* Fetched dynamically or via separate state if needed, simpler to just show it if we add it to state */}
+                    (See App Debug Overlay)
+                </span>
+            </div>
           </div>
 
           <div className="space-y-2">

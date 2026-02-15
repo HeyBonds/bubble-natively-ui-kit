@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import mixpanel from 'mixpanel-browser'; // Import Mixpanel
 import WelcomeScreen from './components/WelcomeScreen';
 import MainTabs from './components/MainTabs';
 import { useNativelyStorage } from './hooks/useNativelyStorage';
@@ -6,14 +7,19 @@ import { useNativelyStorage } from './hooks/useNativelyStorage';
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [debugMode, setDebugMode] = useState(false); // For local testing
+    const [debugMode, setDebugMode] = useState(false);
+    const [deviceId, setDeviceId] = useState(null); // Store the "Shadow" Device ID
     
     // Natively Storage for persistence
     const { getItem, setItem, removeItem } = useNativelyStorage();
     const SESSION_KEY = 'bonds_session_active';
+    const DEVICE_ID_KEY = 'bonds_device_id';
 
     useEffect(() => {
-        // 1. Expose global bridge for Bubble
+        // 1. Initialize Mixpanel & Identity
+        initializeAnalytics();
+
+        // 2. Expose global bridge for Bubble
         window.appUI = window.appUI || {};
         
         window.appUI.setLoginState = (isLogged) => {
@@ -27,14 +33,61 @@ const App = () => {
             }
         };
 
-        // 2. Check for existing session on mount
+        // 3. Check for existing session on mount
         checkSession();
     }, []);
+
+    const initializeAnalytics = async () => {
+        try {
+            // Get Token from Runtime Config (Bubble Header or Local Config)
+            const token = window.APP_CONFIG?.MIXPANEL_TOKEN;
+            
+            if (token) {
+                mixpanel.init(token, { debug: true, track_pageview: false, persistence: 'localStorage' });
+                console.log('📊 Mixpanel Initialized');
+                
+                // --- Device ID Strategy ---
+                // 1. Try to get ID from Native Storage (Persistent)
+                // 1. Try to get ID from Native Storage (Persistent)
+                let storedId = await getItem(DEVICE_ID_KEY);
+
+                if (storedId) {
+                    // MIGRATION FIX: Check if we have a polluted ID (starts with $device:)
+                    if (storedId.startsWith('$device:')) {
+                        console.log('🧹 Cleaning polluted Device ID:', storedId);
+                        storedId = storedId.replace(/^\$device:/, '');
+                        await setItem(DEVICE_ID_KEY, storedId); // Re-save clean version
+                    }
+                    
+                    // 3. Keep existing identity
+                    console.log('📂 Loaded Existing Device ID:', storedId);
+                    mixpanel.identify(storedId);
+                } else {
+                     // 2. If missing, get Mixpanel's auto-generated distinct_id
+                    const rawId = mixpanel.get_distinct_id();
+                    // Strip the $device: prefix if present to promote it to a User ID
+                    storedId = rawId.replace(/^\$device:/, '');
+                    
+                    console.log('🆕 Generated New Device ID:', storedId, '(Raw:', rawId, ')');
+                    await setItem(DEVICE_ID_KEY, storedId);
+                    
+                    // Identify immediately to "claim" this ID as a user
+                    mixpanel.identify(storedId);
+                }
+
+                setDeviceId(storedId);
+            } else {
+                console.warn('⚠️ Mixpanel Token NOT found in window.APP_CONFIG. Analytics disabled.');
+            }
+        } catch (err) {
+            console.error('❌ Analytics Init Failed:', err);
+        }
+    };
 
     const checkSession = async () => {
         try {
             console.log('🔄 App: Starting session check...');
-            // Add a timeout race condition to prevent hanging if storage never returns
+            // Add a timeout race condition to prevent hanging
             const sessionPromise = getItem(SESSION_KEY);
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('timeout'), 2000));
             
@@ -55,14 +108,11 @@ const App = () => {
         }
     };
 
-    // Toggle Debug Mode (Triple click handler helper)
     const handleDebugClick = (e) => {
         if (e.detail === 3) {
             setDebugMode(!debugMode);
         }
     };
-
-    // --- RENDER ---
 
     if (isLoading) {
         return (
@@ -78,7 +128,6 @@ const App = () => {
         );
     }
 
-    // Mock Data for Main User
     const userProps = {
         userName: 'Jonathan',
         userAvatar: 'https://i.pravatar.cc/150?img=12',
@@ -87,21 +136,34 @@ const App = () => {
 
     return (
         <div className="w-full h-full" onClick={handleDebugClick}>
-            {/* Conditional Routing */}
             {isLoggedIn ? (
                 <MainTabs userProps={userProps} />
             ) : (
-                <WelcomeScreen />
+                <WelcomeScreen deviceId={deviceId} /> 
             )}
 
-            {/* Debug Floating Toggle (Visible only if enabled via triple click or generic hidden trigger) */}
+            {/* Debug Info */}
             {debugMode && (
-                <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2">
-                    <button 
+                <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 scale-75 origin-top-right">
+                    <div className="bg-black/80 text-white p-2 text-[10px] font-mono rounded border border-white/20">
+                        <p>Status: {isLoggedIn ? 'LOGGED IN' : 'ANONYMOUS'}</p>
+                        <p>Device ID: {deviceId || 'Loading...'}</p>
+                    </div>
+                     <button 
                         onClick={() => window.appUI.setLoginState(!isLoggedIn)}
                         className="bg-red-500 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
                     >
-                        [Debug] Toggle Auth: {isLoggedIn ? 'ON' : 'OFF'}
+                        Toggle Auth
+                    </button>
+                    <button 
+                         onClick={() => {
+                             removeItem(SESSION_KEY);
+                             removeItem(DEVICE_ID_KEY); // Clear everything
+                             window.location.reload();
+                         }}
+                         className="bg-gray-700 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono"
+                    >
+                        Reset All Storage
                     </button>
                 </div>
             )}

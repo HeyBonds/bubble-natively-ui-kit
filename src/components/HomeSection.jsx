@@ -1,4 +1,5 @@
 import React from 'react';
+import { sendToBubble } from '../utils/bubble';
 
 const HomeSection = ({ userName, userAvatar, credits, push }) => {
     // Default journey data
@@ -8,10 +9,8 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
     };
 
     // Helper functions for Bubble interactions
-    const sendToBubble = (action, data = {}) => {
-        if (window.BubbleBridge) {
-            window.BubbleBridge.send('bubble_fn_home', { action, ...data });
-        }
+    const handleBubbleAction = (action, data = {}) => {
+        sendToBubble('bubble_fn_home', { action, ...data });
     };
 
     return (
@@ -32,7 +31,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                     {/* Action Icons */}
                     <div className="flex items-center gap-3">
                         {/* Send Icon */}
-                        <button onClick={() => sendToBubble('send')} 
+                        <button onClick={() => handleBubbleAction('send')} 
                                 className="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -41,7 +40,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                         </button>
                         
                         {/* Chat Icon */}
-                        <button onClick={() => sendToBubble('chat')} 
+                        <button onClick={() => handleBubbleAction('chat')} 
                                 className="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -49,7 +48,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                         </button>
                         
                         {/* Notifications Icon with Badge */}
-                        <button onClick={() => sendToBubble('notifications')} 
+                        <button onClick={() => handleBubbleAction('notifications')} 
                                 className="relative w-10 h-10 rounded-full bg-[#FF2258] flex items-center justify-center hover:bg-[#FF2258]/90 transition-all">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -72,14 +71,14 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                 <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-[#AD256C] to-[#8B1F57] p-6 shadow-lg">
                     
                     {/* Navigation Arrows */}
-                    <button onClick={() => sendToBubble('previous_journey')} 
+                    <button onClick={() => handleBubbleAction('previous_journey')} 
                             className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-all z-10">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
                     
-                    <button onClick={() => sendToBubble('next_journey')} 
+                    <button onClick={() => handleBubbleAction('next_journey')} 
                             className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-all z-10">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
                             <polyline points="9 18 15 12 9 6"></polyline>
@@ -106,7 +105,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                                 Select (Push Test)
                             </button>
                             
-                            <button onClick={() => sendToBubble('change_topic')} 
+                            <button onClick={() => handleBubbleAction('change_topic')} 
                                     className="px-6 py-3 border border-solid border-white/50 rounded-full font-jakarta font-medium text-sm text-white hover:bg-white/10 transition-all flex items-center gap-2">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <polyline points="1 4 1 10 7 10"></polyline>
@@ -130,7 +129,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                     
                     {/* Conversation Coach Card (with NEW badge) */}
                     <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#6D6987] to-[#4A4660] p-6 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                         onClick={() => sendToBubble('conversation_coach')}>
+                         onClick={() => handleBubbleAction('conversation_coach')}>
                         
                         {/* NEW Badge */}
                         <div className="absolute -top-1 -right-1 w-20 h-20 overflow-hidden">
@@ -160,7 +159,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                         
                         {/* Practical Actions */}
                         <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-[#AD256C] to-[#8B1F57] p-5 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                             onClick={() => sendToBubble('practical_actions')}>
+                             onClick={() => handleBubbleAction('practical_actions')}>
                             <div className="flex flex-col items-start gap-2">
                                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -174,7 +173,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                         
                         {/* Ask a Question */}
                         <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-[#4A7C9E] to-[#3A5F7D] p-5 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
-                             onClick={() => sendToBubble('ask_question')}>
+                             onClick={() => handleBubbleAction('ask_question')}>
                             <div className="flex flex-col items-start gap-2">
                                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">

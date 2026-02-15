@@ -3,3 +3,4 @@ node_modules/
 # Generated files check in
 # bundle.js
 # bundle.css
+preview/config.js

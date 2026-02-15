@@ -1,12 +1,11 @@
 import React from 'react';
+import { sendToBubble } from '../utils/bubble';
 
-const WelcomeScreen = () => {
+const WelcomeScreen = ({ deviceId }) => {
     const bgImage = 'https://0fc323560b9c4d8afc3a7d487716abb6.cdn.bubble.io/f1744960311608x780031988693140400/BG%20%281%29.png?_gl=1*1sjnvjs*_gcl_au*MTI1MTA4NjA5OS4xNzY0NjcxNTYy*_ga*MTkwNzcwNjAyMy4xNzY0MTUwMzM2*_ga_BFPVR2DEE2*czE3NzA4ODE1ODYkbzYyJGcxJHQxNzcwODk2MDU5JGoyMyRsMCRoMA..';
 
-    const sendToBubble = (action) => {
-        if (window.BubbleBridge) {
-            window.BubbleBridge.send('bubble_fn_welcome', { action });
-        }
+    const handleAction = (action) => {
+        sendToBubble('bubble_fn_welcome', { action });
     };
 
     return (
@@ -47,7 +46,7 @@ const WelcomeScreen = () => {
 
                 {/* Action Buttons Container */}
                 <div className="space-y-6">
-                    <button onClick={() => sendToBubble('go')}
+                    <button onClick={() => handleAction('go')}
                             className="w-full h-[58px] rounded-[40px] bg-gradient-to-l from-[#B900B0] to-[#D8003F] flex items-center justify-center shadow-lg transform transition active:scale-95 btn-pressed">
                         <span className="font-jakarta font-semibold text-[18px] text-white tracking-[3px] uppercase">
                             LET’S GO
@@ -57,7 +56,7 @@ const WelcomeScreen = () => {
                     <div className="text-center">
                         <span className="font-jakarta text-[16px] text-white tracking-[0.2px]">
                             Got an account? {' '}
-                            <button onClick={() => sendToBubble('signin')} 
+                            <button onClick={() => handleAction('signin')} 
                                     className="font-bold border-b border-white hover:opacity-80 transition">
                                 Sign In here
                             </button>
