@@ -1,4 +1,4 @@
-<div id="daily-question-root"></div>
+<div id="daily-question-root" style="width:100%;height:100%;"></div>
 
 <script>
     // Data from Bubble (replace with Dynamic Data in Bubble)
@@ -16,12 +16,14 @@
         // selectedAnswer: 2 // Optional: Index of selected option (e.g. 2 for "1-3 hours")
     };
 
-    // Render when bundle loads
-    const renderDailyQuestion = setInterval(() => {
-        if (window.appUI && window.appUI.dailyQuestion) {
-            clearInterval(renderDailyQuestion);
-            document.getElementById('daily-question-root').innerHTML = 
-                window.appUI.dailyQuestion.render(dailyQuestionData);
+    // Mount React component when bundle loads
+    const waitForUI = setInterval(() => {
+        if (window.appUI && window.appUI.mountDailyQuestion) {
+            clearInterval(waitForUI);
+            window.appUI.mountDailyQuestion(
+                document.getElementById('daily-question-root'),
+                dailyQuestionData
+            );
         }
     }, 50);
 </script>
