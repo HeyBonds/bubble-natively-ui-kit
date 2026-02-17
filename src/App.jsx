@@ -3,6 +3,7 @@ import mixpanel from 'mixpanel-browser';
 import WelcomeScreen from './components/WelcomeScreen';
 import MainTabs from './components/MainTabs';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
+import DailyQuestion from './components/DailyQuestion';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
 import { useNativelyStorage } from './hooks/useNativelyStorage';
 
@@ -213,6 +214,20 @@ const App = () => {
                 {displayedPhase === 'main' && (
                     <MainTabs userProps={userProps} />
                 )}
+                {displayedPhase === 'daily-question' && (
+                    <DailyQuestion
+                        credits={13}
+                        category="Time Together"
+                        question="How much intentional one-on-one time do you have in a typical week?"
+                        userName="Danny"
+                        options={[
+                            { text: 'Less than 1 hour', percent: 10, index: 1 },
+                            { text: '1-3 hours', percent: 45, index: 2 },
+                            { text: '4-7 hours', percent: 30, index: 3 },
+                            { text: 'More than 7 hours', percent: 15, index: 4 },
+                        ]}
+                    />
+                )}
             </div>
 
             {/* Debug Overlay */}
@@ -239,6 +254,12 @@ const App = () => {
                         className="bg-green-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
                     >
                         → Main
+                    </button>
+                    <button
+                        onClick={() => transitionTo('daily-question')}
+                        className="bg-orange-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
+                    >
+                        → Daily Q
                     </button>
                     <button
                         onClick={() => {
