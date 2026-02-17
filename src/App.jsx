@@ -236,6 +236,7 @@ const App = () => {
                     <div className="bg-black/80 text-white p-2 text-[10px] font-mono rounded border border-white/20">
                         <p>Phase: {appPhase.toUpperCase()}</p>
                         <p>Device ID: {deviceId || 'Loading...'}</p>
+                        <p>Storage: {(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'localStorage' : 'Natively (1.5s fallback)'}</p>
                     </div>
                     <button
                         onClick={() => transitionTo('welcome')}
