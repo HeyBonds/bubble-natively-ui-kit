@@ -34,6 +34,8 @@ const App = () => {
     const [storageStatus, setStorageStatus] = useState('...');
     const transitionRef = useRef(false);
     const displayedPhaseRef = useRef('loading');
+    const tapCountRef = useRef(0);
+    const tapTimerRef = useRef(null);
 
     const { getItem, setItem, removeItem, probeNative } = useNativelyStorage();
     const SESSION_KEY = 'bonds_session_active';
@@ -170,8 +172,12 @@ const App = () => {
         transitionTo('main');
     };
 
-    const handleDebugClick = (e) => {
-        if (e.detail === 3) {
+    const handleDebugTap = () => {
+        tapCountRef.current += 1;
+        clearTimeout(tapTimerRef.current);
+        tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0; }, 600);
+        if (tapCountRef.current >= 3) {
+            tapCountRef.current = 0;
             const opening = !debugMode;
             setDebugMode(opening);
             if (opening) {
@@ -201,7 +207,7 @@ const App = () => {
     };
 
     return (
-        <div className="absolute inset-0" onClick={handleDebugClick}>
+        <div className="absolute inset-0" onClick={handleDebugTap}>
             {/* Animated phase wrapper */}
             <div className={`w-full h-full ${animClass}`}>
                 {displayedPhase === 'welcome' && (
