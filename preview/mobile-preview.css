@@ -8,11 +8,12 @@ body {
     margin: 0; 
 }
 
-#phone-wrapper { 
-    width: 375px; 
-    height: 812px; 
-    background: #1F1A2E; 
-    overflow: hidden; 
-    border-radius: 40px; 
-    box-shadow: 0 0 0 10px #000; 
+#phone-wrapper {
+    position: relative;
+    width: 375px;
+    height: 812px;
+    background: #1F1A2E;
+    overflow: hidden;
+    border-radius: 40px;
+    box-shadow: 0 0 0 10px #000;
 }

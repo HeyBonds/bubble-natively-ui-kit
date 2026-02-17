@@ -177,7 +177,7 @@ const App = () => {
 
     if (displayedPhase === 'loading') {
         return (
-            <div className="w-full h-full min-h-screen bg-black flex flex-col items-center justify-center font-jakarta">
+            <div className="absolute inset-0 bg-black flex flex-col items-center justify-center font-jakarta">
                 <div className="animate-pulse flex flex-col items-center">
                     <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mb-4">
                         <circle cx="32" cy="32" r="32" fill="white" opacity="0.2" />
@@ -196,7 +196,7 @@ const App = () => {
     };
 
     return (
-        <div className="w-full h-full" onClick={handleDebugClick}>
+        <div className="absolute inset-0" onClick={handleDebugClick}>
             {/* Animated phase wrapper */}
             <div className={`w-full h-full ${animClass}`}>
                 {displayedPhase === 'welcome' && (
