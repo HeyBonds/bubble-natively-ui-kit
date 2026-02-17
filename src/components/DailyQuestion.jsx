@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { sendToBubble } from '../utils/bubble';
 
 const DailyQuestion = ({ category, question, options, userName, credits: initialCredits, selectedAnswer: initialSelectedAnswer }) => {
     const [credits, setCredits] = useState(initialCredits || 0);
@@ -20,13 +21,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
         }, 800);
 
         // Send to Bubble
-        if (window.BubbleBridge) {
-            window.BubbleBridge.send('bubble_fn_daily_question', {
-                action: 'vote',
-                answer: answerText,
-                index: index
-            });
-        }
+        sendToBubble('bubble_fn_daily_question', 'vote', { answer: answerText, index });
 
         // Credit Animation Logic (Ported from legacy)
         setTimeout(() => {
@@ -127,15 +122,11 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
     };
 
     const handleStart = () => {
-        if (window.BubbleBridge) {
-            window.BubbleBridge.send('bubble_fn_daily_question', { action: 'start_planning', timestamp: new Date() });
-        }
+        sendToBubble('bubble_fn_daily_question', 'start_planning');
     };
 
     const handleClose = () => {
-        if (window.BubbleBridge) {
-            window.BubbleBridge.send('bubble_fn_daily_question', { action: 'close' });
-        }
+        sendToBubble('bubble_fn_daily_question', 'close');
     };
 
     return (

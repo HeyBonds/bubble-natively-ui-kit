@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 
-const SingleSelect = ({ question, options = [], refreshable = true, onAnswer, onRefresh }) => {
-    const [selectedIndex, setSelectedIndex] = useState(null);
+const SingleSelect = ({ question, options = [], refreshable = true, previousAnswer, onAnswer, onRefresh }) => {
+    const [selectedIndex, setSelectedIndex] = useState(previousAnswer?.index ?? null);
 
-    const handleSelect = (text, index) => {
-        if (selectedIndex !== null) return;
+    const handleSelect = (opt, index) => {
         setSelectedIndex(index);
-        if (onAnswer) onAnswer({ answer: text, index });
+
+        const text = typeof opt === 'string' ? opt : opt.text;
+        const variable = typeof opt === 'string' ? '' : (opt.variable || '');
+
+        if (onAnswer) onAnswer({ answer: text, variable, index });
     };
 
     const handleRefresh = () => {
@@ -30,7 +33,7 @@ const SingleSelect = ({ question, options = [], refreshable = true, onAnswer, on
                         return (
                             <button
                                 key={i}
-                                onClick={() => handleSelect(text, i)}
+                                onClick={() => handleSelect(opt, i)}
                                 className={`w-full text-left px-5 py-4 rounded-xl border border-solid backdrop-blur-md transition-all duration-300
                                     ${isSelected
                                         ? 'bg-white/20 border-white/30 shadow-[inset_0_2px_8px_rgba(255,255,255,0.1)]'

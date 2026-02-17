@@ -1,4 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { sendToBubble } from '../../utils/bubble';
+import { useNativelyStorage } from '../../hooks/useNativelyStorage';
 import SingleSelect from './SingleSelect';
 
 const SCREEN_COMPONENTS = {
@@ -10,34 +12,48 @@ const SCREEN_COMPONENTS = {
     // 'loading-insight': LoadingInsight,
 };
 
-const OnboardingFlow = ({ steps = [], credits: initialCredits = 0, showCredits = true, onComplete }) => {
-    const [currentStep, setCurrentStep] = useState(0);
+const STORAGE_KEY = 'onboarding_state';
+
+const OnboardingFlow = ({
+    steps = [],
+    credits: initialCredits = 0,
+    initialStep = 0,
+    initialAnswers = {},
+    showCredits = true,
+}) => {
+    const [currentStep, setCurrentStep] = useState(initialStep);
     const [credits, setCredits] = useState(initialCredits);
-    const [direction, setDirection] = useState('forward'); // 'forward' | 'back'
+    const [answers, setAnswers] = useState(initialAnswers);
+    const [direction, setDirection] = useState('forward');
     const [animating, setAnimating] = useState(false);
+    const [answeredThisVisit, setAnsweredThisVisit] = useState(false);
     const creditsCircleRef = useRef(null);
+    const storage = useNativelyStorage();
 
     const step = steps[currentStep];
     const totalSteps = steps.length;
     const progress = ((currentStep + 1) / totalSteps) * 100;
 
+    // Persist current state to device storage for resume
+    const persistState = useCallback((stepIndex, allAnswers, currentCredits) => {
+        const state = {
+            currentStep: stepIndex,
+            answers: allAnswers,
+            credits: currentCredits,
+        };
+        storage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }, [storage]);
+
     const goForward = useCallback(() => {
-        if (animating) return;
-        if (currentStep >= totalSteps - 1) {
-            // Last step — notify Bubble
-            if (onComplete) return onComplete(credits);
-            if (window.BubbleBridge) {
-                window.BubbleBridge.send('bubble_fn_onboarding', { action: 'complete', credits });
-            }
-            return;
-        }
+        if (animating || currentStep >= totalSteps - 1) return;
         setDirection('forward');
         setAnimating(true);
         setTimeout(() => {
             setCurrentStep(prev => prev + 1);
             setAnimating(false);
+            setAnsweredThisVisit(false);
         }, 300);
-    }, [currentStep, totalSteps, animating, credits, onComplete]);
+    }, [currentStep, totalSteps, animating]);
 
     const goBack = useCallback(() => {
         if (animating || currentStep === 0) return;
@@ -46,40 +62,60 @@ const OnboardingFlow = ({ steps = [], credits: initialCredits = 0, showCredits =
         setTimeout(() => {
             setCurrentStep(prev => prev - 1);
             setAnimating(false);
+            setAnsweredThisVisit(false);
         }, 300);
     }, [currentStep, animating]);
 
     const handleAnswer = useCallback((data) => {
-        // Increment credits
-        triggerCreditAnimation();
+        if (answeredThisVisit) return;
+        setAnsweredThisVisit(true);
 
-        // Notify Bubble
-        if (window.BubbleBridge) {
-            window.BubbleBridge.send('bubble_fn_onboarding', {
-                action: 'answer',
-                step: currentStep,
-                stepType: step?.type,
-                ...data,
-            });
+        const isNewAnswer = !answers[currentStep];
+        const newCredits = isNewAnswer ? credits + 1 : credits;
+        const stepAnswer = {
+            questionId: step?.questionId,
+            type: step?.type,
+            ...data,
+        };
+        const newAnswers = { ...answers, [currentStep]: stepAnswer };
+
+        // Update state
+        setAnswers(newAnswers);
+        if (isNewAnswer) {
+            setCredits(newCredits);
+            triggerCreditPulse();
         }
 
-        // Advance after a brief delay for the selection to register visually
-        setTimeout(() => goForward(), 600);
-    }, [currentStep, step, goForward]);
+        // Persist locally for resume
+        const nextStep = currentStep + 1;
+        persistState(nextStep, newAnswers, newCredits);
+
+        // Notify Bubble of step completion
+        sendToBubble('bubble_fn_onboarding', 'step_complete', {
+            step: currentStep,
+            answer: data.answer || '',
+            variable: data.variable || '',
+        });
+
+        // Last step → complete, otherwise advance
+        if (currentStep >= totalSteps - 1) {
+            // Clear persisted state — onboarding is done
+            storage.removeItem(STORAGE_KEY);
+
+            sendToBubble('bubble_fn_onboarding', 'complete', {
+                answers: JSON.stringify(newAnswers),
+                credits: newCredits,
+            });
+        } else {
+            setTimeout(() => goForward(), 600);
+        }
+    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit]);
 
     const handleRefresh = useCallback(() => {
-        if (window.BubbleBridge) {
-            window.BubbleBridge.send('bubble_fn_onboarding', {
-                action: 'refresh',
-                step: currentStep,
-            });
-        }
+        sendToBubble('bubble_fn_onboarding', 'refresh', { step: currentStep });
     }, [currentStep]);
 
-    const triggerCreditAnimation = () => {
-        setCredits(prev => prev + 1);
-
-        // Simple pulse on the circle in place
+    const triggerCreditPulse = () => {
         if (showCredits && creditsCircleRef.current) {
             creditsCircleRef.current.style.transition = 'transform 0.3s ease';
             creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1.2)';
@@ -99,6 +135,9 @@ const OnboardingFlow = ({ steps = [], credits: initialCredits = 0, showCredits =
         if (!animating) return 'animate-fade-in';
         return direction === 'forward' ? 'animate-slide-out-left' : 'animate-slide-out-right';
     };
+
+    // Get previous answer for current step (for resume / going back)
+    const previousAnswer = answers[currentStep] || null;
 
     return (
         <div className="flex flex-col w-full h-full overflow-hidden font-jakarta" style={{
@@ -161,6 +200,7 @@ const OnboardingFlow = ({ steps = [], credits: initialCredits = 0, showCredits =
                 {ScreenComponent ? (
                     <ScreenComponent
                         {...step}
+                        previousAnswer={previousAnswer}
                         onAnswer={handleAnswer}
                         onRefresh={handleRefresh}
                     />
