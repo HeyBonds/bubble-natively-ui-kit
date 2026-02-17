@@ -31,10 +31,11 @@ const App = () => {
     const [animClass, setAnimClass] = useState('');
     const [debugMode, setDebugMode] = useState(false);
     const [deviceId, setDeviceId] = useState(null);
+    const [storageStatus, setStorageStatus] = useState('...');
     const transitionRef = useRef(false);
     const displayedPhaseRef = useRef('loading');
 
-    const { getItem, setItem, removeItem } = useNativelyStorage();
+    const { getItem, setItem, removeItem, probeNative } = useNativelyStorage();
     const SESSION_KEY = 'bonds_session_active';
     const DEVICE_ID_KEY = 'bonds_device_id';
     const ONBOARDING_KEY = 'onboarding_complete';
@@ -171,7 +172,11 @@ const App = () => {
 
     const handleDebugClick = (e) => {
         if (e.detail === 3) {
-            setDebugMode(!debugMode);
+            const opening = !debugMode;
+            setDebugMode(opening);
+            if (opening) {
+                probeNative().then(setStorageStatus);
+            }
         }
     };
 
@@ -235,8 +240,9 @@ const App = () => {
                 <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 scale-75 origin-top-right">
                     <div className="bg-black/80 text-white p-2 text-[10px] font-mono rounded border border-white/20">
                         <p>Phase: {appPhase.toUpperCase()}</p>
-                        <p>Device ID: {deviceId || 'Loading...'}</p>
-                        <p>Storage: {(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'localStorage' : 'Natively (1.5s fallback)'}</p>
+                        <p>Device ID: {deviceId || 'N/A (no Mixpanel token)'}</p>
+                        <p>Mixpanel: {window.APP_CONFIG?.MIXPANEL_TOKEN ? 'configured' : 'NO TOKEN'}</p>
+                        <p>Storage: {storageStatus}</p>
                     </div>
                     <button
                         onClick={() => transitionTo('welcome')}

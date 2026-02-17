@@ -74,10 +74,33 @@ export const useNativelyStorage = () => {
     }
   };
 
+  // Probe: write a test key, read it back, report whether native bridge responded
+  const probeNative = () => {
+    return new Promise((resolve) => {
+      if (!storage) {
+        resolve('localStorage-only');
+        return;
+      }
+      const testKey = '__natively_probe__';
+      storage.setStorageValue(testKey, 'ok');
+
+      const timeout = setTimeout(() => {
+        resolve('timeout (localStorage fallback)');
+      }, 1500);
+
+      storage.getStorageValue(testKey, (resp) => {
+        clearTimeout(timeout);
+        storage.removeStorageValue(testKey);
+        resolve(resp.value === 'ok' ? 'native bridge active' : `unexpected: ${resp.value}`);
+      });
+    });
+  };
+
   return {
     setItem,
     getItem,
     removeItem,
     clear,
+    probeNative,
   };
 };
