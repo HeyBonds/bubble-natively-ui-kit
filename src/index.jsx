@@ -19,9 +19,7 @@ const initGlobals = () => {
     // 2. Bubble Bridge Setup with Auto-Stringify
     window.BubbleBridge = {
         send: (fnName, data) => {
-            const payload = (typeof data === 'object' && data !== null) 
-                ? JSON.stringify(data) 
-                : data;
+            const payload = data;
             console.log(`📤 Sending to Bubble [${fnName}]:`, payload);
             if (window[fnName]) window[fnName](payload); 
         }
