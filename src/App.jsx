@@ -146,7 +146,15 @@ const App = () => {
                 const obResult = await getItem(ONBOARDING_KEY);
                 transitionTo(obResult === 'true' ? 'main' : 'onboarding');
             } else {
-                transitionTo('welcome');
+                // No active session — but check if there's saved onboarding progress
+                const onboardingState = await getItem('onboarding_state');
+                if (onboardingState) {
+                    console.log('📋 App: Found saved onboarding progress, resuming.');
+                    setItem(SESSION_KEY, 'true');
+                    transitionTo('onboarding');
+                } else {
+                    transitionTo('welcome');
+                }
             }
         } catch (err) {
             console.error('❌ App: Failed to check session:', err);
