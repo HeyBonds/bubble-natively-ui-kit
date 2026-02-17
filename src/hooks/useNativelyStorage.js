@@ -4,13 +4,19 @@ import { NativelyStorage } from 'natively';
 /**
  * Custom hook to interact with Natively's native storage.
  * Wraps the callback-based API in Promises for better React integration.
+ *
+ * Strategy:
+ * - On localhost: skip NativelyStorage entirely, use localStorage (instant).
+ * - On native device: use NativelyStorage with localStorage as backup.
+ * - On Bubble web (no native bridge): NativelyStorage calls timeout after 1.5s,
+ *   falls back to localStorage automatically.
+ *
+ * Writes always go to both storages so localStorage stays in sync.
  */
 export const useNativelyStorage = () => {
-  // Check if Natively SDK is actually available in this environment
-  // We also force fallback on localhost to avoid timeouts where the SDK might be injected but not functional
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const isNativelyAvailable = typeof NativelyStorage !== 'undefined' && !isLocalhost;
-  
+
   const storage = useMemo(() => {
     if (isNativelyAvailable) {
         return new NativelyStorage();
@@ -20,37 +26,33 @@ export const useNativelyStorage = () => {
         } else {
              console.warn('⚠️ Natively SDK not found. Falling back to localStorage (Non-Production).');
         }
-        return null; // Signals to use fallback logic
+        return null;
     }
   }, []);
 
-  /**
-   * Saves a value to native device storage.
-   * @param {string} key - The unique key identifier
-   * @param {string} value - The value to store
-   */
   const setItem = (key, value) => {
+    // Always write to localStorage so it stays in sync as a fallback
+    localStorage.setItem(key, value);
     if (storage) {
         storage.setStorageValue(key, value);
-    } else {
-        localStorage.setItem(key, value);
     }
   };
 
-  /**
-   * Retrieves a value from native device storage.
-   * @param {string} key - The unique key identifier
-   * @returns {Promise<string|null>}
-   */
   const getItem = (key) => {
     return new Promise((resolve) => {
       if (storage) {
+        // If native bridge doesn't respond within 1.5s, fall back to localStorage
+        const timeout = setTimeout(() => {
+            console.warn(`⏱️ [NativelyStorage] Timeout for "${key}", falling back to localStorage.`);
+            resolve(localStorage.getItem(key));
+        }, 1500);
+
         storage.getStorageValue(key, (resp) => {
+            clearTimeout(timeout);
             console.log(`[NativelyStorage] Received value for ${resp.key}:`, resp.value);
             resolve(resp.value);
         });
       } else {
-        // Fallback for browser preview
         const val = localStorage.getItem(key);
         console.log(`[LocalStorage Fallback] Received value for ${key}:`, val);
         resolve(val);
@@ -58,26 +60,17 @@ export const useNativelyStorage = () => {
     });
   };
 
-  /**
-   * Removes a specific value from native device storage.
-   * @param {string} key - The unique key identifier
-   */
   const removeItem = (key) => {
+    localStorage.removeItem(key);
     if (storage) {
         storage.removeStorageValue(key);
-    } else {
-        localStorage.removeItem(key);
     }
   };
 
-  /**
-   * Clears all data from the app's native storage.
-   */
   const clear = () => {
+    localStorage.clear();
     if (storage) {
         storage.resetStorage();
-    } else {
-        localStorage.clear();
     }
   };
 
