@@ -1,15 +1,16 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { sendToBubble } from '../../utils/bubble';
 import { useNativelyStorage } from '../../hooks/useNativelyStorage';
 import SingleSelect from './SingleSelect';
+import SliderSelect from './SliderSelect';
+import MultiSelect from './MultiSelect';
+import OpenQuestion from './OpenQuestion';
 
 const SCREEN_COMPONENTS = {
     'single-select': SingleSelect,
-    // Future:
-    // 'multi-select': MultiSelect,
-    // 'carousel': Carousel,
-    // 'open-question': OpenQuestion,
-    // 'loading-insight': LoadingInsight,
+    'slider': SliderSelect,
+    'multi-select': MultiSelect,
+    'open-question': OpenQuestion,
 };
 
 const STORAGE_KEY = 'onboarding_state';
@@ -20,6 +21,8 @@ const OnboardingFlow = ({
     initialStep = 0,
     initialAnswers = {},
     showCredits = true,
+    onComplete,
+    onBack: onBackOut,
 }) => {
     const [currentStep, setCurrentStep] = useState(initialStep);
     const [credits, setCredits] = useState(initialCredits);
@@ -27,19 +30,56 @@ const OnboardingFlow = ({
     const [direction, setDirection] = useState('forward');
     const [animating, setAnimating] = useState(false);
     const [answeredThisVisit, setAnsweredThisVisit] = useState(false);
+    const [rotationOffsets, setRotationOffsets] = useState({});
+    const [ready, setReady] = useState(false);
     const creditsCircleRef = useRef(null);
     const storage = useNativelyStorage();
+
+    // Restore persisted state on mount
+    useEffect(() => {
+        let cancelled = false;
+        storage.getItem(STORAGE_KEY).then(raw => {
+            if (cancelled || !raw) { setReady(true); return; }
+            try {
+                const saved = JSON.parse(raw);
+                if (saved.currentStep != null) setCurrentStep(saved.currentStep);
+                if (saved.answers) setAnswers(saved.answers);
+                if (saved.credits != null) setCredits(saved.credits);
+                if (saved.rotationOffsets) setRotationOffsets(saved.rotationOffsets);
+            } catch (e) {
+                console.warn('Failed to restore onboarding state:', e);
+            }
+            setReady(true);
+        });
+        return () => { cancelled = true; };
+    }, []);
 
     const step = steps[currentStep];
     const totalSteps = steps.length;
     const progress = ((currentStep + 1) / totalSteps) * 100;
 
+    // Get visible options for a step, handling pool rotation
+    const getVisibleOptions = useCallback((s, stepIndex) => {
+        if (s.optionPool && s.visibleCount) {
+            const pool = s.optionPool;
+            const count = s.visibleCount;
+            const offset = rotationOffsets[stepIndex] || 0;
+            const result = [];
+            for (let i = 0; i < count; i++) {
+                result.push(pool[(offset + i) % pool.length]);
+            }
+            return result;
+        }
+        return s.options;
+    }, [rotationOffsets]);
+
     // Persist current state to device storage for resume
-    const persistState = useCallback((stepIndex, allAnswers, currentCredits) => {
+    const persistState = useCallback((stepIndex, allAnswers, currentCredits, offsets) => {
         const state = {
             currentStep: stepIndex,
             answers: allAnswers,
             credits: currentCredits,
+            rotationOffsets: offsets,
         };
         storage.setItem(STORAGE_KEY, JSON.stringify(state));
     }, [storage]);
@@ -88,7 +128,7 @@ const OnboardingFlow = ({
 
         // Persist locally for resume
         const nextStep = currentStep + 1;
-        persistState(nextStep, newAnswers, newCredits);
+        persistState(nextStep, newAnswers, newCredits, rotationOffsets);
 
         // Notify Bubble of step completion
         sendToBubble('bubble_fn_onboarding', 'step_complete', {
@@ -106,14 +146,24 @@ const OnboardingFlow = ({
                 answers: JSON.stringify(newAnswers),
                 credits: newCredits,
             });
+
+            if (onComplete) onComplete(newAnswers, newCredits);
         } else {
             setTimeout(() => goForward(), 600);
         }
-    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit]);
+    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete]);
 
     const handleRefresh = useCallback(() => {
+        const s = steps[currentStep];
+        if (!s || !s.optionPool || !s.visibleCount) return;
+
+        setRotationOffsets(prev => {
+            const currentOffset = prev[currentStep] || 0;
+            return { ...prev, [currentStep]: currentOffset + s.visibleCount };
+        });
+
         sendToBubble('bubble_fn_onboarding', 'refresh', { step: currentStep });
-    }, [currentStep]);
+    }, [currentStep, steps]);
 
     const triggerCreditPulse = () => {
         if (showCredits && creditsCircleRef.current) {
@@ -127,6 +177,9 @@ const OnboardingFlow = ({
         }
     };
 
+    // Wait for persisted state to load before rendering
+    if (!ready) return null;
+
     // Resolve screen component
     const ScreenComponent = step ? SCREEN_COMPONENTS[step.type] : null;
 
@@ -139,6 +192,9 @@ const OnboardingFlow = ({
     // Get previous answer for current step (for resume / going back)
     const previousAnswer = answers[currentStep] || null;
 
+    // Build props for the screen component
+    const visibleOptions = step ? getVisibleOptions(step, currentStep) : [];
+
     return (
         <div className="flex flex-col w-full h-full overflow-hidden font-jakarta" style={{
             background: 'linear-gradient(160deg, #2E4695 0%, #652664 100%)',
@@ -148,9 +204,9 @@ const OnboardingFlow = ({
                 <div className="flex items-end gap-4">
                     {/* Back Button */}
                     <button
-                        onClick={goBack}
+                        onClick={currentStep === 0 && onBackOut ? onBackOut : goBack}
                         className={`w-10 h-10 rounded-full border border-solid border-white/40 flex items-center justify-center transition-all shrink-0 ${
-                            currentStep === 0 ? 'opacity-0 pointer-events-none' : 'hover:bg-white/10'
+                            currentStep === 0 && !onBackOut ? 'opacity-0 pointer-events-none' : 'hover:bg-white/10'
                         }`}
                     >
                         <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
@@ -200,6 +256,7 @@ const OnboardingFlow = ({
                 {ScreenComponent ? (
                     <ScreenComponent
                         {...step}
+                        options={visibleOptions}
                         previousAnswer={previousAnswer}
                         onAnswer={handleAnswer}
                         onRefresh={handleRefresh}

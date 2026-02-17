@@ -1,11 +1,12 @@
 import React from 'react';
 import { sendToBubble } from '../utils/bubble';
 
-const WelcomeScreen = ({ deviceId }) => {
+const WelcomeScreen = ({ deviceId, onAction }) => {
     const bgImage = 'https://0fc323560b9c4d8afc3a7d487716abb6.cdn.bubble.io/f1744960311608x780031988693140400/BG%20%281%29.png?_gl=1*1sjnvjs*_gcl_au*MTI1MTA4NjA5OS4xNzY0NjcxNTYy*_ga*MTkwNzcwNjAyMy4xNzY0MTUwMzM2*_ga_BFPVR2DEE2*czE3NzA4ODE1ODYkbzYyJGcxJHQxNzcwODk2MDU5JGoyMyRsMCRoMA..';
 
     const handleAction = (action) => {
         sendToBubble('bubble_fn_welcome', { action });
+        if (onAction) onAction(action);
     };
 
     return (

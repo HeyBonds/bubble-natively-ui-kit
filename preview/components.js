@@ -26,47 +26,6 @@ window.COMPONENTS = {
     },
     'onboarding': {
         name: 'Onboarding Flow',
-        renderReact: (container) => window.appUI.mountOnboarding(container, {
-            credits: 0,
-            showCredits: true,
-            steps: [
-                {
-                    type: 'single-select',
-                    question: "What's most true about you?",
-                    options: [
-                        'I highly appreciate it when my partner runs errands for me.',
-                        'Receiving gifts from my partner makes me happy.',
-                        'I like to be alone with my partner.',
-                        'I love to hear my partner say they love me.'
-                    ]
-                },
-                {
-                    type: 'single-select',
-                    question: 'How do you prefer to spend quality time?',
-                    options: [
-                        'Going on adventures together.',
-                        'Having deep conversations.',
-                        'Doing everyday tasks side by side.',
-                        'Surprising each other with plans.'
-                    ]
-                },
-                {
-                    type: 'single-select',
-                    question: 'What makes you feel most loved?',
-                    refreshable: false,
-                    options: [
-                        'Words of affirmation.',
-                        'Physical touch.',
-                        'Acts of service.',
-                        'Quality time together.'
-                    ]
-                }
-            ]
-        })
+        renderReact: (container) => window.appUI.mountOnboarding(container)
     }
 };
-
-
-
-
-

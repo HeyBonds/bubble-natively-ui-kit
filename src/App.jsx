@@ -1,77 +1,118 @@
-import React, { useState, useEffect } from 'react';
-import mixpanel from 'mixpanel-browser'; // Import Mixpanel
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import mixpanel from 'mixpanel-browser';
 import WelcomeScreen from './components/WelcomeScreen';
 import MainTabs from './components/MainTabs';
+import OnboardingFlow from './components/onboarding/OnboardingFlow';
+import mockOnboardingSteps from './data/mockOnboardingSteps';
 import { useNativelyStorage } from './hooks/useNativelyStorage';
 
+// Transition map: [fromPhase][toPhase] → { exit, enter, exitDuration }
+const TRANSITIONS = {
+    welcome: {
+        onboarding: { exit: 'phase-zoom-out', enter: 'phase-slide-up', exitDuration: 450 },
+        main:       { exit: 'phase-zoom-out', enter: 'phase-scale-in', exitDuration: 450 },
+    },
+    onboarding: {
+        main:       { exit: 'phase-complete-out', enter: 'phase-scale-in', exitDuration: 600 },
+        welcome:    { exit: 'phase-slide-down', enter: 'phase-zoom-in', exitDuration: 400 },
+    },
+    main: {
+        welcome:    { exit: 'phase-fade-out', enter: 'phase-fade-in', exitDuration: 300 },
+        onboarding: { exit: 'phase-fade-out', enter: 'phase-slide-up', exitDuration: 300 },
+    },
+};
+
+const DEFAULT_TRANSITION = { exit: 'phase-fade-out', enter: 'phase-fade-in', exitDuration: 300 };
+
 const App = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [appPhase, setAppPhase] = useState('loading');
+    const [displayedPhase, setDisplayedPhase] = useState('loading');
+    const [animClass, setAnimClass] = useState('');
     const [debugMode, setDebugMode] = useState(false);
-    const [deviceId, setDeviceId] = useState(null); // Store the "Shadow" Device ID
-    
-    // Natively Storage for persistence
+    const [deviceId, setDeviceId] = useState(null);
+    const transitionRef = useRef(false);
+    const displayedPhaseRef = useRef('loading');
+
     const { getItem, setItem, removeItem } = useNativelyStorage();
     const SESSION_KEY = 'bonds_session_active';
     const DEVICE_ID_KEY = 'bonds_device_id';
+    const ONBOARDING_KEY = 'onboarding_complete';
+
+    // Animated phase transition (uses ref to avoid stale closure)
+    const transitionTo = useCallback((nextPhase) => {
+        if (transitionRef.current) return;
+        const fromPhase = displayedPhaseRef.current;
+        if (fromPhase === nextPhase) return;
+
+        // Loading → anything: no exit animation, just enter
+        if (fromPhase === 'loading') {
+            displayedPhaseRef.current = nextPhase;
+            setDisplayedPhase(nextPhase);
+            setAppPhase(nextPhase);
+            setAnimClass('phase-fade-in');
+            return;
+        }
+
+        const t = TRANSITIONS[fromPhase]?.[nextPhase] || DEFAULT_TRANSITION;
+        transitionRef.current = true;
+
+        // 1. Play exit animation on current phase
+        setAnimClass(t.exit);
+
+        // 2. After exit completes, swap content + play enter
+        setTimeout(() => {
+            displayedPhaseRef.current = nextPhase;
+            setDisplayedPhase(nextPhase);
+            setAppPhase(nextPhase);
+            setAnimClass(t.enter);
+            transitionRef.current = false;
+        }, t.exitDuration);
+    }, []);
 
     useEffect(() => {
-        // 1. Initialize Mixpanel & Identity
         initializeAnalytics();
 
-        // 2. Expose global bridge for Bubble
         window.appUI = window.appUI || {};
-        
+
         window.appUI.setLoginState = (isLogged) => {
             console.log(`🔑 Bubble Setting Login State: ${isLogged}`);
-            setIsLoggedIn(isLogged);
-            // Persist state
             if (isLogged) {
                 setItem(SESSION_KEY, 'true');
+                getItem(ONBOARDING_KEY).then(ob => {
+                    transitionTo(ob === 'true' ? 'main' : 'onboarding');
+                });
             } else {
                 removeItem(SESSION_KEY);
+                transitionTo('welcome');
             }
         };
 
-        // 3. Check for existing session on mount
         checkSession();
     }, []);
 
     const initializeAnalytics = async () => {
         try {
-            // Get Token from Runtime Config (Bubble Header or Local Config)
             const token = window.APP_CONFIG?.MIXPANEL_TOKEN;
-            
+
             if (token) {
                 mixpanel.init(token, { debug: true, track_pageview: false, persistence: 'localStorage' });
                 console.log('📊 Mixpanel Initialized');
-                
-                // --- Device ID Strategy ---
-                // 1. Try to get ID from Native Storage (Persistent)
-                // 1. Try to get ID from Native Storage (Persistent)
+
                 let storedId = await getItem(DEVICE_ID_KEY);
 
                 if (storedId) {
-                    // MIGRATION FIX: Check if we have a polluted ID (starts with $device:)
                     if (storedId.startsWith('$device:')) {
                         console.log('🧹 Cleaning polluted Device ID:', storedId);
                         storedId = storedId.replace(/^\$device:/, '');
-                        await setItem(DEVICE_ID_KEY, storedId); // Re-save clean version
+                        await setItem(DEVICE_ID_KEY, storedId);
                     }
-                    
-                    // 3. Keep existing identity
                     console.log('📂 Loaded Existing Device ID:', storedId);
                     mixpanel.identify(storedId);
                 } else {
-                     // 2. If missing, get Mixpanel's auto-generated distinct_id
                     const rawId = mixpanel.get_distinct_id();
-                    // Strip the $device: prefix if present to promote it to a User ID
                     storedId = rawId.replace(/^\$device:/, '');
-                    
                     console.log('🆕 Generated New Device ID:', storedId, '(Raw:', rawId, ')');
                     await setItem(DEVICE_ID_KEY, storedId);
-                    
-                    // Identify immediately to "claim" this ID as a user
                     mixpanel.identify(storedId);
                 }
 
@@ -87,25 +128,44 @@ const App = () => {
     const checkSession = async () => {
         try {
             console.log('🔄 App: Starting session check...');
-            // Add a timeout race condition to prevent hanging
             const sessionPromise = getItem(SESSION_KEY);
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('timeout'), 2000));
-            
-            const result = await Promise.race([sessionPromise, timeoutPromise]);
-            
-            console.log(`💾 App: Session check result: ${result}`);
-            
-            if (result === 'timeout') {
-                console.warn('⚠️ App: Storage check timed out. Defaulting to logged out.');
-            } else if (result === 'true') {
-                setIsLoggedIn(true);
+
+            const sessionResult = await Promise.race([sessionPromise, timeoutPromise]);
+
+            console.log(`💾 App: Session check result: ${sessionResult}`);
+
+            if (sessionResult === 'timeout') {
+                console.warn('⚠️ App: Storage check timed out. Defaulting to welcome.');
+                transitionTo('welcome');
+            } else if (sessionResult === 'true') {
+                const obResult = await getItem(ONBOARDING_KEY);
+                transitionTo(obResult === 'true' ? 'main' : 'onboarding');
+            } else {
+                transitionTo('welcome');
             }
         } catch (err) {
             console.error('❌ App: Failed to check session:', err);
+            transitionTo('welcome');
         } finally {
             console.log('✅ App: Loading finished. Rendering UI.');
-            setIsLoading(false);
         }
+    };
+
+    const handleWelcomeAction = (action) => {
+        if (action === 'go') {
+            setItem(SESSION_KEY, 'true');
+            transitionTo('onboarding');
+        } else if (action === 'signin') {
+            setItem(SESSION_KEY, 'true');
+            setItem(ONBOARDING_KEY, 'true');
+            transitionTo('main');
+        }
+    };
+
+    const handleOnboardingComplete = () => {
+        setItem(ONBOARDING_KEY, 'true');
+        transitionTo('main');
     };
 
     const handleDebugClick = (e) => {
@@ -114,7 +174,7 @@ const App = () => {
         }
     };
 
-    if (isLoading) {
+    if (displayedPhase === 'loading') {
         return (
             <div className="w-full h-full min-h-screen bg-black flex flex-col items-center justify-center font-jakarta">
                 <div className="animate-pulse flex flex-col items-center">
@@ -136,32 +196,59 @@ const App = () => {
 
     return (
         <div className="w-full h-full" onClick={handleDebugClick}>
-            {isLoggedIn ? (
-                <MainTabs userProps={userProps} />
-            ) : (
-                <WelcomeScreen deviceId={deviceId} /> 
-            )}
+            {/* Animated phase wrapper */}
+            <div className={`w-full h-full ${animClass}`}>
+                {displayedPhase === 'welcome' && (
+                    <WelcomeScreen deviceId={deviceId} onAction={handleWelcomeAction} />
+                )}
+                {displayedPhase === 'onboarding' && (
+                    <OnboardingFlow
+                        steps={mockOnboardingSteps}
+                        credits={0}
+                        showCredits={true}
+                        onComplete={handleOnboardingComplete}
+                        onBack={() => transitionTo('welcome')}
+                    />
+                )}
+                {displayedPhase === 'main' && (
+                    <MainTabs userProps={userProps} />
+                )}
+            </div>
 
-            {/* Debug Info */}
+            {/* Debug Overlay */}
             {debugMode && (
                 <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 scale-75 origin-top-right">
                     <div className="bg-black/80 text-white p-2 text-[10px] font-mono rounded border border-white/20">
-                        <p>Status: {isLoggedIn ? 'LOGGED IN' : 'ANONYMOUS'}</p>
+                        <p>Phase: {appPhase.toUpperCase()}</p>
                         <p>Device ID: {deviceId || 'Loading...'}</p>
                     </div>
-                     <button 
-                        onClick={() => window.appUI.setLoginState(!isLoggedIn)}
-                        className="bg-red-500 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
+                    <button
+                        onClick={() => transitionTo('welcome')}
+                        className="bg-blue-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
                     >
-                        Toggle Auth
+                        → Welcome
                     </button>
-                    <button 
-                         onClick={() => {
-                             removeItem(SESSION_KEY);
-                             removeItem(DEVICE_ID_KEY); // Clear everything
-                             window.location.reload();
-                         }}
-                         className="bg-gray-700 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono"
+                    <button
+                        onClick={() => transitionTo('onboarding')}
+                        className="bg-purple-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
+                    >
+                        → Onboarding
+                    </button>
+                    <button
+                        onClick={() => transitionTo('main')}
+                        className="bg-green-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
+                    >
+                        → Main
+                    </button>
+                    <button
+                        onClick={() => {
+                            removeItem(SESSION_KEY);
+                            removeItem(DEVICE_ID_KEY);
+                            removeItem(ONBOARDING_KEY);
+                            localStorage.removeItem('onboarding_state');
+                            window.location.reload();
+                        }}
+                        className="bg-red-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
                     >
                         Reset All Storage
                     </button>

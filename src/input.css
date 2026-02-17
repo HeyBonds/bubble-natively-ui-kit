@@ -97,4 +97,79 @@
   .animate-slide-out-right { animation: slideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
   .animate-slide-in-left { animation: slideInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
   .animate-slide-out-left { animation: slideOutLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+  /* ── Phase Transition Animations ── */
+
+  /* Welcome exit: zoom in + fade (feels like diving into the app) */
+  @keyframes phaseZoomOut {
+    0%   { opacity: 1; transform: scale(1); filter: blur(0); }
+    100% { opacity: 0; transform: scale(1.15); filter: blur(6px); }
+  }
+  .phase-zoom-out {
+    animation: phaseZoomOut 0.5s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  /* Onboarding enter: slide up from bottom + fade */
+  @keyframes phaseSlideUp {
+    0%   { opacity: 0; transform: translateY(60px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .phase-slide-up {
+    animation: phaseSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Onboarding complete exit: scale down + fade with a glow */
+  @keyframes phaseCompleteOut {
+    0%   { opacity: 1; transform: scale(1); filter: brightness(1); }
+    40%  { opacity: 1; transform: scale(1.02); filter: brightness(1.2); }
+    100% { opacity: 0; transform: scale(0.92); filter: brightness(1.5) blur(4px); }
+  }
+  .phase-complete-out {
+    animation: phaseCompleteOut 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  /* Main app enter: scale up from slightly behind + fade */
+  @keyframes phaseScaleIn {
+    0%   { opacity: 0; transform: scale(0.94); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .phase-scale-in {
+    animation: phaseScaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Onboarding slide back down (reverse of slide-up) */
+  @keyframes phaseSlideDown {
+    0%   { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(60px); }
+  }
+  .phase-slide-down {
+    animation: phaseSlideDown 0.4s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  /* Welcome zoom back in (reverse of zoom-out) */
+  @keyframes phaseZoomIn {
+    0%   { opacity: 0; transform: scale(1.1); filter: blur(4px); }
+    100% { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
+  .phase-zoom-in {
+    animation: phaseZoomIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Generic soft fade enter (loading → welcome, debug jumps) */
+  @keyframes phaseFadeIn {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  .phase-fade-in {
+    animation: phaseFadeIn 0.4s ease-out forwards;
+  }
+
+  /* Generic exit (debug jumps, sign-in shortcut) */
+  @keyframes phaseFadeOut {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .phase-fade-out {
+    animation: phaseFadeOut 0.35s ease-in forwards;
+  }
 }

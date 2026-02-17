@@ -36,6 +36,7 @@ import App from './App';
 import WelcomeScreen from './components/WelcomeScreen';
 import DailyQuestion from './components/DailyQuestion';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
+import mockOnboardingSteps from './data/mockOnboardingSteps';
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
@@ -57,8 +58,9 @@ window.appUI.mountDailyQuestion = (container, props = {}) => {
 };
 
 window.appUI.mountOnboarding = (container, props = {}) => {
+    const defaults = { steps: mockOnboardingSteps, credits: 0, showCredits: true };
     const root = createRoot(container);
-    root.render(<OnboardingFlow {...props} />);
+    root.render(<OnboardingFlow {...defaults} {...props} />);
     return root;
 };
 
