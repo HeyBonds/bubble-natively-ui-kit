@@ -207,13 +207,14 @@ const OnboardingFlow = ({
 
             // 2. Create the floating credit circle at the bar position
             const circle = document.createElement('div');
+            circle.id = 'credit-intro-circle';
             circle.style.cssText = `
                 position: fixed;
                 top: ${startRect.top}px;
                 left: ${startRect.left}px;
                 width: ${startRect.width}px;
                 height: ${startRect.height}px;
-                z-index: 9999;
+                z-index: 10000;
                 pointer-events: none;
                 transition: top 0.7s cubic-bezier(0.16, 1, 0.3, 1),
                             left 0.7s cubic-bezier(0.16, 1, 0.3, 1),
@@ -227,27 +228,30 @@ const OnboardingFlow = ({
             `;
             document.body.appendChild(circle);
 
-            // 3. Create text + button container (hidden initially)
-            const textEl = document.createElement('div');
-            textEl.style.cssText = `
+            // 3. Create centered overlay container (circle placeholder + text + button)
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
                 position: fixed;
-                top: calc(50% + 70px);
-                left: 50%;
-                transform: translateX(-50%);
+                inset: 0;
                 z-index: 9999;
-                text-align: center;
-                max-width: 280px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                pointer-events: none;
                 opacity: 0;
                 transition: opacity 0.5s ease;
             `;
-            textEl.innerHTML = `
-                <p style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:white;margin:0 0 8px 0;line-height:1.4;">
+            overlay.innerHTML = `
+                <div style="width:96px;height:96px;margin-bottom:24px;"></div>
+                <p style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:white;margin:0 0 8px 0;line-height:1.4;text-align:center;">
                     Meet your Credits! &#x1F389;
                 </p>
-                <p style="font-family:'Poppins',sans-serif;font-weight:400;font-size:14px;color:rgba(255,255,255,0.7);margin:0 0 24px 0;line-height:1.5;">
+                <p style="font-family:'Poppins',sans-serif;font-weight:400;font-size:14px;color:rgba(255,255,255,0.7);margin:0 0 24px 0;line-height:1.5;text-align:center;max-width:280px;padding:0 20px;">
                     Every answer earns you a credit.<br/>Use them to unlock experiences in Bonds.
                 </p>
                 <button id="credit-intro-cta" style="
+                    pointer-events:auto;
                     font-family:'Plus Jakarta Sans',sans-serif;
                     font-weight:700;
                     font-size:16px;
@@ -262,12 +266,19 @@ const OnboardingFlow = ({
                     transition:transform 0.15s ease, box-shadow 0.15s ease;
                 ">OK, Cool!</button>
             `;
-            document.body.appendChild(textEl);
+            document.body.appendChild(overlay);
+
+            // Calculate center target for the circle (aligned with placeholder)
+            const placeholderRect = overlay.querySelector('div').getBoundingClientRect();
 
             // Dismiss handler — triggered by the CTA button
+            let dismissed = false;
             const dismiss = () => {
-                // Fade out text + button
-                textEl.style.opacity = '0';
+                if (dismissed) return;
+                dismissed = true;
+
+                // Fade out overlay (text + button)
+                overlay.style.opacity = '0';
 
                 // After fade, fly circle back to bar
                 setTimeout(() => {
@@ -287,7 +298,7 @@ const OnboardingFlow = ({
                 // Cleanup + pulse
                 setTimeout(() => {
                     circle.remove();
-                    textEl.remove();
+                    overlay.remove();
                     dim.remove();
 
                     triggerCreditPulse();
@@ -300,14 +311,13 @@ const OnboardingFlow = ({
                 }, 1300);
             };
 
-            // 4. After a tick, fly circle to center + grow
+            // 4. After a tick, fly circle to center (aligned with placeholder)
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    const size = 96;
-                    circle.style.top = `calc(50% - ${size / 2}px)`;
-                    circle.style.left = `calc(50% - ${size / 2}px)`;
-                    circle.style.width = size + 'px';
-                    circle.style.height = size + 'px';
+                    circle.style.top = placeholderRect.top + 'px';
+                    circle.style.left = placeholderRect.left + 'px';
+                    circle.style.width = '96px';
+                    circle.style.height = '96px';
                     const numEl = document.getElementById('credit-intro-num');
                     if (numEl) numEl.style.fontSize = '2.5rem';
                 });
@@ -319,10 +329,9 @@ const OnboardingFlow = ({
                 if (numEl) numEl.innerText = '1';
             }, 800);
 
-            // 6. Fade in text + button
+            // 6. Fade in overlay (text + button)
             setTimeout(() => {
-                textEl.style.opacity = '1';
-                // Wire up the CTA
+                overlay.style.opacity = '1';
                 const cta = document.getElementById('credit-intro-cta');
                 if (cta) {
                     cta.addEventListener('click', dismiss);
@@ -333,7 +342,10 @@ const OnboardingFlow = ({
     };
 
     // Wait for persisted state to load before rendering
-    if (!ready) return null;
+    // Show matching background while loading persisted state (prevents white flash on mobile)
+    if (!ready) return (
+        <div className="w-full h-full" style={{ background: 'linear-gradient(160deg, #2E4695 0%, #652664 100%)' }} />
+    );
 
     // Resolve screen component
     const ScreenComponent = step ? SCREEN_COMPONENTS[step.type] : null;

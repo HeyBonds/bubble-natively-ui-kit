@@ -132,17 +132,12 @@ const App = () => {
     const checkSession = async () => {
         try {
             console.log('🔄 App: Starting session check...');
-            const sessionPromise = getItem(SESSION_KEY);
-            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('timeout'), 2000));
-
-            const sessionResult = await Promise.race([sessionPromise, timeoutPromise]);
+            // getItem reads from localStorage (instant) — no timeout needed
+            const sessionResult = await getItem(SESSION_KEY);
 
             console.log(`💾 App: Session check result: ${sessionResult}`);
 
-            if (sessionResult === 'timeout') {
-                console.warn('⚠️ App: Storage check timed out. Defaulting to welcome.');
-                transitionTo('welcome');
-            } else if (sessionResult === 'true') {
+            if (sessionResult === 'true') {
                 const obResult = await getItem(ONBOARDING_KEY);
                 transitionTo(obResult === 'true' ? 'main' : 'onboarding');
             } else {

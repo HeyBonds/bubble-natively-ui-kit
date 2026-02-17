@@ -2,16 +2,15 @@ import { useMemo } from 'react';
 import { NativelyStorage } from 'natively';
 
 /**
- * Custom hook to interact with Natively's native storage.
- * Wraps the callback-based API in Promises for better React integration.
+ * useNativelyStorage — Fast reads via localStorage, durable writes via NativelyStorage.
  *
  * Strategy:
- * - On localhost: skip NativelyStorage entirely, use localStorage (instant).
- * - On native device: use NativelyStorage with localStorage as backup.
- * - On Bubble web (no native bridge): NativelyStorage calls timeout after 1.5s,
- *   falls back to localStorage automatically.
- *
- * Writes always go to both storages so localStorage stays in sync.
+ * - Reads: Return localStorage synchronously (instant). In the background, verify
+ *   against NativelyStorage. If native has a different value, update localStorage.
+ *   This handles the rare case where the OS clears the WebView's localStorage
+ *   but native storage persists.
+ * - Writes: Always write to both localStorage (sync) and NativelyStorage (async).
+ * - On localhost: skip NativelyStorage entirely.
  */
 export const useNativelyStorage = () => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -22,42 +21,44 @@ export const useNativelyStorage = () => {
         return new NativelyStorage();
     } else {
         if (isLocalhost) {
-             console.log('🔧 Running on localhost: Forcing localStorage fallback (Instant).');
-        } else {
-             console.warn('⚠️ Natively SDK not found. Falling back to localStorage (Non-Production).');
+             console.log('🔧 Storage: localhost → localStorage only (instant).');
         }
         return null;
     }
   }, []);
 
   const setItem = (key, value) => {
-    // Always write to localStorage so it stays in sync as a fallback
     localStorage.setItem(key, value);
     if (storage) {
         storage.setStorageValue(key, value);
     }
   };
 
+  /**
+   * getItem — Returns localStorage value immediately (sync, wrapped in resolved Promise).
+   * Kicks off a background native read to reconcile if values ever diverge.
+   */
   const getItem = (key) => {
-    return new Promise((resolve) => {
-      if (storage) {
-        // If native bridge doesn't respond within 1.5s, fall back to localStorage
+    const localValue = localStorage.getItem(key);
+
+    // Background verify: if native has a different value, update localStorage
+    if (storage) {
         const timeout = setTimeout(() => {
-            console.warn(`⏱️ [NativelyStorage] Timeout for "${key}", falling back to localStorage.`);
-            resolve(localStorage.getItem(key));
-        }, 1500);
+            console.warn(`⏱️ [NativelyStorage] Background verify timeout for "${key}".`);
+        }, 2000);
 
         storage.getStorageValue(key, (resp) => {
             clearTimeout(timeout);
-            console.log(`[NativelyStorage] Received value for ${resp.key}:`, resp.value);
-            resolve(resp.value);
+            const nativeValue = resp.value;
+            // If native has data that localStorage doesn't, sync it
+            if (nativeValue != null && nativeValue !== localValue) {
+                console.log(`🔄 [NativelyStorage] Reconciled "${key}": native="${nativeValue}" wins over local="${localValue}".`);
+                localStorage.setItem(key, nativeValue);
+            }
         });
-      } else {
-        const val = localStorage.getItem(key);
-        console.log(`[LocalStorage Fallback] Received value for ${key}:`, val);
-        resolve(val);
-      }
-    });
+    }
+
+    return Promise.resolve(localValue);
   };
 
   const removeItem = (key) => {
@@ -74,7 +75,7 @@ export const useNativelyStorage = () => {
     }
   };
 
-  // Probe: write a test key, read it back, report whether native bridge responded
+  // Probe: write a test key, read it back via native bridge to confirm it's working
   const probeNative = () => {
     return new Promise((resolve) => {
       if (!storage) {
