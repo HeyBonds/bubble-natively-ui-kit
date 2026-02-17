@@ -266,7 +266,7 @@ const App = () => {
                             removeItem(SESSION_KEY);
                             removeItem(DEVICE_ID_KEY);
                             removeItem(ONBOARDING_KEY);
-                            localStorage.removeItem('onboarding_state');
+                            removeItem('onboarding_state');
                             window.location.reload();
                         }}
                         className="bg-red-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
