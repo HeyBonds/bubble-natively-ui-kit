@@ -32,22 +32,30 @@ const OnboardingFlow = ({
     const [answeredThisVisit, setAnsweredThisVisit] = useState(false);
     const [rotationOffsets, setRotationOffsets] = useState({});
     const [ready, setReady] = useState(false);
+    const [creditIntroSeen, setCreditIntroSeen] = useState(false);
     const creditsCircleRef = useRef(null);
+    const creditIntroRunningRef = useRef(false);
     const storage = useNativelyStorage();
 
     // Restore persisted state on mount
     useEffect(() => {
         let cancelled = false;
-        storage.getItem(STORAGE_KEY).then(raw => {
-            if (cancelled || !raw) { setReady(true); return; }
-            try {
-                const saved = JSON.parse(raw);
-                if (saved.currentStep != null) setCurrentStep(saved.currentStep);
-                if (saved.answers) setAnswers(saved.answers);
-                if (saved.credits != null) setCredits(saved.credits);
-                if (saved.rotationOffsets) setRotationOffsets(saved.rotationOffsets);
-            } catch (e) {
-                console.warn('Failed to restore onboarding state:', e);
+        Promise.all([
+            storage.getItem(STORAGE_KEY),
+            storage.getItem('credits_intro_seen'),
+        ]).then(([raw, introSeen]) => {
+            if (cancelled) return;
+            if (introSeen === 'true') setCreditIntroSeen(true);
+            if (raw) {
+                try {
+                    const saved = JSON.parse(raw);
+                    if (saved.currentStep != null) setCurrentStep(saved.currentStep);
+                    if (saved.answers) setAnswers(saved.answers);
+                    if (saved.credits != null) setCredits(saved.credits);
+                    if (saved.rotationOffsets) setRotationOffsets(saved.rotationOffsets);
+                } catch (e) {
+                    console.warn('Failed to restore onboarding state:', e);
+                }
             }
             setReady(true);
         });
@@ -121,10 +129,7 @@ const OnboardingFlow = ({
 
         // Update state
         setAnswers(newAnswers);
-        if (isNewAnswer) {
-            setCredits(newCredits);
-            triggerCreditPulse();
-        }
+        if (isNewAnswer) setCredits(newCredits);
 
         // Persist locally for resume
         const nextStep = currentStep + 1;
@@ -137,21 +142,28 @@ const OnboardingFlow = ({
             variable: data.variable || '',
         });
 
-        // Last step → complete, otherwise advance
-        if (currentStep >= totalSteps - 1) {
-            // Clear persisted state — onboarding is done
-            storage.removeItem(STORAGE_KEY);
+        // Determine what happens after the answer
+        const advanceOrComplete = () => {
+            if (currentStep >= totalSteps - 1) {
+                storage.removeItem(STORAGE_KEY);
+                sendToBubble('bubble_fn_onboarding', 'complete', {
+                    answers: JSON.stringify(newAnswers),
+                    credits: newCredits,
+                });
+                if (onComplete) onComplete(newAnswers, newCredits);
+            } else {
+                setTimeout(() => goForward(), 600);
+            }
+        };
 
-            sendToBubble('bubble_fn_onboarding', 'complete', {
-                answers: JSON.stringify(newAnswers),
-                credits: newCredits,
-            });
-
-            if (onComplete) onComplete(newAnswers, newCredits);
+        // First credit ever + not seen intro → play the full intro animation
+        if (isNewAnswer && credits === 0 && !creditIntroSeen && !creditIntroRunningRef.current) {
+            triggerCreditIntro().then(advanceOrComplete);
         } else {
-            setTimeout(() => goForward(), 600);
+            if (isNewAnswer) triggerCreditPulse();
+            advanceOrComplete();
         }
-    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete]);
+    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete, creditIntroSeen]);
 
     const handleRefresh = useCallback(() => {
         const s = steps[currentStep];
@@ -175,6 +187,149 @@ const OnboardingFlow = ({
                 }
             }, 300);
         }
+    };
+
+    // First-time credit intro animation (0→1)
+    // Returns a Promise that resolves when the animation is done
+    const triggerCreditIntro = () => {
+        return new Promise((resolve) => {
+            if (!creditsCircleRef.current || creditIntroRunningRef.current) { resolve(); return; }
+            creditIntroRunningRef.current = true;
+
+            // Get the starting position of the real credits circle
+            const startRect = creditsCircleRef.current.getBoundingClientRect();
+
+            // 1. Create dim overlay
+            const dim = document.createElement('div');
+            dim.className = 'dim-overlay';
+            document.body.appendChild(dim);
+            requestAnimationFrame(() => dim.classList.add('active'));
+
+            // 2. Create the floating credit circle at the bar position
+            const circle = document.createElement('div');
+            circle.style.cssText = `
+                position: fixed;
+                top: ${startRect.top}px;
+                left: ${startRect.left}px;
+                width: ${startRect.width}px;
+                height: ${startRect.height}px;
+                z-index: 9999;
+                pointer-events: none;
+                transition: top 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                            left 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                            width 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                            height 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+            `;
+            circle.innerHTML = `
+                <div style="width:100%;height:100%;background:#FF2258;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(255,34,88,0.5);">
+                    <span id="credit-intro-num" style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.75rem;color:white;letter-spacing:0.05em;line-height:1;transition:font-size 0.7s cubic-bezier(0.16,1,0.3,1);">0</span>
+                </div>
+            `;
+            document.body.appendChild(circle);
+
+            // 3. Create text + button container (hidden initially)
+            const textEl = document.createElement('div');
+            textEl.style.cssText = `
+                position: fixed;
+                top: calc(50% + 70px);
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 9999;
+                text-align: center;
+                max-width: 280px;
+                opacity: 0;
+                transition: opacity 0.5s ease;
+            `;
+            textEl.innerHTML = `
+                <p style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:white;margin:0 0 8px 0;line-height:1.4;">
+                    Meet your Credits! &#x1F389;
+                </p>
+                <p style="font-family:'Poppins',sans-serif;font-weight:400;font-size:14px;color:rgba(255,255,255,0.7);margin:0 0 24px 0;line-height:1.5;">
+                    Every answer earns you a credit.<br/>Use them to unlock experiences in Bonds.
+                </p>
+                <button id="credit-intro-cta" style="
+                    font-family:'Plus Jakarta Sans',sans-serif;
+                    font-weight:700;
+                    font-size:16px;
+                    color:#FF2258;
+                    background:white;
+                    border:none;
+                    border-radius:40px;
+                    padding:14px 48px;
+                    cursor:pointer;
+                    letter-spacing:0.5px;
+                    box-shadow:0 4px 20px rgba(255,34,88,0.3);
+                    transition:transform 0.15s ease, box-shadow 0.15s ease;
+                ">OK, Cool!</button>
+            `;
+            document.body.appendChild(textEl);
+
+            // Dismiss handler — triggered by the CTA button
+            const dismiss = () => {
+                // Fade out text + button
+                textEl.style.opacity = '0';
+
+                // After fade, fly circle back to bar
+                setTimeout(() => {
+                    dim.classList.remove('active');
+
+                    const endRect = creditsCircleRef.current?.getBoundingClientRect();
+                    if (endRect) {
+                        circle.style.top = endRect.top + 'px';
+                        circle.style.left = endRect.left + 'px';
+                        circle.style.width = endRect.width + 'px';
+                        circle.style.height = endRect.height + 'px';
+                        const numEl = document.getElementById('credit-intro-num');
+                        if (numEl) numEl.style.fontSize = '0.75rem';
+                    }
+                }, 500);
+
+                // Cleanup + pulse
+                setTimeout(() => {
+                    circle.remove();
+                    textEl.remove();
+                    dim.remove();
+
+                    triggerCreditPulse();
+
+                    setCreditIntroSeen(true);
+                    storage.setItem('credits_intro_seen', 'true');
+                    creditIntroRunningRef.current = false;
+
+                    resolve();
+                }, 1300);
+            };
+
+            // 4. After a tick, fly circle to center + grow
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const size = 96;
+                    circle.style.top = `calc(50% - ${size / 2}px)`;
+                    circle.style.left = `calc(50% - ${size / 2}px)`;
+                    circle.style.width = size + 'px';
+                    circle.style.height = size + 'px';
+                    const numEl = document.getElementById('credit-intro-num');
+                    if (numEl) numEl.style.fontSize = '2.5rem';
+                });
+            });
+
+            // 5. After circle arrives at center, increment 0→1
+            setTimeout(() => {
+                const numEl = document.getElementById('credit-intro-num');
+                if (numEl) numEl.innerText = '1';
+            }, 800);
+
+            // 6. Fade in text + button
+            setTimeout(() => {
+                textEl.style.opacity = '1';
+                // Wire up the CTA
+                const cta = document.getElementById('credit-intro-cta');
+                if (cta) {
+                    cta.addEventListener('click', dismiss);
+                    cta.addEventListener('touchend', (e) => { e.preventDefault(); dismiss(); });
+                }
+            }, 1100);
+        });
     };
 
     // Wait for persisted state to load before rendering

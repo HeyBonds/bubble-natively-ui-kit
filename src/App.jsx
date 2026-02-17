@@ -288,6 +288,7 @@ const App = () => {
                             removeItem(DEVICE_ID_KEY);
                             removeItem(ONBOARDING_KEY);
                             removeItem('onboarding_state');
+                            removeItem('credits_intro_seen');
                             window.location.reload();
                         }}
                         className="bg-red-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"

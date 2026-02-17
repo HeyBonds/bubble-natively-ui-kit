@@ -28685,23 +28685,28 @@
     const [answeredThisVisit, setAnsweredThisVisit] = d2(false);
     const [rotationOffsets, setRotationOffsets] = d2({});
     const [ready, setReady] = d2(false);
+    const [creditIntroSeen, setCreditIntroSeen] = d2(false);
     const creditsCircleRef = A2(null);
+    const creditIntroRunningRef = A2(false);
     const storage = useNativelyStorage();
     y2(() => {
       let cancelled = false;
-      storage.getItem(STORAGE_KEY).then((raw) => {
-        if (cancelled || !raw) {
-          setReady(true);
-          return;
-        }
-        try {
-          const saved = JSON.parse(raw);
-          if (saved.currentStep != null) setCurrentStep(saved.currentStep);
-          if (saved.answers) setAnswers(saved.answers);
-          if (saved.credits != null) setCredits(saved.credits);
-          if (saved.rotationOffsets) setRotationOffsets(saved.rotationOffsets);
-        } catch (e3) {
-          console.warn("Failed to restore onboarding state:", e3);
+      Promise.all([
+        storage.getItem(STORAGE_KEY),
+        storage.getItem("credits_intro_seen")
+      ]).then(([raw, introSeen]) => {
+        if (cancelled) return;
+        if (introSeen === "true") setCreditIntroSeen(true);
+        if (raw) {
+          try {
+            const saved = JSON.parse(raw);
+            if (saved.currentStep != null) setCurrentStep(saved.currentStep);
+            if (saved.answers) setAnswers(saved.answers);
+            if (saved.credits != null) setCredits(saved.credits);
+            if (saved.rotationOffsets) setRotationOffsets(saved.rotationOffsets);
+          } catch (e3) {
+            console.warn("Failed to restore onboarding state:", e3);
+          }
         }
         setReady(true);
       });
@@ -28766,10 +28771,7 @@
       };
       const newAnswers = { ...answers, [currentStep]: stepAnswer };
       setAnswers(newAnswers);
-      if (isNewAnswer) {
-        setCredits(newCredits);
-        triggerCreditPulse();
-      }
+      if (isNewAnswer) setCredits(newCredits);
       const nextStep = currentStep + 1;
       persistState(nextStep, newAnswers, newCredits, rotationOffsets);
       sendToBubble("bubble_fn_onboarding", "step_complete", {
@@ -28777,17 +28779,25 @@
         answer: data.answer || "",
         variable: data.variable || ""
       });
-      if (currentStep >= totalSteps - 1) {
-        storage.removeItem(STORAGE_KEY);
-        sendToBubble("bubble_fn_onboarding", "complete", {
-          answers: JSON.stringify(newAnswers),
-          credits: newCredits
-        });
-        if (onComplete) onComplete(newAnswers, newCredits);
+      const advanceOrComplete = () => {
+        if (currentStep >= totalSteps - 1) {
+          storage.removeItem(STORAGE_KEY);
+          sendToBubble("bubble_fn_onboarding", "complete", {
+            answers: JSON.stringify(newAnswers),
+            credits: newCredits
+          });
+          if (onComplete) onComplete(newAnswers, newCredits);
+        } else {
+          setTimeout(() => goForward(), 600);
+        }
+      };
+      if (isNewAnswer && credits === 0 && !creditIntroSeen && !creditIntroRunningRef.current) {
+        triggerCreditIntro().then(advanceOrComplete);
       } else {
-        setTimeout(() => goForward(), 600);
+        if (isNewAnswer) triggerCreditPulse();
+        advanceOrComplete();
       }
-    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete]);
+    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete, creditIntroSeen]);
     const handleRefresh = q2(() => {
       const s3 = steps[currentStep];
       if (!s3 || !s3.optionPool || !s3.visibleCount) return;
@@ -28807,6 +28817,126 @@
           }
         }, 300);
       }
+    };
+    const triggerCreditIntro = () => {
+      return new Promise((resolve2) => {
+        if (!creditsCircleRef.current || creditIntroRunningRef.current) {
+          resolve2();
+          return;
+        }
+        creditIntroRunningRef.current = true;
+        const startRect = creditsCircleRef.current.getBoundingClientRect();
+        const dim = document.createElement("div");
+        dim.className = "dim-overlay";
+        document.body.appendChild(dim);
+        requestAnimationFrame(() => dim.classList.add("active"));
+        const circle = document.createElement("div");
+        circle.style.cssText = `
+                position: fixed;
+                top: ${startRect.top}px;
+                left: ${startRect.left}px;
+                width: ${startRect.width}px;
+                height: ${startRect.height}px;
+                z-index: 9999;
+                pointer-events: none;
+                transition: top 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                            left 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                            width 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                            height 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+            `;
+        circle.innerHTML = `
+                <div style="width:100%;height:100%;background:#FF2258;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(255,34,88,0.5);">
+                    <span id="credit-intro-num" style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.75rem;color:white;letter-spacing:0.05em;line-height:1;transition:font-size 0.7s cubic-bezier(0.16,1,0.3,1);">0</span>
+                </div>
+            `;
+        document.body.appendChild(circle);
+        const textEl = document.createElement("div");
+        textEl.style.cssText = `
+                position: fixed;
+                top: calc(50% + 70px);
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 9999;
+                text-align: center;
+                max-width: 280px;
+                opacity: 0;
+                transition: opacity 0.5s ease;
+            `;
+        textEl.innerHTML = `
+                <p style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:white;margin:0 0 8px 0;line-height:1.4;">
+                    Meet your Credits! &#x1F389;
+                </p>
+                <p style="font-family:'Poppins',sans-serif;font-weight:400;font-size:14px;color:rgba(255,255,255,0.7);margin:0 0 24px 0;line-height:1.5;">
+                    Every answer earns you a credit.<br/>Use them to unlock experiences in Bonds.
+                </p>
+                <button id="credit-intro-cta" style="
+                    font-family:'Plus Jakarta Sans',sans-serif;
+                    font-weight:700;
+                    font-size:16px;
+                    color:#FF2258;
+                    background:white;
+                    border:none;
+                    border-radius:40px;
+                    padding:14px 48px;
+                    cursor:pointer;
+                    letter-spacing:0.5px;
+                    box-shadow:0 4px 20px rgba(255,34,88,0.3);
+                    transition:transform 0.15s ease, box-shadow 0.15s ease;
+                ">OK, Cool!</button>
+            `;
+        document.body.appendChild(textEl);
+        const dismiss = () => {
+          textEl.style.opacity = "0";
+          setTimeout(() => {
+            dim.classList.remove("active");
+            const endRect = creditsCircleRef.current?.getBoundingClientRect();
+            if (endRect) {
+              circle.style.top = endRect.top + "px";
+              circle.style.left = endRect.left + "px";
+              circle.style.width = endRect.width + "px";
+              circle.style.height = endRect.height + "px";
+              const numEl = document.getElementById("credit-intro-num");
+              if (numEl) numEl.style.fontSize = "0.75rem";
+            }
+          }, 500);
+          setTimeout(() => {
+            circle.remove();
+            textEl.remove();
+            dim.remove();
+            triggerCreditPulse();
+            setCreditIntroSeen(true);
+            storage.setItem("credits_intro_seen", "true");
+            creditIntroRunningRef.current = false;
+            resolve2();
+          }, 1300);
+        };
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const size = 96;
+            circle.style.top = `calc(50% - ${size / 2}px)`;
+            circle.style.left = `calc(50% - ${size / 2}px)`;
+            circle.style.width = size + "px";
+            circle.style.height = size + "px";
+            const numEl = document.getElementById("credit-intro-num");
+            if (numEl) numEl.style.fontSize = "2.5rem";
+          });
+        });
+        setTimeout(() => {
+          const numEl = document.getElementById("credit-intro-num");
+          if (numEl) numEl.innerText = "1";
+        }, 800);
+        setTimeout(() => {
+          textEl.style.opacity = "1";
+          const cta = document.getElementById("credit-intro-cta");
+          if (cta) {
+            cta.addEventListener("click", dismiss);
+            cta.addEventListener("touchend", (e3) => {
+              e3.preventDefault();
+              dismiss();
+            });
+          }
+        }, 1100);
+      });
     };
     if (!ready) return null;
     const ScreenComponent = step ? SCREEN_COMPONENTS[step.type] : null;
@@ -29384,6 +29514,7 @@
           removeItem(DEVICE_ID_KEY);
           removeItem(ONBOARDING_KEY);
           removeItem("onboarding_state");
+          removeItem("credits_intro_seen");
           window.location.reload();
         },
         className: "bg-red-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
