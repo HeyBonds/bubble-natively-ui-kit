@@ -199,53 +199,51 @@ const OnboardingFlow = ({
         <div className="flex flex-col w-full h-full overflow-hidden font-jakarta" style={{
             background: 'linear-gradient(160deg, #2E4695 0%, #652664 100%)',
         }}>
-            {/* Top Bar */}
-            <div className="z-20 px-5 pt-[46px] pb-5 overflow-hidden">
-                <div className="flex items-end gap-4">
-                    {/* Back Button */}
-                    <button
-                        onClick={currentStep === 0 && onBackOut ? onBackOut : goBack}
-                        className={`w-10 h-10 rounded-full border border-solid border-white/40 flex items-center justify-center transition-opacity duration-200 shrink-0 ${
-                            currentStep === 0 && !onBackOut ? 'opacity-0 pointer-events-none' : 'hover:bg-white/10'
-                        }`}
-                    >
-                        <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                            <path d="M6 1L1 6L6 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    </button>
+            {/* Top Bar — absolute positioned like DailyQuestion */}
+            <div className="relative z-20 shrink-0 pt-[18px] pb-4 px-[18px]">
+                {/* Back Button — matches DailyQuestion X button positioning */}
+                <button
+                    onClick={currentStep === 0 && onBackOut ? onBackOut : goBack}
+                    className={`w-8 h-8 rounded-full border border-solid border-white/40 flex items-center justify-center transition-opacity duration-200 ${
+                        currentStep === 0 && !onBackOut ? 'opacity-0 pointer-events-none' : 'hover:bg-white/10'
+                    }`}
+                >
+                    <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+                        <path d="M6 1L1 6L6 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
 
-                    {/* Progress — centered in remaining space */}
-                    <div className="flex-1 flex flex-col gap-1.5 items-center pb-[3px]">
-                        <span className="font-semibold text-[10px] text-white tracking-[0.5px]">
-                            {currentStep + 1}/{totalSteps}
-                        </span>
-                        <div className="h-[14px] w-full max-w-[200px] rounded-[90px] border border-solid border-white/50 bg-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.15)] overflow-hidden">
-                            <div
-                                className="h-full rounded-[90px] bg-white/30 transition-[width] duration-500 ease-out"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
+                {/* Progress — centered absolutely */}
+                <div className="absolute left-1/2 top-[18px] -translate-x-1/2 flex flex-col gap-1.5 items-center">
+                    <span className="font-semibold text-[10px] text-white tracking-[0.5px]">
+                        {currentStep + 1}/{totalSteps}
+                    </span>
+                    <div className="h-[14px] w-[180px] rounded-[90px] border border-solid border-white/50 bg-white/[0.06] overflow-hidden">
+                        <div
+                            className="h-full rounded-[90px] bg-white/30 transition-[width] duration-500 ease-out"
+                            style={{ width: `${progress}%` }}
+                        />
                     </div>
+                </div>
 
-                    {/* Credits Widget — in flex flow, extends off-screen right */}
-                    {showCredits && (
-                        <div className="shrink-0 -mr-[95px]">
-                            <div className="relative w-[180px] h-10 rounded-full flex items-center border border-solid border-white/50">
-                                <div
-                                    ref={creditsCircleRef}
-                                    className="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center shadow-lg"
-                                >
-                                    <span className="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">
-                                        {credits}
-                                    </span>
-                                </div>
-                                <span className="absolute left-[42px] top-1/2 -translate-y-1/2 font-jakarta font-medium text-[10px] text-white tracking-wide leading-none">
-                                    Credits
+                {/* Credits Widget — same pattern as DailyQuestion */}
+                {showCredits && (
+                    <div className="absolute top-4 -right-[95px] z-10">
+                        <div className="relative w-[180px] h-10 rounded-full flex items-center border border-solid border-white/50">
+                            <div
+                                ref={creditsCircleRef}
+                                className="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center shadow-lg"
+                            >
+                                <span className="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">
+                                    {credits}
                                 </span>
                             </div>
+                            <span className="absolute left-[42px] top-1/2 translate-y-[6px] font-jakarta font-medium text-[10px] text-white tracking-wide leading-none">
+                                Credits
+                            </span>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
 
             {/* Divider */}
