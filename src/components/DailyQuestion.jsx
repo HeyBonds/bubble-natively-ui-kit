@@ -21,11 +21,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
         }, 800);
 
         // Send to Bubble
-        sendToBubble('bubble_fn_daily_question', {
-            action: 'vote',
-            answer: answerText,
-            index: index
-        });
+        sendToBubble('bubble_fn_daily_question', 'vote', { answer: answerText, index });
 
         // Credit Animation Logic (Ported from legacy)
         setTimeout(() => {
@@ -126,11 +122,11 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
     };
 
     const handleStart = () => {
-        sendToBubble('bubble_fn_daily_question', { action: 'start_planning' });
+        sendToBubble('bubble_fn_daily_question', 'start_planning');
     };
 
     const handleClose = () => {
-        sendToBubble('bubble_fn_daily_question', { action: 'close' });
+        sendToBubble('bubble_fn_daily_question', 'close');
     };
 
     return (
