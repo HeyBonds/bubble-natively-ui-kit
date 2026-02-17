@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 const SingleSelect = ({ question, options = [], refreshable = true, previousAnswer, onAnswer, onRefresh }) => {
     const [selectedIndex, setSelectedIndex] = useState(previousAnswer?.index ?? null);
+    const [refreshAnim, setRefreshAnim] = useState(''); // '', 'out', 'in'
+    const [refreshKey, setRefreshKey] = useState(0);
+    const iconRef = useRef(null);
 
     const handleSelect = (opt, index) => {
         setSelectedIndex(index);
@@ -13,9 +16,27 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
     };
 
     const handleRefresh = () => {
-        setSelectedIndex(null);
-        if (onRefresh) onRefresh();
+        // Phase 1: animate out
+        setRefreshAnim('out');
+        if (iconRef.current) {
+            iconRef.current.classList.remove('refresh-spin');
+            void iconRef.current.offsetWidth; // force reflow
+            iconRef.current.classList.add('refresh-spin');
+        }
+
+        // Phase 2: after exit completes, swap data + animate in
+        setTimeout(() => {
+            setSelectedIndex(null);
+            if (onRefresh) onRefresh();
+            setRefreshKey(k => k + 1);
+            setRefreshAnim('in');
+
+            // Phase 3: clear animation class after enter completes
+            setTimeout(() => setRefreshAnim(''), 450);
+        }, 300);
     };
+
+    const listClass = refreshAnim === 'out' ? 'refresh-out' : refreshAnim === 'in' ? 'refresh-in' : '';
 
     return (
         <>
@@ -25,7 +46,7 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
                     {question}
                 </h1>
 
-                <div className="space-y-4">
+                <div className={`space-y-4 ${listClass}`} key={refreshKey}>
                     {options.map((opt, i) => {
                         const text = typeof opt === 'string' ? opt : opt.text;
                         const isSelected = selectedIndex === i;
@@ -61,8 +82,9 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
                     <button
                         onClick={handleRefresh}
                         className="flex items-center gap-2 mt-1 group"
+                        disabled={refreshAnim !== ''}
                     >
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="group-hover:rotate-[-45deg] transition-transform duration-300">
+                        <svg ref={iconRef} width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ willChange: 'transform' }}>
                             <path d="M1.667 3.333v5h5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                             <path d="M3.51 12.5a7.5 7.5 0 1 0 1.14-7.833L1.667 8.333" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
