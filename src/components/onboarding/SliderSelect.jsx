@@ -29,7 +29,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
                         {/* Filled track */}
                         {selectedIndex !== null && (
                             <div
-                                className="absolute top-1/2 left-0 h-[3px] -translate-y-1/2 bg-[#FF2258] rounded-full transition-all duration-300"
+                                className="absolute top-1/2 left-0 h-[3px] -translate-y-1/2 bg-[#FF2258] rounded-full transition-[width] duration-300"
                                 style={{ width: `${(selectedIndex / (stops.length - 1)) * 100}%` }}
                             />
                         )}
@@ -48,7 +48,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
                                         style={{ width: `${100 / stops.length}%` }}
                                     >
                                         {/* Dot */}
-                                        <div className={`w-5 h-5 rounded-full border-2 border-solid transition-all duration-300 ${
+                                        <div className={`w-5 h-5 rounded-full border-2 border-solid transition-[background-color,border-color,transform,box-shadow] duration-200 ${
                                             isSelected
                                                 ? 'bg-[#FF2258] border-[#FF2258] scale-125 shadow-[0_0_12px_rgba(255,34,88,0.5)]'
                                                 : isFilled
@@ -57,7 +57,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
                                         }`} />
 
                                         {/* Label */}
-                                        <span className={`text-[11px] leading-tight text-center max-w-[60px] transition-all duration-300 ${
+                                        <span className={`text-[11px] leading-tight text-center max-w-[60px] transition-colors duration-200 ${
                                             isSelected
                                                 ? 'text-white font-semibold'
                                                 : 'text-white/50 font-medium'
@@ -77,7 +77,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
                 <button
                     onClick={handleContinue}
                     disabled={selectedIndex === null}
-                    className={`w-full h-[54px] rounded-[40px] flex items-center justify-center transition-all duration-300 ${
+                    className={`w-full h-[54px] rounded-[40px] flex items-center justify-center transition-[background-color,opacity] duration-200 ${
                         selectedIndex !== null
                             ? 'bg-gradient-to-l from-[#B900B0] to-[#D8003F] shadow-lg active:scale-95'
                             : 'bg-white/10 border border-solid border-white/10'

@@ -54,12 +54,12 @@ const MultiSelect = ({ question, options = [], maxSelections = 3, previousAnswer
                             <button
                                 key={i}
                                 onClick={() => toggleOption(i)}
-                                className={`px-5 py-3 rounded-full border border-solid backdrop-blur-md transition-all duration-300 ${
+                                className={`px-5 py-3 rounded-full border border-solid transition-colors duration-200 ${
                                     isSelected
                                         ? 'bg-white/20 border-white/40 shadow-[inset_0_2px_8px_rgba(255,255,255,0.1)]'
                                         : isDimmed
                                             ? 'bg-white/[0.02] border-white/[0.06] opacity-40'
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                            : 'bg-white/[0.07] border-white/10 hover:bg-white/10'
                                 }`}
                             >
                                 <span className={`font-medium text-[14px] leading-[20px] tracking-[0.02em] ${
@@ -78,7 +78,7 @@ const MultiSelect = ({ question, options = [], maxSelections = 3, previousAnswer
                 <button
                     onClick={handleContinue}
                     disabled={selectedIndices.size !== maxSelections}
-                    className={`w-full h-[54px] rounded-[40px] flex items-center justify-center transition-all duration-300 ${
+                    className={`w-full h-[54px] rounded-[40px] flex items-center justify-center transition-[background-color,opacity] duration-200 ${
                         selectedIndices.size === maxSelections
                             ? 'bg-gradient-to-l from-[#B900B0] to-[#D8003F] shadow-lg active:scale-95'
                             : 'bg-white/10 border border-solid border-white/10'

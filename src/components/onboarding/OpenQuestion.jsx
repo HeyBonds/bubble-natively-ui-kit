@@ -20,7 +20,7 @@ const OpenQuestion = ({ question, placeholder, charGuidance, previousAnswer, onA
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         placeholder={placeholder || 'Type your answer...'}
-                        className="w-full h-full resize-none rounded-2xl px-5 py-4 bg-white/5 backdrop-blur-md border border-solid border-white/10 text-white text-[15px] leading-[24px] font-medium placeholder:text-white/30 focus:outline-none focus:border-white/25 transition-colors"
+                        className="w-full h-full resize-none rounded-2xl px-5 py-4 bg-white/[0.07] border border-solid border-white/10 text-white text-[15px] leading-[24px] font-medium placeholder:text-white/30 focus:outline-none focus:border-white/25 transition-colors"
                     />
                     {charGuidance && (
                         <span className={`absolute bottom-3 right-4 text-[11px] font-medium ${
@@ -37,7 +37,7 @@ const OpenQuestion = ({ question, placeholder, charGuidance, previousAnswer, onA
                 <button
                     onClick={handleContinue}
                     disabled={!text.trim()}
-                    className={`w-full h-[54px] rounded-[40px] flex items-center justify-center transition-all duration-300 ${
+                    className={`w-full h-[54px] rounded-[40px] flex items-center justify-center transition-[background-color,opacity] duration-200 ${
                         text.trim()
                             ? 'bg-gradient-to-l from-[#B900B0] to-[#D8003F] shadow-lg active:scale-95'
                             : 'bg-white/10 border border-solid border-white/10'

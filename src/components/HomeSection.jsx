@@ -32,7 +32,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                     <div className="flex items-center gap-3">
                         {/* Send Icon */}
                         <button onClick={() => handleBubbleAction('send')} 
-                                className="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
+                                className="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -41,7 +41,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                         
                         {/* Chat Icon */}
                         <button onClick={() => handleBubbleAction('chat')} 
-                                className="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-all">
+                                className="w-10 h-10 rounded-full border border-solid border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
@@ -49,7 +49,7 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                         
                         {/* Notifications Icon with Badge */}
                         <button onClick={() => handleBubbleAction('notifications')} 
-                                className="relative w-10 h-10 rounded-full bg-[#FF2258] flex items-center justify-center hover:bg-[#FF2258]/90 transition-all">
+                                className="relative w-10 h-10 rounded-full bg-[#FF2258] flex items-center justify-center hover:bg-[#FF2258]/90 transition-colors">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -72,14 +72,14 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                     
                     {/* Navigation Arrows */}
                     <button onClick={() => handleBubbleAction('previous_journey')} 
-                            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-all z-10">
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 bg-white/[0.12] flex items-center justify-center hover:bg-white/20 transition-colors z-10">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
                     
                     <button onClick={() => handleBubbleAction('next_journey')} 
-                            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-all z-10">
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 bg-white/[0.12] flex items-center justify-center hover:bg-white/20 transition-colors z-10">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
@@ -101,12 +101,12 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                         {/* Action Buttons */}
                         <div className="flex items-center justify-center gap-3">
                             <button onClick={() => push('details', { title: currentJourney.title })} 
-                                    className="px-8 py-3 bg-[#FF2258] rounded-full font-jakarta font-semibold text-sm text-white hover:bg-[#FF2258]/90 transition-all btn-pressed">
+                                    className="px-8 py-3 bg-[#FF2258] rounded-full font-jakarta font-semibold text-sm text-white hover:bg-[#FF2258]/90 transition-colors btn-pressed">
                                 Select (Push Test)
                             </button>
                             
                             <button onClick={() => handleBubbleAction('change_topic')} 
-                                    className="px-6 py-3 border border-solid border-white/50 rounded-full font-jakarta font-medium text-sm text-white hover:bg-white/10 transition-all flex items-center gap-2">
+                                    className="px-6 py-3 border border-solid border-white/50 rounded-full font-jakarta font-medium text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <polyline points="1 4 1 10 7 10"></polyline>
                                     <polyline points="23 20 23 14 17 14"></polyline>

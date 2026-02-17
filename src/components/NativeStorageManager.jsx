@@ -54,7 +54,7 @@ const NativeStorageManager = () => {
 
   return (
     <div className="p-6 text-white space-y-6 max-w-md mx-auto">
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+      <div className="bg-white/10 rounded-2xl p-6 border border-white/20 shadow-xl">
         <h2 className="text-xl font-bold mb-2 text-[#FF2258]">Native Storage</h2>
         <p className="text-sm text-white/60 mb-6">
           Manage persistent data stored directly on this device.
@@ -89,13 +89,13 @@ const NativeStorageManager = () => {
           <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               onClick={handleSave}
-              className="bg-[#FF2258] hover:bg-[#FF2258]/80 text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-[#FF2258]/20"
+              className="bg-[#FF2258] hover:bg-[#FF2258]/80 text-white font-bold py-3 rounded-xl transition-colors active:scale-95 shadow-lg shadow-[#FF2258]/20"
             >
               Update ID
             </button>
             <button
               onClick={handleRemove}
-              className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-all active:scale-95 border border-white/10"
+              className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors active:scale-95 border border-white/10"
             >
               Remove
             </button>
@@ -103,7 +103,7 @@ const NativeStorageManager = () => {
 
           <button
             onClick={handleClear}
-            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium py-2 rounded-xl transition-all border border-red-500/20 text-xs"
+            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium py-2 rounded-xl transition-colors border border-red-500/20 text-xs"
           >
             Clear All Data
           </button>

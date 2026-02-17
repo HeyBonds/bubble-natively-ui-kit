@@ -93,7 +93,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                 overlay.style.transform = 'scale(1)'; // This REMOVES the translate(-50%, -50%)
                 
                 const overlayCircle = overlay.querySelector('div');
-                overlayCircle.style.transition = 'all 600ms cubic-bezier(0.4, 0, 0.2, 1)';
+                overlayCircle.style.transition = 'width 600ms cubic-bezier(0.4, 0, 0.2, 1), height 600ms cubic-bezier(0.4, 0, 0.2, 1)';
                 overlayCircle.style.width = '32px';
                 overlayCircle.style.height = '32px';
                 overlayCircle.querySelector('span').style.fontSize = '0.75rem';
@@ -169,7 +169,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                     
                     return (
                         <div key={optIndex}
-                             className={`daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ${isVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`}
+                             className={`daily-question-option relative w-full max-w-[315px] h-9 bg-white/[0.07] border border-solid border-white/10 rounded-lg cursor-pointer overflow-hidden transition-[background-color] duration-200 hover:bg-white/10 ${isVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`}
                              onClick={() => handleVote(opt.text, optIndex)}>
                              
                              <div className="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" 

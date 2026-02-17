@@ -205,7 +205,7 @@ const OnboardingFlow = ({
                     {/* Back Button */}
                     <button
                         onClick={currentStep === 0 && onBackOut ? onBackOut : goBack}
-                        className={`w-10 h-10 rounded-full border border-solid border-white/40 flex items-center justify-center transition-all shrink-0 ${
+                        className={`w-10 h-10 rounded-full border border-solid border-white/40 flex items-center justify-center transition-opacity duration-200 shrink-0 ${
                             currentStep === 0 && !onBackOut ? 'opacity-0 pointer-events-none' : 'hover:bg-white/10'
                         }`}
                     >
@@ -219,9 +219,9 @@ const OnboardingFlow = ({
                         <span className="font-semibold text-[10px] text-white tracking-[0.5px]">
                             {currentStep + 1}/{totalSteps}
                         </span>
-                        <div className="h-[14px] w-full max-w-[200px] rounded-[90px] border border-solid border-white/50 backdrop-blur-[15px] shadow-[0_4px_50px_rgba(0,0,0,0.2)] overflow-hidden">
+                        <div className="h-[14px] w-full max-w-[200px] rounded-[90px] border border-solid border-white/50 bg-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.15)] overflow-hidden">
                             <div
-                                className="h-full rounded-[90px] bg-white/30 transition-all duration-500 ease-out"
+                                className="h-full rounded-[90px] bg-white/30 transition-[width] duration-500 ease-out"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>

@@ -100,7 +100,7 @@ const MainTabs = ({ userProps }) => {
     return (
       <button 
         onClick={() => switchTab(id)}
-        className={`flex flex-col items-center justify-center gap-1 transition-all duration-300 ease-out transform ${
+        className={`flex flex-col items-center justify-center gap-1 transition-[color,transform,opacity] duration-200 ease-out ${
             isActive ? 'text-[#FF2258] font-bold scale-110 active-tab-shimmer' : 'text-white/60 font-medium scale-100 opacity-70'
         }`}
       >
@@ -126,7 +126,7 @@ const MainTabs = ({ userProps }) => {
          {/* Simple header if deep in stack */}
          {currentStack.length > 1 && (
              <div className="absolute top-4 left-4 z-50">
-                 <button onClick={pop} className="bg-black/20 p-2 rounded-full backdrop-blur-md text-white hover:bg-black/40 transition-colors">
+                 <button onClick={pop} className="bg-black/20 p-2 rounded-full bg-black/30 text-white hover:bg-black/40 transition-colors">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
                  </button>
              </div>
@@ -136,7 +136,7 @@ const MainTabs = ({ userProps }) => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-[#1F1A2E]/95 backdrop-blur-md border-t border-solid border-white/10 z-50">
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-[#1F1A2E] border-t border-solid border-white/10 z-50">
         <div className="flex items-center justify-around h-full max-w-[500px] mx-auto px-4">
             <NavButton id="home" label="Home" icon={Icons.home} />
             <NavButton id="learn" label="Learn" icon={Icons.learn} />

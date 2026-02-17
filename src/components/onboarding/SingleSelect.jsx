@@ -34,10 +34,10 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
                             <button
                                 key={i}
                                 onClick={() => handleSelect(opt, i)}
-                                className={`w-full text-left px-5 py-4 rounded-xl border border-solid backdrop-blur-md transition-all duration-300
+                                className={`w-full text-left px-5 py-4 rounded-xl border border-solid transition-colors duration-200
                                     ${isSelected
                                         ? 'bg-white/20 border-white/30 shadow-[inset_0_2px_8px_rgba(255,255,255,0.1)]'
-                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                        : 'bg-white/[0.07] border-white/10 hover:bg-white/10'
                                     }`}
                             >
                                 <span className="font-medium text-[14px] text-white leading-[22px] tracking-[0.02em]">
