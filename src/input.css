@@ -186,6 +186,41 @@
     animation: phaseFadeIn 0.35s ease-out forwards;
   }
 
+  /* ── Slider Stop Animations ── */
+  @keyframes stopReveal {
+    0%   { opacity: 0; transform: translateX(-20px) translateZ(0); }
+    60%  { opacity: 1; transform: translateX(4px) translateZ(0); }
+    100% { opacity: 1; transform: translateX(0) translateZ(0); }
+  }
+  .stop-reveal {
+    opacity: 0;
+    animation: stopReveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+
+  @keyframes emojiBounce {
+    0%   { transform: scale(1) translateZ(0); }
+    30%  { transform: scale(1.5) translateZ(0); }
+    50%  { transform: scale(0.85) translateZ(0); }
+    70%  { transform: scale(1.15) translateZ(0); }
+    100% { transform: scale(1) translateZ(0); }
+  }
+  .emoji-bounce {
+    animation: emojiBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+  }
+
+  @keyframes dotPop {
+    0%   { transform: scale(0) translateZ(0); }
+    60%  { transform: scale(1.3) translateZ(0); }
+    100% { transform: scale(1) translateZ(0); }
+  }
+  .dot-pop {
+    animation: dotPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+  }
+
   /* Generic exit (debug jumps, sign-in shortcut) */
   @keyframes phaseFadeOut {
     0%   { opacity: 1; transform: translateZ(0); }

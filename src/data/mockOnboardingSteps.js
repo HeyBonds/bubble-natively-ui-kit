@@ -19,12 +19,12 @@ const mockOnboardingSteps = [
         questionId: 'relationship_duration',
         question: 'How long have you been together?',
         stops: [
-            { label: 'Less than 6 months', variable: 'lt_6mo' },
-            { label: '6 months – 1 year', variable: '6mo_1yr' },
-            { label: '1 – 3 years', variable: '1_3yr' },
-            { label: '3 – 5 years', variable: '3_5yr' },
-            { label: '5 – 10 years', variable: '5_10yr' },
-            { label: '10+ years', variable: '10plus_yr' },
+            { label: 'Less than 6 months', variable: 'lt_6mo', emoji: '🥰' },
+            { label: '6 months – 1 year', variable: '6mo_1yr', emoji: '💌' },
+            { label: '1 – 3 years', variable: '1_3yr', emoji: '🤝' },
+            { label: '3 – 5 years', variable: '3_5yr', emoji: '🔥' },
+            { label: '5 – 10 years', variable: '5_10yr', emoji: '💎' },
+            { label: '10+ years', variable: '10plus_yr', emoji: '🏆' },
         ],
     },
 
