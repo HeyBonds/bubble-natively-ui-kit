@@ -156,9 +156,9 @@ const OnboardingFlow = ({
             }
         };
 
-        // First credit ever + not seen intro → play the full intro animation
+        // First credit ever + not seen intro → pause to let selection sink in, then play intro
         if (isNewAnswer && credits === 0 && !creditIntroSeen && !creditIntroRunningRef.current) {
-            triggerCreditIntro().then(advanceOrComplete);
+            setTimeout(() => triggerCreditIntro().then(advanceOrComplete), 500);
         } else {
             if (isNewAnswer) triggerCreditPulse();
             advanceOrComplete();
