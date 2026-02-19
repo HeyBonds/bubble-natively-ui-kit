@@ -127,11 +127,12 @@
             }
         }
 
-        // Auto-load first component
-        const firstKey = Object.keys(window.COMPONENTS)[0];
-        if (firstKey) {
-            select.value = firstKey;
-            loadComponent(firstKey);
+        // Auto-load from hash or first component
+        const hashKey = window.location.hash.slice(1);
+        const initialKey = (hashKey && window.COMPONENTS[hashKey]) ? hashKey : Object.keys(window.COMPONENTS)[0];
+        if (initialKey) {
+            select.value = initialKey;
+            loadComponent(initialKey);
         }
     </script>
 </body>
