@@ -9,8 +9,8 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
     };
 
     // Helper functions for Bubble interactions
-    const handleBubbleAction = (action, data = {}) => {
-        sendToBubble('bubble_fn_home', { action, ...data });
+    const handleBubbleAction = (action) => {
+        sendToBubble('bubble_fn_home', action);
     };
 
     return (

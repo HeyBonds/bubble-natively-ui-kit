@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bonds Tech Roadmap: From Prototype to Platform</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+  <style>
+    :root {
+      --brand: #FF2258;
+      --brand-gradient-start: #AD256C;
+      --brand-gradient-end: #E76B0C;
+      --surface: #2E2740;
+      --surface-dark: #1F1A2E;
+    }
+    .reveal {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    .reveal h1, .reveal h2, .reveal h3 {
+      text-transform: none;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .reveal h1 { font-size: 2.2em; }
+    .reveal h2 { font-size: 1.5em; margin-bottom: 0.3em; }
+    .reveal h3 { font-size: 1em; color: var(--brand); margin-top: 0.1em; }
+    .reveal .slide-background {
+      background: var(--surface-dark);
+    }
+    section.has-dark-background h1,
+    section.has-dark-background h2 {
+      color: #fff;
+    }
+    .brand-text { color: var(--brand); }
+    .brand-gradient {
+      background: linear-gradient(135deg, var(--brand-gradient-start), var(--brand-gradient-end));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .reveal table {
+      font-size: 0.65em;
+      margin: 0.5em auto;
+    }
+    .reveal table th {
+      background: var(--brand);
+      color: #fff;
+      font-weight: 600;
+      padding: 0.4em 0.8em;
+      border: none;
+    }
+    .reveal table td {
+      padding: 0.4em 0.8em;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      vertical-align: top;
+    }
+    .reveal table tr:nth-child(even) td {
+      background: rgba(255,255,255,0.03);
+    }
+    .reveal ul, .reveal ol {
+      font-size: 0.85em;
+      text-align: left;
+    }
+    .reveal li {
+      margin-bottom: 0.4em;
+      line-height: 1.4;
+    }
+    .reveal pre {
+      font-size: 0.55em;
+      box-shadow: none;
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 1em;
+      width: 90%;
+      margin: 0.5em auto;
+    }
+    .reveal code {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    }
+    .reveal blockquote {
+      background: rgba(255,34,88,0.1);
+      border-left: 4px solid var(--brand);
+      padding: 0.5em 1em;
+      font-style: normal;
+      width: 80%;
+      font-size: 0.85em;
+    }
+    .phase-box {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 0.5em 0.7em;
+      margin: 0.2em;
+      font-size: 0.6em;
+      text-align: left;
+      vertical-align: top;
+      width: 20%;
+    }
+    .phase-box.current {
+      border-color: rgba(255,255,255,0.3);
+      border-style: dashed;
+    }
+    .phase-box.active {
+      border-color: var(--brand);
+      box-shadow: 0 0 20px rgba(255,34,88,0.2);
+    }
+    .phase-label {
+      font-weight: 700;
+      font-size: 0.85em;
+      margin-bottom: 0.3em;
+    }
+    .phase-label.before { color: rgba(255,255,255,0.4); }
+    .phase-label.now { color: var(--brand); }
+    .phase-label.next { color: var(--brand-gradient-end); }
+    .phase-label.future { color: #888; }
+    .bar {
+      display: flex;
+      align-items: center;
+      margin: 0.15em 0;
+      font-size: 0.6em;
+    }
+    .bar-label {
+      width: 140px;
+      text-align: right;
+      padding-right: 10px;
+      color: rgba(255,255,255,0.7);
+    }
+    .bar-track {
+      flex: 1;
+      height: 18px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--brand-gradient-start), var(--brand-gradient-end));
+    }
+    .bar-fill.rewrite {
+      background: rgba(255,255,255,0.15);
+    }
+    .bar-value {
+      width: 65px;
+      padding-left: 8px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.9em;
+    }
+    .risk-tag {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      border-radius: 4px;
+      font-size: 0.75em;
+      font-weight: 600;
+    }
+    .risk-tag.high { background: rgba(255,34,88,0.2); color: var(--brand); }
+    .risk-tag.med { background: rgba(231,107,12,0.2); color: var(--brand-gradient-end); }
+    .risk-tag.low { background: rgba(100,200,100,0.2); color: #6c6; }
+    .two-col {
+      display: flex;
+      gap: 1.5em;
+      text-align: left;
+    }
+    .two-col > div { flex: 1; }
+    .subtitle {
+      font-size: 0.6em;
+      color: rgba(255,255,255,0.5);
+      margin-top: -0.5em;
+    }
+    .reveal .small { font-size: 0.7em; }
+    .reveal .dim { color: rgba(255,255,255,0.5); }
+    .callout {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 0.8em 1.2em;
+      margin: 0.5em auto;
+      width: 80%;
+      text-align: center;
+      font-size: 0.85em;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .step-num {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      text-align: center;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.8em;
+      margin-right: 0.3em;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.2em 0.6em;
+      border-radius: 6px;
+      font-size: 0.65em;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-left: 0.3em;
+    }
+    .status-badge.production { background: rgba(100,200,100,0.2); color: #6c6; }
+    .status-badge.poc { background: rgba(231,107,12,0.2); color: var(--brand-gradient-end); }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- TITLE -->
+      <section data-background="linear-gradient(135deg, #1F1A2E 0%, #2E2740 100%)">
+        <h1><span class="brand-gradient">Bonds Tech Roadmap</span></h1>
+        <p>From Prototype to Platform</p>
+        <p class="subtitle">3-phase migration strategy &mdash; Bubble + Natively &rarr; Fully Native</p>
+      </section>
+
+      <!-- WHERE WE ARE TODAY -->
+      <section data-background-color="#1F1A2E">
+        <h2>Where We Are Today</h2>
+        <p class="small" style="margin-bottom:0.5em;">The app currently runs as a <strong>Bubble-native app wrapped with Natively</strong>.</p>
+        <div class="callout" style="font-size:0.75em;text-align:left;">
+          <p style="margin:0 0 0.4em;"><strong>All UI</strong> &mdash; rendered by Bubble's built-in page system (Bubble elements, responsive engine, workflows)</p>
+          <p style="margin:0 0 0.4em;"><strong>Natively</strong> &mdash; wraps it in a native shell for App Store + bridge access to device capabilities</p>
+          <p style="margin:0;"><strong>Result</strong> &mdash; it works, but every UI change means fighting Bubble's layout engine, and the experience feels like a web app &mdash; because it is one</p>
+        </div>
+      </section>
+
+      <!-- PLATFORM LIMITATIONS -->
+      <section data-background-color="#1F1A2E">
+        <h2>Platform Limitations <span class="dim">(Today &amp; Phase 1)</span></h2>
+        <p class="small dim" style="margin-bottom:0.3em;">Inherent to WebView + Bubble. Persist through Phase 1 &mdash; only Phase 2 and 3 resolve them.</p>
+        <div style="font-size:0.7em;text-align:left;max-width:88%;margin:0 auto;">
+          <ul style="margin:0;">
+            <li><strong>WebView performance ceiling</strong> &mdash; browser engine inside the app. Can't match native rendering for scroll-heavy lists, gesture-driven animations, or complex transitions.</li>
+            <li><strong>Bubble vendor lock-in</strong> &mdash; business logic in visual workflows. Can't version-control, can't unit test, can't migrate without rewriting.</li>
+            <li><strong>Bridge overhead</strong> &mdash; every native call round-trips: JS &rarr; Natively &rarr; OS API &rarr; Natively &rarr; JS. Adds latency, limits architecture.</li>
+            <li><strong>No push / offline / background</strong> &mdash; WebView can't register for push tokens, run background tasks, or do offline-first sync. Native-only capabilities.</li>
+            <li><strong>Scale costs</strong> &mdash; Bubble pricing scales per user/workflow. No control over infrastructure.</li>
+          </ul>
+        </div>
+        <div class="callout" style="font-size:0.75em;">We validated with Bubble. Now we need infrastructure to <span class="brand-text">scale</span>.</div>
+      </section>
+
+      <!-- STRATEGY OVERVIEW -->
+      <section data-background-color="#1F1A2E">
+        <h2>Incremental, Not Big-Bang</h2>
+        <p class="small dim">Each phase ships a working product. Nothing is throwaway.</p>
+        <div style="margin-top:0.8em;">
+          <div class="phase-box current">
+            <div class="phase-label before">Current State</div>
+            <div style="font-size:0.85em;">Bubble UI (Pages)</div>
+            <div style="font-size:0.85em;">Natively Wrapper</div>
+            <div style="font-size:0.85em;">Bubble Everything</div>
+          </div>
+          <span style="font-size:1.2em;vertical-align:middle;margin:0 0.05em;">&#x2192;</span>
+          <div class="phase-box active">
+            <div class="phase-label now">Phase 1 &mdash; NOW</div>
+            <div style="font-size:0.85em;">React UI (WebView)</div>
+            <div style="font-size:0.85em;">Natively Bridge</div>
+            <div style="font-size:0.85em;">Bubble Backend</div>
+          </div>
+          <span style="font-size:1.2em;vertical-align:middle;margin:0 0.05em;">&#x2192;</span>
+          <div class="phase-box">
+            <div class="phase-label next">Phase 2 &mdash; NEXT</div>
+            <div style="font-size:0.85em;">React Native</div>
+            <div style="font-size:0.85em;">Native APIs</div>
+            <div style="font-size:0.85em;">Bubble as API</div>
+          </div>
+          <span style="font-size:1.2em;vertical-align:middle;margin:0 0.05em;">&#x2192;</span>
+          <div class="phase-box">
+            <div class="phase-label future">Phase 3 &mdash; FUTURE</div>
+            <div style="font-size:0.85em;">React Native</div>
+            <div style="font-size:0.85em;">Native APIs</div>
+            <div style="font-size:0.85em;">Real Backend</div>
+          </div>
+        </div>
+        <blockquote style="margin-top:0.8em;">Each phase reduces risk independently. We can stop at any phase and have a solid product.</blockquote>
+      </section>
+
+      <!-- VIBE CODING ADVANTAGE -->
+      <section data-background-color="#1F1A2E">
+        <h2>Why React? The <span class="brand-gradient">Vibe Coding</span> Advantage</h2>
+        <div style="font-size:0.78em;text-align:left;max-width:85%;margin:0.3em auto;">
+          <ul>
+            <li><strong>Largest ecosystem in frontend</strong> &mdash; most libraries, most Stack Overflow answers, most open-source code. AI models are trained on massive amounts of React &mdash; they generate higher-quality React code than any other framework.</li>
+            <li><strong>Declarative, component-based</strong> &mdash; self-contained units map perfectly to AI code generation. Describe what a component should do, get a complete working component.</li>
+            <li><strong>JSX is readable by humans and machines</strong> &mdash; markup + logic in one file. No template language, no separate files to sync. AI tools understand context and generate correct output.</li>
+            <li><strong>React &rarr; React Native is the same paradigm</strong> &mdash; hooks, state management, component patterns all transfer. AI tools that generate good React code also generate good React Native code.</li>
+          </ul>
+        </div>
+        <div class="callout" style="font-size:0.75em;">Phase 1 investment in React <strong>accelerates</strong> Phase 2. AI-assisted development works across both.</div>
+      </section>
+
+      <!-- PHASE 1: WHAT WE'VE BUILT -->
+      <section data-background-color="#1F1A2E">
+        <h2>Phase 1 <span class="brand-text">(NOW)</span></h2>
+        <h3>Bubble + Natively + React</h3>
+        <div class="two-col" style="font-size:0.68em;margin-top:0.3em;">
+          <div>
+            <p style="font-weight:600;color:var(--brand);margin-bottom:0.3em;">What We've Built So Far</p>
+            <ul style="font-size:0.92em;">
+              <li><strong>Daily Question</strong> <span class="status-badge production">PRODUCTION</span><br><span class="dim">Fully working &mdash; UI, animations, state, Bubble integration</span></li>
+              <li>Onboarding flow <span class="status-badge poc">POC</span></li>
+              <li>Tab navigation + stack routing <span class="status-badge poc">POC</span></li>
+              <li>Glassmorphic design system <span class="status-badge poc">POC</span></li>
+              <li>Device storage + analytics <span class="status-badge poc">POC</span></li>
+              <li>JS &harr; Bubble bridge (JS2B) <span class="status-badge production">WORKING</span></li>
+              <li>Build pipeline (Tailwind + esbuild + Preact) <span class="status-badge production">WORKING</span></li>
+            </ul>
+          </div>
+          <div>
+            <p style="font-weight:600;color:var(--brand);margin-bottom:0.3em;">Value Delivered</p>
+            <ul style="font-size:0.92em;">
+              <li><strong>Speed</strong> &mdash; Idea to App Store in weeks</li>
+              <li><strong>Validation</strong> &mdash; Real users, real data</li>
+              <li><strong>Iteration</strong> &mdash; Deploy instantly via CDN</li>
+              <li><strong>AI-assisted velocity</strong> &mdash; React ecosystem = high-quality AI-generated components</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- PHASE 1: WHAT'S AHEAD -->
+      <section data-background-color="#1F1A2E">
+        <h2>Phase 1 &mdash; <span class="brand-text">What's Ahead</span></h2>
+        <p class="small dim" style="margin-bottom:0.3em;">Phase 1 is far from done. The app is large, and migrating each screen involves significant work.</p>
+        <div style="font-size:0.73em;text-align:left;max-width:85%;margin:0 auto;">
+          <ul>
+            <li><strong>Screen-by-screen migration</strong> &mdash; every Bubble page rebuilt as a React component with new UI, styling, and interaction logic</li>
+            <li><strong>Workflow restructuring</strong> &mdash; moving to single-page React components changes how Bubble workflows operate. Frontend workflows shift from driving UI to responding to JS2B events. This touches every screen.</li>
+            <li><strong>JS2B integration per feature</strong> &mdash; each feature needs its own Toolbox element with Multiple Outputs, action routing, and wired Bubble workflows</li>
+            <li><strong>Testing across devices</strong> &mdash; each migrated screen needs validation to match or exceed the Bubble original</li>
+          </ul>
+        </div>
+        <div class="callout" style="font-size:0.75em;">
+          <strong>Key change:</strong> Bubble workflows shift from <em>driving UI directly</em> &rarr; <em>responding to JS2B actions from React</em>.<br>Mostly frontend workflow changes, heavily reliant on JS-to-Bubble bridge.
+        </div>
+      </section>
+
+      <!-- PHASE 1: SPECIFIC CHALLENGES -->
+      <section data-background-color="#1F1A2E">
+        <h2>Phase 1 &mdash; <span class="dim">Specific Challenges</span></h2>
+        <p class="small dim" style="margin-bottom:0.2em;">Beyond the platform limitations, Phase 1 introduces its own challenges:</p>
+        <div style="font-size:0.7em;text-align:left;max-width:88%;margin:0 auto;">
+          <ul>
+            <li><strong>Two UI paradigms during migration</strong> &mdash; some screens are Bubble pages, others are React components. Users see inconsistency; team maintains two rendering approaches at once.</li>
+            <li><strong>Workflow restructuring overhead</strong> &mdash; every screen migration requires rearchitecting its Bubble workflows. Frontend workflows shift from driving UI to responding to JS2B events &mdash; non-trivial, touches both sides.</li>
+            <li><strong>JS2B complexity scales with features</strong> &mdash; each screen adds another Toolbox element, more action routing, more Bubble workflows. Coordination overhead grows with app surface area.</li>
+            <li><strong>Debugging across the bridge</strong> &mdash; bugs can live in React, in Bubble workflows, or in JS2B communication between them. Tracing issues across this boundary is harder than debugging either side alone.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- PHASE 2: OVERVIEW -->
+      <section data-background-color="#1F1A2E">
+        <h2>Phase 2 <span style="color:var(--brand-gradient-end);">(NEXT)</span></h2>
+        <h3>React Native + Bubble APIs</h3>
+        <p class="small dim">Native app shell replaces WebView. Bubble stays as headless backend.</p>
+        <div class="two-col" style="font-size:0.65em;margin-top:0.5em;">
+          <div>
+            <p style="font-weight:600;color:#6c6;">What Carries Over</p>
+            <table>
+              <tbody>
+                <tr><td>Component structure</td><td>~80%</td></tr>
+                <tr><td>Business logic</td><td>~80%</td></tr>
+                <tr><td>User flows</td><td>100%</td></tr>
+                <tr><td>Design values</td><td>100%</td></tr>
+                <tr><td>Analytics</td><td>100%</td></tr>
+                <tr><td>API communication</td><td>~50%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <p style="font-weight:600;color:var(--brand);">What Gets Rewritten</p>
+            <table>
+              <tbody>
+                <tr><td>Styling</td><td>Tailwind &rarr; StyleSheet</td></tr>
+                <tr><td>Animations</td><td>CSS &rarr; Reanimated</td></tr>
+                <tr><td>Navigation</td><td>Custom &rarr; React Navigation</td></tr>
+                <tr><td>Storage</td><td>Natively SDK &rarr; MMKV</td></tr>
+                <tr><td>Native features</td><td>Bridge &rarr; Direct modules</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PHASE 2: NEW CAPABILITIES -->
+      <section data-background-color="#1F1A2E">
+        <h2>Phase 2 &mdash; <span style="color:var(--brand-gradient-end);">New Capabilities</span></h2>
+        <div style="font-size:0.8em;text-align:left;max-width:80%;margin:0 auto;">
+          <ul>
+            <li><strong>True native performance</strong> &mdash; 60fps animations, native scroll &amp; gestures</li>
+            <li><strong>Push notifications</strong> &mdash; FCM / APNs, fully controlled</li>
+            <li><strong>Offline support</strong> &mdash; local-first data with background sync</li>
+            <li><strong>Native animations</strong> &mdash; Reanimated / Moti, spring-based, gesture-driven</li>
+            <li><strong>Background tasks</strong> &mdash; periodic sync, silent push</li>
+            <li><strong>Deep linking</strong> &mdash; native URL schemes, universal links</li>
+          </ul>
+        </div>
+        <div class="callout" style="margin-top:0.6em;">
+          <strong>Bubble's role:</strong> headless backend via Data API + Workflow API<br>
+          <span class="dim small">No Bubble-side changes needed &rarr; zero backend migration risk</span>
+        </div>
+      </section>
+
+      <!-- PHASE 3 -->
+      <section data-background-color="#1F1A2E">
+        <h2>Phase 3 <span class="dim">(FUTURE)</span></h2>
+        <h3>React Native + Real Backend</h3>
+        <p class="small dim">Replace Bubble backend with real infrastructure. Frontend stays unchanged from Phase 2.</p>
+        <div class="two-col" style="font-size:0.75em;margin-top:0.5em;">
+          <div>
+            <p style="font-weight:600;color:var(--brand);">Value</p>
+            <ul style="font-size:0.95em;">
+              <li>Full control over logic &amp; data</li>
+              <li>Version-controlled, testable code</li>
+              <li>No per-user Bubble costs</li>
+              <li>Optimized queries &amp; caching</li>
+              <li>Any integration, any pipeline</li>
+            </ul>
+          </div>
+          <div>
+            <p style="font-weight:600;color:var(--brand-gradient-end);">When to Trigger</p>
+            <ul style="font-size:0.95em;">
+              <li>Bubble costs &gt; self-hosted costs</li>
+              <li>Logic exceeds Bubble workflows</li>
+              <li>Need WebSockets, ML, etc.</li>
+              <li>Performance requirements grow</li>
+            </ul>
+          </div>
+        </div>
+        <blockquote style="margin-top:0.6em;">Phase 3 is optional until scale demands it.</blockquote>
+      </section>
+
+      <!-- TRANSFER MATRIX -->
+      <section data-background-color="#1F1A2E">
+        <h2>What Transfers at Each Step</h2>
+        <div style="margin-top:0.3em;">
+          <p class="small" style="font-weight:600;margin-bottom:0.3em;">Phase 1 &rarr; Phase 2</p>
+          <div class="bar"><span class="bar-label">Component logic</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-value">80%</span></div>
+          <div class="bar"><span class="bar-label">Design values</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-value">100%</span></div>
+          <div class="bar"><span class="bar-label">User flows</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-value">100%</span></div>
+          <div class="bar"><span class="bar-label">Analytics</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-value">100%</span></div>
+          <div class="bar"><span class="bar-label">Styling</span><div class="bar-track"><div class="bar-fill rewrite" style="width:100%"></div></div><span class="bar-value">rewrite</span></div>
+          <div class="bar"><span class="bar-label">Animations</span><div class="bar-track"><div class="bar-fill rewrite" style="width:100%"></div></div><span class="bar-value">rewrite</span></div>
+          <div class="bar"><span class="bar-label">Navigation</span><div class="bar-track"><div class="bar-fill" style="width:30%"></div></div><span class="bar-value">partial</span></div>
+
+          <p class="small" style="font-weight:600;margin:0.5em 0 0.3em;">Phase 2 &rarr; Phase 3</p>
+          <div class="bar"><span class="bar-label">Frontend</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-value">100%</span></div>
+          <div class="bar"><span class="bar-label">Backend logic</span><div class="bar-track"><div class="bar-fill rewrite" style="width:100%"></div></div><span class="bar-value">rewrite</span></div>
+          <div class="bar"><span class="bar-label">Database</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-value">migrate</span></div>
+          <div class="bar"><span class="bar-label">Auth</span><div class="bar-track"><div class="bar-fill rewrite" style="width:100%"></div></div><span class="bar-value">replace</span></div>
+        </div>
+        <div class="callout" style="margin-top:0.5em;font-size:0.75em;">Phase 2 = <strong>frontend rewrite</strong> (backend stays) &nbsp;|&nbsp; Phase 3 = <strong>backend rewrite</strong> (frontend stays)<br>We never rewrite both at once.</div>
+      </section>
+
+      <!-- EFFORT -->
+      <section data-background-color="#1F1A2E">
+        <h2>Relative Effort</h2>
+        <div style="max-width:70%;margin:1em auto;font-size:0.8em;">
+          <div class="bar">
+            <span class="bar-label" style="width:100px;font-weight:600;color:var(--brand);">Phase 1</span>
+            <div class="bar-track" style="height:28px;"><div class="bar-fill" style="width:50%;"></div></div>
+            <span class="bar-value">In progress</span>
+          </div>
+          <div class="bar" style="margin:0.4em 0;">
+            <span class="bar-label" style="width:100px;font-weight:600;color:var(--brand-gradient-end);">Phase 2</span>
+            <div class="bar-track" style="height:28px;"><div class="bar-fill" style="width:70%;"></div></div>
+            <span class="bar-value">Significant</span>
+          </div>
+          <div class="bar">
+            <span class="bar-label" style="width:100px;font-weight:600;color:#888;">Phase 3</span>
+            <div class="bar-track" style="height:28px;"><div class="bar-fill" style="width:100%;"></div></div>
+            <span class="bar-value">Largest</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:1em;max-width:90%;margin:0.5em auto;font-size:0.62em;text-align:left;">
+          <div style="flex:1;">
+            <strong>Phase 1</strong> &mdash; large app, every screen migrated, all frontend workflows rearchitected for JS2B.
+          </div>
+          <div style="flex:1;">
+            <strong>Phase 2</strong> &mdash; repeating patterns screen by screen. First few screens set the formula.
+          </div>
+          <div style="flex:1;">
+            <strong>Phase 3</strong> &mdash; largest. Full backend from scratch: DB, API, auth, data migration, DevOps.
+          </div>
+        </div>
+      </section>
+
+      <!-- RISKS -->
+      <section data-background-color="#1F1A2E">
+        <h2>Risks &amp; Mitigations</h2>
+        <table style="font-size:0.55em;">
+          <thead>
+            <tr><th>Phase</th><th>Risk</th><th>Mitigation</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="risk-tag low">P1</span></td>
+              <td>WebView performance degrades with complexity</td>
+              <td>Simple animations, optimize bundle, lazy-load</td>
+            </tr>
+            <tr>
+              <td><span class="risk-tag med">P1</span></td>
+              <td>Workflow rearchitecting takes longer than expected</td>
+              <td>Start with simpler screens, build reusable JS2B patterns</td>
+            </tr>
+            <tr>
+              <td><span class="risk-tag med">P2</span></td>
+              <td>Bubble API rate limits / latency</td>
+              <td>Aggressive on-device caching, pagination, batching</td>
+            </tr>
+            <tr>
+              <td><span class="risk-tag high">P2</span></td>
+              <td>Scope creep during rewrite</td>
+              <td>Strict 1:1 feature parity first, enhancements after</td>
+            </tr>
+            <tr>
+              <td><span class="risk-tag high">P3</span></td>
+              <td>Data migration errors</td>
+              <td>Dry-run migrations, parallel backends, rollback plan</td>
+            </tr>
+            <tr>
+              <td><span class="risk-tag high">P3</span></td>
+              <td>Replicating all Bubble logic in code</td>
+              <td>Audit every workflow before starting; document edge cases</td>
+            </tr>
+            <tr>
+              <td><span class="risk-tag med">P3</span></td>
+              <td>Ops burden (DevOps, monitoring, on-call)</td>
+              <td>Managed services, serverless where possible</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- NEXT STEPS -->
+      <section data-background-color="#1F1A2E">
+        <h2>Next Steps</h2>
+        <p class="small dim" style="margin-bottom:0.3em;">Immediate actions to continue Phase 1</p>
+        <div style="text-align:left;max-width:80%;margin:0.3em auto;font-size:0.72em;">
+          <p><span class="step-num">1</span> <strong>Complete screen migrations</strong><br>
+            <span class="dim small" style="margin-left:38px;display:inline-block;">Prioritize high-traffic screens. Build each as a React component with JS2B bridge.</span></p>
+          <p><span class="step-num">2</span> <strong>Establish JS2B workflow patterns</strong><br>
+            <span class="dim small" style="margin-left:38px;display:inline-block;">Document and templatize Bubble workflow restructuring for each screen.</span></p>
+          <p><span class="step-num">3</span> <strong>Validate on lower-end devices</strong><br>
+            <span class="dim small" style="margin-left:38px;display:inline-block;">Stress-test migrated screens to confirm WebView performance is acceptable.</span></p>
+          <p><span class="step-num">4</span> <strong>Audit Bubble APIs</strong><br>
+            <span class="dim small" style="margin-left:38px;display:inline-block;">In parallel, document data types and workflows for Phase 2 readiness.</span></p>
+          <p><span class="step-num">5</span> <strong>Extract shared logic</strong><br>
+            <span class="dim small" style="margin-left:38px;display:inline-block;">Identify hooks, utilities, and constants that transfer directly to React Native.</span></p>
+        </div>
+      </section>
+
+      <!-- CLOSING -->
+      <section data-background="linear-gradient(135deg, #AD256C, #E76B0C)">
+        <h2 style="color:#fff;">Each phase is a product,<br>not a prototype.</h2>
+        <p style="font-size:0.85em;color:rgba(255,255,255,0.85);">We build on what we have &mdash; we don't throw it away.</p>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'none',
+      center: true,
+      width: 1280,
+      height: 800,
+      margin: 0.04,
+      controls: true,
+      progress: true,
+      slideNumber: true,
+    });
+  </script>
+</body>
+</html>
