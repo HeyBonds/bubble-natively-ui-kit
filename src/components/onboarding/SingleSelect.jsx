@@ -39,9 +39,9 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
     const listClass = refreshAnim === 'out' ? 'refresh-out' : refreshAnim === 'in' ? 'refresh-in' : '';
 
     return (
-        <>
+        <div className="flex flex-col h-full w-full">
             {/* Content */}
-            <div className="flex-1 px-7 pt-8 pb-6 w-full">
+            <div className="flex-1 px-7 pt-8 pb-6 w-full overflow-y-auto">
                 <h1 className="font-bold text-[22px] text-white leading-[30px] tracking-[0.02em] mb-8">
                     {question}
                 </h1>
@@ -72,7 +72,7 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
 
             {/* Footer */}
             {refreshable && (
-                <div className="pb-10 w-full flex flex-col items-center gap-1">
+                <div className="shrink-0 pb-10 w-full flex flex-col items-center gap-1">
                     <span className="font-medium text-[14px] text-white tracking-[0.5px]">
                         Choose the most relevant option
                     </span>
@@ -94,7 +94,7 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
                     </button>
                 </div>
             )}
-        </>
+        </div>
     );
 };
 

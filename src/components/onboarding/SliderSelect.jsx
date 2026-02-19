@@ -35,7 +35,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
     };
 
     return (
-        <>
+        <div className="flex flex-col h-full w-full">
             <div className="flex-1 px-7 pt-8 pb-6 w-full flex flex-col">
                 <h1 className="font-bold text-[22px] text-white leading-[30px] tracking-[0.02em] mb-6">
                     {question}
@@ -118,7 +118,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
             </div>
 
             {/* Continue Button */}
-            <div className="pb-10 px-7 w-full">
+            <div className="shrink-0 pb-10 px-7 w-full">
                 <button
                     onClick={handleContinue}
                     disabled={selectedIndex === null}
@@ -135,7 +135,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
                     </span>
                 </button>
             </div>
-        </>
+        </div>
     );
 };
 

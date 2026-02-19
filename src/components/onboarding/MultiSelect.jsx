@@ -34,7 +34,7 @@ const MultiSelect = ({ question, options = [], maxSelections = 3, previousAnswer
     const atMax = selectedIndices.size >= maxSelections;
 
     return (
-        <>
+        <div className="flex flex-col h-full w-full">
             <div className="flex-1 px-7 pt-8 pb-6 w-full overflow-y-auto">
                 <h1 className="font-bold text-[22px] text-white leading-[30px] tracking-[0.02em] mb-2">
                     {question}
@@ -74,7 +74,7 @@ const MultiSelect = ({ question, options = [], maxSelections = 3, previousAnswer
             </div>
 
             {/* Continue Button */}
-            <div className="pb-10 px-7 w-full">
+            <div className="shrink-0 pb-10 px-7 w-full">
                 <button
                     onClick={handleContinue}
                     disabled={selectedIndices.size !== maxSelections}
@@ -91,7 +91,7 @@ const MultiSelect = ({ question, options = [], maxSelections = 3, previousAnswer
                     </span>
                 </button>
             </div>
-        </>
+        </div>
     );
 };
 
