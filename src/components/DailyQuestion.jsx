@@ -172,7 +172,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                              className={`daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ${isVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`}
                              onClick={() => handleVote(opt.text, optIndex)}>
                              
-                             <div className="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg" 
+                             <div className="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg"
                                   style={{ width: isVoted ? `${opt.percent}%` : '0%' }}></div>
                              
                              <div className="relative flex items-center justify-between h-full px-[42px] z-10">
@@ -196,7 +196,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                   ) : (
                       <>
                         <div className="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in">
-                          <span className="font-bold">{userName}</span>, we would love to plan with you that first step to creating more 'you time'
+                          {userName}, We would love to answer any follow up question you might have about {category}
                         </div>
 
                         <button onClick={handleStart} 
