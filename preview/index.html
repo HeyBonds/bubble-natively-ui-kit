@@ -16,6 +16,9 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         #component-selector select {
             padding: 8px 12px;
@@ -24,14 +27,39 @@
             font-size: 14px;
             cursor: pointer;
         }
+        #component-selector label {
+            font-size: 12px;
+            color: #666;
+            font-family: sans-serif;
+        }
+        #device-info {
+            font-size: 11px;
+            color: #999;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
     <div id="component-selector">
-        <label for="component-select">Component:</label>
-        <select id="component-select" onchange="loadComponent(this.value)">
-            <option value="">Select a component...</option>
-        </select>
+        <div>
+            <label for="component-select">Component</label>
+            <select id="component-select" onchange="loadComponent(this.value)">
+                <option value="">Select a component...</option>
+            </select>
+        </div>
+        <div>
+            <label for="device-select">Device</label>
+            <select id="device-select" onchange="changeDevice(this.value)">
+                <option value="375x812">iPhone X/11/12 (375x812)</option>
+                <option value="375x667">iPhone SE/6/7/8 (375x667)</option>
+                <option value="390x844">iPhone 12/13/14 (390x844)</option>
+                <option value="430x932">iPhone 14 Pro Max (430x932)</option>
+                <option value="360x640">Android Small (360x640)</option>
+                <option value="360x780">Android Medium (360x780)</option>
+                <option value="412x915">Pixel 7 (412x915)</option>
+            </select>
+            <div id="device-info">375 x 812</div>
+        </div>
     </div>
 
     <div id="phone-wrapper"></div>
@@ -50,6 +78,17 @@
             option.textContent = window.COMPONENTS[key].name;
             select.appendChild(option);
         });
+
+        function changeDevice(size) {
+            const [w, h] = size.split('x').map(Number);
+            const wrapper = document.getElementById('phone-wrapper');
+            wrapper.style.width = w + 'px';
+            wrapper.style.height = h + 'px';
+            document.getElementById('device-info').textContent = w + ' x ' + h;
+            // Re-render current component to adapt
+            const currentKey = document.getElementById('component-select').value;
+            if (currentKey) loadComponent(currentKey);
+        }
 
         function loadComponent(componentKey) {
             if (!componentKey) return;

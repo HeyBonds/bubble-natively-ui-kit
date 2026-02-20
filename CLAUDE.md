@@ -41,6 +41,14 @@ Preview URL: `http://localhost:8000/preview/index.html`
 - **Borders**: Bubble's CSS reset hides borders. Always add `border-solid` (e.g., `border border-solid border-white/10`).
 - **Glassmorphism pattern**: `bg-white/5 backdrop-blur-md border border-solid border-white/10`
 - **Custom animations**: Defined as `@keyframes` in `src/input.css`. Use corresponding Tailwind classes (`animate-fade-in`, `animate-slide-in-right`, etc.).
+- **Full-screen layout rules** (scale to fit, scroll as last resort):
+  - Components use `h-full` (not `h-screen`) to fill their container. The mounting container must have an explicit height (Bubble provides this; the preview phone wrapper sets it via CSS).
+  - Use `flex flex-col` + `flex-1` spacers to distribute content within the screen and anchor footer/CTA to the bottom.
+  - Use `overflow-x-hidden` on the outer wrapper. Only add `overflow-y-auto` on the inner content area as a fallback for very small screens.
+  - Prefer Tailwind's built-in rem-based spacing (`mb-8`, `mb-10`, `gap-4`) over arbitrary px values. Rem scales with root font-size.
+  - Avoid large fixed px margins (`mb-[68px]`). Content length varies across languages and data.
+  - Test every screen at iPhone SE (375x667) and Android Small (360x640) with max-length content.
+  - **Future**: Migrate to rem-based point system (`html { font-size: calc(100vw / 375) }`) so all measurements scale proportionally across devices, similar to Android dp.
 
 ## Design Tokens
 

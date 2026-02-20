@@ -12,15 +12,15 @@ window.COMPONENTS = {
     'daily-question': {
         name: 'Daily Question',
         renderReact: (container) => window.appUI.mountDailyQuestion(container, {
-            credits: 13,
-            category: 'Time Together',
-            question: 'How much intentional one-on-one time do you have in a typical week?',
-            userName: 'Danny',
+            credits: 7,
+            category: 'Emotional Responsibility',
+            question: 'When your partner is in a bad mood, how responsible do you feel for fixing it?',
+            userName: 'Isha',
             options: [
-                { text: 'Less than 1 hour', percent: 10, index: 1 },
-                { text: '1-3 hours', percent: 45, index: 2 },
-                { text: '4-7 hours', percent: 30, index: 3 },
-                { text: 'More than 7 hours', percent: 15, index: 4 }
+                { text: 'Quite a bit', percent: 16, index: 1 },
+                { text: 'Not at all', percent: 15, index: 2 },
+                { text: 'A lot', percent: 48, index: 3 },
+                { text: 'A little', percent: 21, index: 4 }
             ]
         })
     },
