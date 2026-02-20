@@ -91,7 +91,6 @@ Phase 1 is far from done. The app is large, and migrating each screen from Bubbl
 ### Value Delivered
 
 - **Speed**: Product went from idea to App Store in weeks, not months
-- **Validation**: Real users, real feedback, real data — before investing in native infrastructure
 - **Iteration**: UI changes deploy instantly (CDN cache bust), no app store review needed for most updates
 - **AI-assisted velocity**: React's ecosystem means AI tools generate high-quality components, accelerating screen-by-screen migration
 

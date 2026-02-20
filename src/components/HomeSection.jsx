@@ -100,9 +100,9 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                         
                         {/* Action Buttons */}
                         <div className="flex items-center justify-center gap-3">
-                            <button onClick={() => push('details', { title: currentJourney.title })} 
-                                    className="px-8 py-3 bg-[#FF2258] rounded-full font-jakarta font-semibold text-sm text-white hover:bg-[#FF2258]/90 transition-colors btn-pressed">
-                                Select (Push Test)
+                            <button onClick={() => push('details', { title: currentJourney.title })}
+                                    className="px-6 py-3 bg-[#FF2258] rounded-full font-jakarta font-semibold text-sm text-white whitespace-nowrap hover:bg-[#FF2258]/90 transition-colors btn-pressed">
+                                Select
                             </button>
                             
                             <button onClick={() => handleBubbleAction('change_topic')} 
