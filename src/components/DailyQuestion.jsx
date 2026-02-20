@@ -130,8 +130,8 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
     };
 
     return (
-        <div className="relative w-full min-h-screen overflow-hidden gradient-purple-orange font-poppins">
-            
+        <div className="relative w-full h-full overflow-x-hidden gradient-purple-orange font-poppins flex flex-col">
+
             {/* Top Bar */}
             <div className="absolute top-0 left-0 w-full z-20 pointer-events-none">
                 <button onClick={handleClose}
@@ -143,7 +143,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
 
                 <div className="absolute top-4 -right-[95px] z-10">
                   <div className="relative w-[180px] h-10 rounded-full flex items-center border border-solid border-white/50">
-                    <div ref={creditsCircleRef} id="creditsCircle" 
+                    <div ref={creditsCircleRef} id="creditsCircle"
                          className="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center shadow-lg">
                       <span className="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">{credits}</span>
                     </div>
@@ -152,29 +152,29 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                 </div>
             </div>
 
-            <div className="px-9 pt-[78px] max-w-[375px] mx-auto relative z-10">
-              
-              <div className="font-jakarta font-medium text-lg text-white mb-[68px]">
+            <div className="flex flex-col flex-1 min-h-0 px-9 pt-[78px] pb-8 max-w-[375px] mx-auto relative z-10 overflow-y-auto">
+
+              <div className="font-jakarta font-medium text-lg text-white mb-8">
                 {category || 'Time Together'}
               </div>
 
-              <div className="font-poppins font-semibold text-xl text-white leading-[30px] tracking-[0.02em] mb-10 max-w-[303px]">
+              <div className="font-poppins font-semibold text-xl text-white leading-[30px] tracking-[0.02em] mb-8 max-w-[303px]">
                 {question}
               </div>
 
-              <div className="space-y-[19px] mb-16">
+              <div className="space-y-4">
                 {options.map((opt, i) => {
                     const optIndex = opt.index !== undefined ? opt.index : (i + 1);
                     const isSelected = isVoted && (selectedAnswer === optIndex);
-                    
+
                     return (
                         <div key={optIndex}
-                             className={`daily-question-option relative w-full max-w-[315px] h-9 bg-white/5 border border-solid border-white/10 backdrop-blur-md rounded-lg cursor-pointer overflow-hidden transition-all duration-300 hover:bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] ${isVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`}
+                             className={`daily-question-option relative w-full max-w-[315px] h-9 bg-white/[0.07] border border-solid border-white/10 rounded-lg cursor-pointer overflow-hidden transition-[background-color] duration-200 hover:bg-white/10 ${isVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`}
                              onClick={() => handleVote(opt.text, optIndex)}>
-                             
+
                              <div className="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg"
                                   style={{ width: isVoted ? `${opt.percent}%` : '0%' }}></div>
-                             
+
                              <div className="relative flex items-center justify-between h-full px-[42px] z-10">
                                 <span className="font-poppins font-bold text-sm text-[#F8F8F8] tracking-[0.02em]">{opt.text}</span>
                                 <span className={`percentage font-poppins text-xs text-[#F8F8F8] tracking-[0.02em] ${isVoted ? 'opacity-100' : 'opacity-0'}`}
@@ -187,8 +187,10 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                 })}
               </div>
 
-              <div className="min-h-[100px] flex flex-col items-center justify-start">
-                  
+              <div className="flex-1" />
+
+              <div className="flex flex-col items-center justify-center py-4">
+
                   {!showFooterAfter ? (
                       <div className="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px]">
                         Vote and see the live results and also gain 1 credits
@@ -199,7 +201,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                           {userName}, We would love to answer any follow up question you might have about {category}
                         </div>
 
-                        <button onClick={handleStart} 
+                        <button onClick={handleStart}
                                 className="px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto">
                           <span className="font-jakarta font-semibold text-[17px] text-[#E76B0C] tracking-[0.7px] pointer-events-none">Start</span>
                         </button>
