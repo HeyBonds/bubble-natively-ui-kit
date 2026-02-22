@@ -56,45 +56,219 @@ const THEMES = {
 const DARK_MODE_OPTIONS = ['system', 'on', 'off'];
 const DARK_MODE_LABELS = { system: 'System', on: 'On', off: 'Off' };
 
-// Profile section with dark mode selector
-const ProfileSection = ({ theme, darkModePref, setDarkModePref }) => (
-  <div className="p-6">
-    <h2 className="text-2xl font-bold mb-6" style={{ color: theme.textPrimary }}>Profile</h2>
-    <div className="rounded-2xl p-4 border border-solid" style={{ background: theme.glassBg, borderColor: theme.glassBorder, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', transition: 'background 0.3s ease' }}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-          <span className="font-semibold text-[15px]" style={{ color: theme.textPrimary }}>Dark Mode</span>
-        </div>
-        {/* Segmented control */}
-        <div className="flex rounded-xl overflow-hidden" style={{ background: theme.border }}>
-          {DARK_MODE_OPTIONS.map((opt, i) => {
-            const active = darkModePref === opt;
-            const nextActive = darkModePref === DARK_MODE_OPTIONS[i + 1];
-            const showDivider = i < DARK_MODE_OPTIONS.length - 1 && !active && !nextActive;
-            return (
-              <div key={opt} className="flex items-center">
-                <button
-                  onClick={() => setDarkModePref(opt)}
-                  className="px-3 py-1.5 text-[12px] font-bold transition-all duration-200"
-                  style={{
-                    background: active ? '#E44B8E' : 'transparent',
-                    color: active ? '#fff' : theme.textSecondary,
-                  }}
-                >
-                  {DARK_MODE_LABELS[opt]}
-                </button>
-                {showDivider && <div style={{ width: 1, height: 14, background: theme.textMuted }} />}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+// ── Reusable profile building blocks ──────────────────────────────────
+
+const glassStyle = (theme) => ({
+  background: theme.glassBg,
+  borderColor: theme.glassBorder,
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+});
+
+const SectionLabel = ({ children, theme }) => (
+  <p className="font-jakarta font-bold text-[10px] uppercase tracking-[2px] mb-2 px-1" style={{ color: theme.textMuted }}>
+    {children}
+  </p>
+);
+
+const SettingsRow = ({ icon, label, right, theme, last }) => (
+  <div
+    className={`flex items-center justify-between py-3 px-1 ${last ? '' : 'border-b border-solid'}`}
+    style={{ borderColor: last ? 'transparent' : theme.border }}
+  >
+    <div className="flex items-center gap-3">
+      {icon}
+      <span className="font-semibold text-[14px]" style={{ color: theme.textPrimary }}>{label}</span>
     </div>
+    {right}
   </div>
 );
+
+const Chevron = ({ theme }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
+// ── Mock data (will come from userProps later) ──────────────────────
+const MOCK_PROFILE = {
+  name: 'Testjan28',
+  email: 'testjan28@gmail.com',
+  partner: null,
+  pillars: ['Support', 'Work-life-balance', 'Flexibility'],
+};
+
+// ── Profile Section ─────────────────────────────────────────────────
+
+const ProfileSection = ({ theme, darkModePref, setDarkModePref }) => {
+  const glass = glassStyle(theme);
+  const profile = MOCK_PROFILE;
+
+  return (
+    <div className="px-5 pt-6 pb-10 font-jakarta">
+
+      {/* ── Header: Avatar + Name + Partner ── */}
+      <div className="flex items-center gap-4 mb-2">
+        {/* Avatar */}
+        <div className="rounded-full flex items-center justify-center" style={{ width: 56, height: 56, background: theme.border }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <div>
+          <p className="font-extrabold text-[20px]" style={{ color: theme.textPrimary }}>{profile.name}</p>
+          <p className="text-[12px]" style={{ color: theme.textSecondary }}>{profile.email}</p>
+        </div>
+      </div>
+
+      {/* Partner status */}
+      <div className="rounded-2xl p-4 mt-4 border border-solid" style={glass}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full flex items-center justify-center" style={{ width: 36, height: 36, border: `1.5px dashed ${theme.textMuted}` }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </div>
+            <span className="font-semibold text-[14px]" style={{ color: theme.textSecondary }}>No partner connected</span>
+          </div>
+          <button className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#E44B8E', color: '#E44B8E' }}>
+            Invite
+          </button>
+        </div>
+      </div>
+
+      {/* ── Relationship ── */}
+      <div className="mt-6">
+        <SectionLabel theme={theme}>Relationship</SectionLabel>
+        <div className="rounded-2xl p-4 border border-solid" style={glass}>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="font-semibold text-[14px] mb-2" style={{ color: theme.textPrimary }}>Your Pillars</p>
+              <div className="flex flex-wrap gap-2">
+                {profile.pillars.map(p => (
+                  <span key={p} className="rounded-full px-3 py-1 text-[11px] font-bold border border-solid" style={{ borderColor: theme.border, color: theme.textSecondary }}>
+                    {p}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <Chevron theme={theme} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Preferences ── */}
+      <div className="mt-6">
+        <SectionLabel theme={theme}>Preferences</SectionLabel>
+        <div className="rounded-2xl px-4 border border-solid" style={glass}>
+          <SettingsRow
+            theme={theme}
+            last
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            }
+            label="Dark Mode"
+            right={
+              <div className="flex rounded-xl overflow-hidden" style={{ background: theme.border }}>
+                {DARK_MODE_OPTIONS.map((opt, i) => {
+                  const active = darkModePref === opt;
+                  const nextActive = darkModePref === DARK_MODE_OPTIONS[i + 1];
+                  const showDivider = i < DARK_MODE_OPTIONS.length - 1 && !active && !nextActive;
+                  return (
+                    <div key={opt} className="flex items-center">
+                      <button
+                        onClick={() => setDarkModePref(opt)}
+                        className="px-3 py-1.5 text-[12px] font-bold transition-all duration-200"
+                        style={{
+                          background: active ? '#E44B8E' : 'transparent',
+                          color: active ? '#fff' : theme.textSecondary,
+                        }}
+                      >
+                        {DARK_MODE_LABELS[opt]}
+                      </button>
+                      {showDivider && <div style={{ width: 1, height: 14, background: theme.textMuted }} />}
+                    </div>
+                  );
+                })}
+              </div>
+            }
+          />
+        </div>
+      </div>
+
+      {/* ── Account ── */}
+      <div className="mt-6">
+        <SectionLabel theme={theme}>Account</SectionLabel>
+        <div className="rounded-2xl px-4 border border-solid" style={glass}>
+          <SettingsRow
+            theme={theme}
+            last
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-10 7L2 7" />
+              </svg>
+            }
+            label="Account Info"
+            right={<Chevron theme={theme} />}
+          />
+        </div>
+      </div>
+
+      {/* ── Support ── */}
+      <div className="mt-6">
+        <SectionLabel theme={theme}>Support</SectionLabel>
+        <div className="rounded-2xl px-4 border border-solid" style={glass}>
+          <SettingsRow
+            theme={theme}
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            }
+            label="Share Feedback"
+            right={<Chevron theme={theme} />}
+          />
+          <SettingsRow
+            theme={theme}
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+              </svg>
+            }
+            label="Terms of Service"
+            right={<Chevron theme={theme} />}
+          />
+          <SettingsRow
+            theme={theme}
+            last
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            }
+            label="Privacy Policy"
+            right={<Chevron theme={theme} />}
+          />
+        </div>
+      </div>
+
+      {/* ── Bottom actions ── */}
+      <div className="mt-8 flex flex-col items-center gap-3">
+        <button className="font-bold text-[14px] py-2 px-8 rounded-full border border-solid" style={{ borderColor: theme.border, color: theme.textSecondary }}>
+          Log Out
+        </button>
+        <button className="text-[12px] font-semibold" style={{ color: theme.textMuted }}>
+          Delete Account
+        </button>
+        <p className="text-[10px] mt-2" style={{ color: theme.textMuted }}>v1.0.0</p>
+      </div>
+
+    </div>
+  );
+};
 
 // Placeholder components for other sections
 const PlaceholderSection = ({ title, theme }) => (
