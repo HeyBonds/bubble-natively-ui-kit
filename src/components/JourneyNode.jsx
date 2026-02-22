@@ -1,7 +1,7 @@
 import React from 'react';
 
 // ── Inline SVG Icons ──────────────────────────────────────────────────
-const NodeIcons = {
+const nodeIcons = (theme) => ({
     check: (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <polyline points="4 12 10 18 20 6" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
@@ -14,8 +14,8 @@ const NodeIcons = {
     ),
     lock: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <rect x="5" y="11" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.35)" strokeWidth="2" />
-            <path d="M8 11V7a4 4 0 1 1 8 0v4" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round" />
+            <rect x="5" y="11" width="14" height="10" rx="2" stroke={theme.lockedIcon} strokeWidth="2" />
+            <path d="M8 11V7a4 4 0 1 1 8 0v4" stroke={theme.lockedIcon} strokeWidth="2" strokeLinecap="round" />
         </svg>
     ),
     trophy: (
@@ -27,24 +27,24 @@ const NodeIcons = {
     ),
     diamond: (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M6 3h12l4 7-10 12L2 10l4-7z" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M6 3h12l4 7-10 12L2 10l4-7z" stroke={theme.lockedIcon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
     ),
-};
+});
 
 const SCREEN_WIDTH = 375;
 const POPOVER_WIDTH = 220;
 const POPOVER_PADDING = 12;
 
 // ── Floating "START" label above current node ─────────────────────────
-const FloatingLabel = ({ text }) => (
+const FloatingLabel = ({ text, theme }) => (
     <div className="absolute -top-12 left-1/2 z-10 animate-float">
-        <div className="relative bg-[#2B2B3D] border-2 border-solid border-[#4A4A5E] rounded-xl px-4 py-1.5 whitespace-nowrap">
-            <span className="font-jakarta font-extrabold text-[13px] text-white tracking-[1.5px] uppercase">
+        <div className="relative border-2 border-solid rounded-xl px-4 py-1.5 whitespace-nowrap" style={{ background: theme.floatBg, borderColor: theme.floatBorder }}>
+            <span className="font-jakarta font-extrabold text-[13px] tracking-[1.5px] uppercase" style={{ color: theme.textPrimary }}>
                 {text}
             </span>
-            <div className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px] border-t-[#4A4A5E]" />
-            <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#2B2B3D]" />
+            <div className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px]" style={{ borderTopColor: theme.floatBorder }} />
+            <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px]" style={{ borderTopColor: theme.floatBg }} />
         </div>
     </div>
 );
@@ -109,7 +109,7 @@ const NodePopover = ({ node, color, onStart, nodeX }) => {
 };
 
 // ── Component ─────────────────────────────────────────────────────────
-const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap, onStart, accentColor, accentDark }) => {
+const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap, onStart, accentColor, accentDark, theme }) => {
     const { title, status, milestone } = node;
     const isCompleted = status === 'completed';
     const isCurrent = status === 'current';
@@ -118,27 +118,28 @@ const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap,
     const size = milestone ? 72 : isCurrent ? 68 : 60;
     const depth = milestone ? 6 : 5;
 
-    const chapterColor = accentColor || '#FF2258';
-    const chapterDark = accentDark || '#C4194A';
-    const lockedColor = '#3C3C4E';
-    const lockedDark = '#2A2A3A';
+    const chapterColor = accentColor || '#E44B8E';
+    const chapterDark = accentDark || '#B83A72';
+    const lockedColor = theme.lockedBg;
+    const lockedDark = theme.lockedShadow;
     const goldColor = '#FFB800';
     const goldDark = '#CC9300';
 
+    const icons = nodeIcons(theme);
     let bgColor, shadowColor, icon;
 
     if (milestone) {
         if (isCompleted) {
-            bgColor = goldColor; shadowColor = goldDark; icon = NodeIcons.trophy;
+            bgColor = goldColor; shadowColor = goldDark; icon = icons.trophy;
         } else {
-            bgColor = lockedColor; shadowColor = lockedDark; icon = NodeIcons.diamond;
+            bgColor = lockedColor; shadowColor = lockedDark; icon = icons.diamond;
         }
     } else if (isCompleted) {
-        bgColor = chapterColor; shadowColor = chapterDark; icon = NodeIcons.check;
+        bgColor = chapterColor; shadowColor = chapterDark; icon = icons.check;
     } else if (isCurrent) {
-        bgColor = chapterColor; shadowColor = chapterDark; icon = NodeIcons.star;
+        bgColor = chapterColor; shadowColor = chapterDark; icon = icons.star;
     } else {
-        bgColor = lockedColor; shadowColor = lockedDark; icon = NodeIcons.lock;
+        bgColor = lockedColor; shadowColor = lockedDark; icon = icons.lock;
     }
 
     const popoverColor = accentColor || bgColor;
@@ -148,7 +149,7 @@ const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap,
             className="absolute flex flex-col items-center"
             style={{ ...style, width: size + 40, marginLeft: -(size + 40) / 2 }}
         >
-            {showFloatingLabel && !isSelected && <FloatingLabel text="START" />}
+            {showFloatingLabel && !isSelected && <FloatingLabel text="START" theme={theme} />}
 
             <div className="relative">
                 <button
@@ -173,9 +174,9 @@ const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap,
             </div>
 
             {!milestone && (
-                <span className={`mt-2 text-[10px] font-jakarta font-bold text-center leading-tight tracking-wide ${
-                    isCompleted ? 'text-white/50' : isCurrent ? 'text-white' : 'text-white/25'
-                }`}>
+                <span className="mt-2 text-[10px] font-jakarta font-bold text-center leading-tight tracking-wide" style={{
+                    color: isCompleted ? theme.labelCompleted : isCurrent ? theme.labelCurrent : theme.labelLocked,
+                }}>
                     {title}
                 </span>
             )}

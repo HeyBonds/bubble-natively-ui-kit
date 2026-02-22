@@ -12,11 +12,11 @@ const X_POSITIONS = [260, 188, 115, 188];
 
 // Section banner colors — each chapter gets a themed color
 const SECTION_COLORS = [
-    { bg: '#FF2258', dark: '#C4194A' },
-    { bg: '#58CC02', dark: '#44A302' },
-    { bg: '#CE82FF', dark: '#A35CD4' },
-    { bg: '#1CB0F6', dark: '#1899D6' },
-    { bg: '#FF9600', dark: '#CC7800' },
+    { bg: '#E44B8E', dark: '#B83A72' },
+    { bg: '#F06862', dark: '#C0534E' },
+    { bg: '#8558C8', dark: '#6A46A0' },
+    { bg: '#4545B5', dark: '#363690' },
+    { bg: '#42A8C8', dark: '#348698' },
 ];
 
 // Determine chapter status from its nodes
@@ -28,12 +28,12 @@ const getChapterStatus = (chapter) => {
     return 'locked';
 };
 
-const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect }) => (
+const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect, theme }) => (
     <button
         onClick={() => onSelect()}
         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200"
         style={{
-            background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+            background: isActive ? theme.menuActive : 'transparent',
         }}
     >
         {/* Status indicator */}
@@ -42,8 +42,8 @@ const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect }) => (
             style={{
                 width: 32,
                 height: 32,
-                backgroundColor: status === 'locked' ? '#3C3C4E' : color.bg,
-                boxShadow: status === 'locked' ? '0 2px 0 0 #2A2A3A' : `0 2px 0 0 ${color.dark}`,
+                backgroundColor: status === 'locked' ? theme.lockedBg : color.bg,
+                boxShadow: status === 'locked' ? `0 2px 0 0 ${theme.lockedShadow}` : `0 2px 0 0 ${color.dark}`,
             }}
         >
             {status === 'completed' ? (
@@ -56,32 +56,32 @@ const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect }) => (
                 </svg>
             ) : (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <rect x="5" y="11" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                    <path d="M8 11V7a4 4 0 1 1 8 0v4" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" />
+                    <rect x="5" y="11" width="14" height="10" rx="2" stroke={theme.lockedIcon} strokeWidth="2" />
+                    <path d="M8 11V7a4 4 0 1 1 8 0v4" stroke={theme.lockedIcon} strokeWidth="2" strokeLinecap="round" />
                 </svg>
             )}
         </div>
 
         {/* Chapter info */}
         <div className="flex-1 text-left">
-            <p className="font-bold text-[10px] uppercase tracking-widest" style={{ color: status === 'locked' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)' }}>
+            <p className="font-bold text-[10px] uppercase tracking-widest" style={{ color: status === 'locked' ? theme.textMuted : theme.textSecondary }}>
                 Chapter {chapter.index}
             </p>
-            <p className="font-extrabold text-[14px] leading-tight" style={{ color: status === 'locked' ? 'rgba(255,255,255,0.35)' : 'white' }}>
+            <p className="font-extrabold text-[14px] leading-tight" style={{ color: status === 'locked' ? theme.lockedIcon : theme.textPrimary }}>
                 {chapter.title}
             </p>
         </div>
 
         {/* Active arrow */}
         {isActive && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.textPrimary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
             </svg>
         )}
     </button>
 );
 
-const JourneyPath = ({ credits = 0 }) => {
+const JourneyPath = ({ credits = 0, theme }) => {
     const { chapters } = mockJourneyData;
     const scrollRef = useRef(null);
     const [activeChapterIdx, setActiveChapterIdx] = useState(() => {
@@ -195,17 +195,18 @@ const JourneyPath = ({ credits = 0 }) => {
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
-                background: '#1B1B2F',
+                background: theme.bg,
+                transition: 'background 0.3s ease',
             }}
         >
             {/* Top stats bar */}
             <div className="flex items-center justify-center gap-7 px-4 pt-3 pb-4" style={{ flexShrink: 0 }}>
                 {/* Coins */}
                 <div className="flex items-center gap-2">
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 35% 30%, #E0E0E0, #A0A0A0 70%, #888)', boxShadow: '0 2px 0 0 #707070' }}>
+                    <div className="coin-shimmer" style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 35% 30%, #E0E0E0, #A0A0A0 70%, #888)', boxShadow: '0 2px 0 0 #707070' }}>
                         <span className="font-extrabold text-[14px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>B</span>
                     </div>
-                    <span className="font-extrabold text-[18px] text-[#D4D4D4]">{credits}</span>
+                    <span className="font-extrabold text-[18px]" style={{ color: theme.creditsText }}>{credits}</span>
                 </div>
 
                 {/* Streak */}
@@ -220,7 +221,7 @@ const JourneyPath = ({ credits = 0 }) => {
                 </div>
 
                 {/* Premium badge */}
-                <div style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #CE82FF 0%, #7B61FF 100%)', boxShadow: '0 2px 0 0 #5B3DBF' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #8558C8 0%, #4545B5 100%)', boxShadow: '0 2px 0 0 #363690' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
                     </svg>
@@ -276,10 +277,10 @@ const JourneyPath = ({ credits = 0 }) => {
                         opacity: menuOpen ? 1 : 0,
                         overflowY: menuOpen ? 'auto' : 'hidden',
                         overflowX: 'hidden',
-                        transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease',
-                        backgroundColor: '#252538',
+                        transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, background-color 0.3s ease',
+                        backgroundColor: theme.surface,
                         borderRadius: '0 0 16px 16px',
-                        boxShadow: menuOpen ? '0 8px 24px rgba(0,0,0,0.4)' : 'none',
+                        boxShadow: menuOpen ? theme.menuShadow : 'none',
                     }}
                 >
                     <div className="py-2 px-1">
@@ -294,6 +295,7 @@ const JourneyPath = ({ credits = 0 }) => {
                                     status={status}
                                     isActive={idx === activeChapterIdx}
                                     onSelect={() => handleChapterSelect(idx)}
+                                    theme={theme}
                                 />
                             );
                         })}
@@ -312,7 +314,7 @@ const JourneyPath = ({ credits = 0 }) => {
                         right: 0,
                         bottom: 0,
                         zIndex: 15,
-                        background: 'rgba(0,0,0,0.4)',
+                        background: theme.backdrop,
                     }}
                 />
             )}
@@ -343,6 +345,7 @@ const JourneyPath = ({ credits = 0 }) => {
                                 onStart={handleStartLesson}
                                 accentColor={chapterColor.bg}
                                 accentDark={chapterColor.dark}
+                                theme={theme}
                                 style={{
                                     left: item.x,
                                     top: item.y,

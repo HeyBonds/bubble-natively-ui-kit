@@ -331,6 +331,34 @@
     transform-origin: top center;
   }
 
+  /* Coin shimmer — occasional glint across the surface */
+  @keyframes coinShimmer {
+    0%, 90%  { background-position: -150% center; }
+    100%     { background-position: 250% center; }
+  }
+  .coin-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .coin-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      105deg,
+      transparent 30%,
+      rgba(255,255,255,0.45) 45%,
+      rgba(255,255,255,0.6) 50%,
+      rgba(255,255,255,0.45) 55%,
+      transparent 70%
+    );
+    background-size: 200% 100%;
+    background-position: -150% center;
+    animation: coinShimmer 10s ease-in-out infinite;
+    pointer-events: none;
+  }
+
   /* Floating bob for journey tooltip */
   @keyframes float-bob {
     0%, 100% { transform: translateX(-50%) translateY(0); }
