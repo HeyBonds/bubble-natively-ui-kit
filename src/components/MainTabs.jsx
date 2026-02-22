@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import JourneyPath from './JourneyPath';
 import NativeStorageManager from './NativeStorageManager';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
@@ -109,9 +109,6 @@ const STORAGE_KEY = 'bonds_dark_mode';
 const getSystemTheme = () =>
   window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-const resolveTheme = (pref) =>
-  pref === 'on' ? 'dark' : pref === 'off' ? 'light' : getSystemTheme();
-
 const MainTabs = ({ userProps }) => {
   const storage = useNativelyStorage();
 
@@ -124,6 +121,13 @@ const MainTabs = ({ userProps }) => {
     setDarkModePrefRaw(val);
     storage.setItem(STORAGE_KEY, val);
   };
+
+  // Hydrate from native storage (handles OS clearing localStorage)
+  useEffect(() => {
+    storage.getItem(STORAGE_KEY).then(val => {
+      if (val && val !== darkModePref) setDarkModePrefRaw(val);
+    });
+  }, []);
 
   // Listen to OS theme changes when pref is 'system'
   const [systemTheme, setSystemTheme] = useState(getSystemTheme);
@@ -205,7 +209,7 @@ const MainTabs = ({ userProps }) => {
         content = <ProfileSection theme={t} darkModePref={darkModePref} setDarkModePref={setDarkModePref} />;
         break;
       default:
-        content = <PlaceholderSection title="Not Found" />;
+        content = <PlaceholderSection title="Not Found" theme={t} />;
     }
 
     // Wrap in animated container

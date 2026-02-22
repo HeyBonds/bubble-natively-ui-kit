@@ -1,7 +1,8 @@
 import React from 'react';
 
 // ── Inline SVG Icons ──────────────────────────────────────────────────
-const nodeIcons = (theme) => ({
+// Static icons (no theme dependency) — created once at module level
+const STATIC_ICONS = {
     check: (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <polyline points="4 12 10 18 20 6" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
@@ -12,17 +13,21 @@ const nodeIcons = (theme) => ({
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
         </svg>
     ),
-    lock: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <rect x="5" y="11" width="14" height="10" rx="2" stroke={theme.lockedIcon} strokeWidth="2" />
-            <path d="M8 11V7a4 4 0 1 1 8 0v4" stroke={theme.lockedIcon} strokeWidth="2" strokeLinecap="round" />
-        </svg>
-    ),
     trophy: (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
             <path d="M6 2h12v6a6 6 0 0 1-12 0V2z" fill="white" />
             <path d="M6 4H3a1 1 0 0 0-1 1v1a4 4 0 0 0 4 4m12-6h3a1 1 0 0 1 1 1v1a4 4 0 0 1-4 4" stroke="white" strokeWidth="1.5" />
             <path d="M8 21h8m-4-7v7" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+    ),
+};
+
+// Theme-dependent icons — only lock & diamond use theme colors
+const themedIcons = (theme) => ({
+    lock: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="5" y="11" width="14" height="10" rx="2" stroke={theme.lockedIcon} strokeWidth="2" />
+            <path d="M8 11V7a4 4 0 1 1 8 0v4" stroke={theme.lockedIcon} strokeWidth="2" strokeLinecap="round" />
         </svg>
     ),
     diamond: (
@@ -125,21 +130,21 @@ const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap,
     const goldColor = '#FFB800';
     const goldDark = '#CC9300';
 
-    const icons = nodeIcons(theme);
+    const themed = themedIcons(theme);
     let bgColor, shadowColor, icon;
 
     if (milestone) {
         if (isCompleted) {
-            bgColor = goldColor; shadowColor = goldDark; icon = icons.trophy;
+            bgColor = goldColor; shadowColor = goldDark; icon = STATIC_ICONS.trophy;
         } else {
-            bgColor = lockedColor; shadowColor = lockedDark; icon = icons.diamond;
+            bgColor = lockedColor; shadowColor = lockedDark; icon = themed.diamond;
         }
     } else if (isCompleted) {
-        bgColor = chapterColor; shadowColor = chapterDark; icon = icons.check;
+        bgColor = chapterColor; shadowColor = chapterDark; icon = STATIC_ICONS.check;
     } else if (isCurrent) {
-        bgColor = chapterColor; shadowColor = chapterDark; icon = icons.star;
+        bgColor = chapterColor; shadowColor = chapterDark; icon = STATIC_ICONS.star;
     } else {
-        bgColor = lockedColor; shadowColor = lockedDark; icon = icons.lock;
+        bgColor = lockedColor; shadowColor = lockedDark; icon = themed.lock;
     }
 
     const popoverColor = accentColor || bgColor;
