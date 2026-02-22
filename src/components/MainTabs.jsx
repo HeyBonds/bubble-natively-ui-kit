@@ -24,7 +24,7 @@ const THEMES = {
     menuShadow: '0 8px 24px rgba(0,0,0,0.4)',
     backdrop: 'rgba(0,0,0,0.4)',
     creditsText: '#D4D4D4',
-    glassBg: 'rgba(255,255,255,0.06)',
+    glassBg: 'rgba(37,37,56,0.97)',
     glassBorder: 'rgba(255,255,255,0.08)',
   },
   light: {
@@ -47,7 +47,7 @@ const THEMES = {
     menuShadow: '0 8px 24px rgba(0,0,0,0.12)',
     backdrop: 'rgba(0,0,0,0.25)',
     creditsText: '#555555',
-    glassBg: 'rgba(255,255,255,0.6)',
+    glassBg: 'rgba(240,240,245,0.97)',
     glassBorder: 'rgba(0,0,0,0.06)',
   },
 };
