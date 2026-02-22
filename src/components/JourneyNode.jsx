@@ -155,7 +155,7 @@ const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap,
                 <button
                     disabled={isLocked}
                     onClick={!isLocked ? () => onTap && onTap(node) : undefined}
-                    className={`relative rounded-full flex items-center justify-center transition-transform duration-100 ${
+                    className={`relative rounded-full flex items-center justify-center transition-transform duration-100 overflow-hidden ${
                         isLocked ? 'cursor-default' : 'cursor-pointer active:translate-y-[2px]'
                     }`}
                     style={{
@@ -165,6 +165,12 @@ const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap,
                         boxShadow: `0 ${depth}px 0 0 ${shadowColor}`,
                     }}
                 >
+                    {/* Subtle top highlight on completed nodes */}
+                    {isCompleted && (
+                        <div className="absolute inset-0 rounded-full pointer-events-none" style={{
+                            background: 'radial-gradient(ellipse 70% 50% at 30% 15%, rgba(255,255,255,0.25), transparent 65%)',
+                        }} />
+                    )}
                     {icon}
                 </button>
 

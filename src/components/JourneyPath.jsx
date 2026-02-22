@@ -278,8 +278,12 @@ const JourneyPath = ({ credits = 0, theme }) => {
                         overflowY: menuOpen ? 'auto' : 'hidden',
                         overflowX: 'hidden',
                         transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, background-color 0.3s ease',
-                        backgroundColor: theme.surface,
+                        backgroundColor: theme.glassBg,
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
                         borderRadius: '0 0 16px 16px',
+                        border: `1px solid ${theme.glassBorder}`,
+                        borderTop: 'none',
                         boxShadow: menuOpen ? theme.menuShadow : 'none',
                     }}
                 >
