@@ -48,8 +48,8 @@ const FloatingLabel = ({ text, theme }) => (
             <span className="font-jakarta font-extrabold text-[13px] tracking-[1.5px] uppercase" style={{ color: theme.textPrimary }}>
                 {text}
             </span>
-            <div className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px]" style={{ borderTopColor: theme.floatBorder }} />
-            <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px]" style={{ borderTopColor: theme.floatBg }} />
+            <div className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 w-0 h-0 border-solid border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px]" style={{ borderTopColor: theme.floatBorder }} />
+            <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-0 h-0 border-solid border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px]" style={{ borderTopColor: theme.floatBg }} />
         </div>
     </div>
 );
@@ -85,7 +85,7 @@ const NodePopover = ({ node, color, onStart, nodeX }) => {
         >
             {/* Triangle pointing up */}
             <div
-                className="absolute -top-[7px] w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px]"
+                className="absolute -top-[7px] w-0 h-0 border-solid border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px]"
                 style={{ borderBottomColor: color, left: '50%', transform: `translateX(calc(-50% + ${triangleOffset}px))` }}
             />
             <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: color }}>

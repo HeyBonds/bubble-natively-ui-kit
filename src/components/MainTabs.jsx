@@ -24,8 +24,8 @@ const THEMES = {
     menuShadow: '0 8px 24px rgba(0,0,0,0.4)',
     backdrop: 'rgba(0,0,0,0.4)',
     creditsText: '#D4D4D4',
-    glassBg: 'rgba(255,255,255,0.05)',
-    glassBorder: 'rgba(255,255,255,0.1)',
+    glassBg: 'rgba(255,255,255,0.06)',
+    glassBorder: 'rgba(255,255,255,0.08)',
   },
   light: {
     bg: '#F0F0F5',
@@ -61,8 +61,6 @@ const DARK_MODE_LABELS = { system: 'System', on: 'On', off: 'Off' };
 const glassStyle = (theme) => ({
   background: theme.glassBg,
   borderColor: theme.glassBorder,
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
 });
 
 const SectionLabel = ({ children, theme }) => (
@@ -432,7 +430,7 @@ const MainTabs = ({ userProps }) => {
          {/* Simple header if deep in stack */}
          {currentStack.length > 1 && (
              <div className="absolute top-4 left-4 z-50">
-                 <button onClick={pop} className="p-2 rounded-full border border-solid transition-colors" style={{ background: t.glassBg, borderColor: t.glassBorder, color: t.textPrimary, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+                 <button onClick={pop} className="p-2 rounded-full border border-solid transition-colors" style={{ background: t.glassBg, borderColor: t.glassBorder, color: t.textPrimary }}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
                  </button>
              </div>
@@ -442,7 +440,7 @@ const MainTabs = ({ userProps }) => {
       </div>
 
       {/* Bottom Navigation — flex child, never overflows */}
-      <div className="shrink-0 h-20 border-t border-solid" style={{ background: t.glassBg, borderColor: t.glassBorder, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', transition: 'background 0.3s ease, border-color 0.3s ease' }}>
+      <div className="shrink-0 h-20 border-t border-solid" style={{ background: t.glassBg, borderColor: t.glassBorder, transition: 'background 0.3s ease, border-color 0.3s ease' }}>
         <div className="flex items-center justify-around h-full max-w-[500px] mx-auto px-4">
             <NavButton id="journey" label="Journey" icon={Icons.journey} />
             <NavButton id="simulator" label="Simulator" icon={Icons.simulator} />
