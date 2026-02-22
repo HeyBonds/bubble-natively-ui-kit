@@ -1,0 +1,13 @@
+<div id="app-root" style="width:100%;height:100%;"></div>
+
+<script>
+    // Mount React app when bundle loads
+    const waitForUI = setInterval(() => {
+        if (window.appUI && window.appUI.mountMainApp) {
+            clearInterval(waitForUI);
+            window.appUI.mountMainApp(
+                document.getElementById('app-root')
+            );
+        }
+    }, 50);
+</script>
