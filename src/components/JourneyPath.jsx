@@ -136,44 +136,25 @@ const JourneyPath = ({ credits = 0, theme }) => {
         };
     }, [chapters]);
 
-    // Virtualizer — only renders nodes in/near the viewport
+    // Track active chapter + dismiss popover via refs (no state during scroll)
+    const activeChapterRef = useRef(activeChapterIdx);
+    const selectedNodeRef = useRef(null);
+
+    // Virtualizer — only renders nodes in/near the viewport.
+    // onChange fires once per scroll frame (virtualizer's own rAF), so we
+    // piggyback chapter tracking here instead of a separate scroll listener.
     const virtualizer = useVirtualizer({
         count: nodePositions.length,
         getScrollElement: () => scrollRef.current,
         estimateSize: (i) => slotSizes[i],
-        overscan: 5,
-    });
-
-    // Auto-scroll to current node on mount + attach passive scroll listener
-    useEffect(() => {
-        const currentIdx = nodePositions.findIndex(n => n.node.status === 'current');
-        if (currentIdx >= 0) {
-            virtualizer.scrollToIndex(currentIdx, { align: 'center' });
-        }
-        const el = scrollRef.current;
-        if (el) {
-            el.addEventListener('scroll', handleScrollWithDismiss, { passive: true });
-            return () => el.removeEventListener('scroll', handleScrollWithDismiss);
-        }
-    }, []);
-
-    // Update active chapter on scroll — rAF-throttled to avoid multiple setState per frame
-    const activeChapterRef = useRef(activeChapterIdx);
-    const selectedNodeRef = useRef(null);
-    const rafRef = useRef(0);
-
-    const handleScrollWithDismiss = useCallback(() => {
-        if (rafRef.current) return; // already scheduled
-        rafRef.current = requestAnimationFrame(() => {
-            rafRef.current = 0;
-            if (!scrollRef.current) return;
-            const scrollTop = scrollRef.current.scrollTop + 150;
+        overscan: 4,
+        onChange: () => {
+            const el = scrollRef.current;
+            if (!el) return;
+            const scrollTop = el.scrollTop + 150;
             let idx = 0;
             for (let i = chapterYStarts.length - 1; i >= 0; i--) {
-                if (scrollTop >= chapterYStarts[i]) {
-                    idx = i;
-                    break;
-                }
+                if (scrollTop >= chapterYStarts[i]) { idx = i; break; }
             }
             if (idx !== activeChapterRef.current) {
                 activeChapterRef.current = idx;
@@ -183,8 +164,16 @@ const JourneyPath = ({ credits = 0, theme }) => {
                 selectedNodeRef.current = null;
                 setSelectedNodeId(null);
             }
-        });
-    }, [chapterYStarts]);
+        },
+    });
+
+    // Auto-scroll to current node on mount
+    useEffect(() => {
+        const currentIdx = nodePositions.findIndex(n => n.node.status === 'current');
+        if (currentIdx >= 0) {
+            virtualizer.scrollToIndex(currentIdx, { align: 'center' });
+        }
+    }, []);
 
     // Toggle popover on node tap
     const handleNodeTap = useCallback((node) => {
