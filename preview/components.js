@@ -27,5 +27,9 @@ window.COMPONENTS = {
     'onboarding': {
         name: 'Onboarding Flow',
         renderReact: (container) => window.appUI.mountOnboarding(container)
+    },
+    'journey': {
+        name: 'Journey Path',
+        renderReact: (container) => window.appUI.mountJourney(container)
     }
 };

@@ -33,6 +33,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import DailyQuestion from './components/DailyQuestion';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
+import JourneyPath from './components/JourneyPath';
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
@@ -57,6 +58,13 @@ window.appUI.mountOnboarding = (container, props = {}) => {
     const defaults = { steps: mockOnboardingSteps, credits: 0, showCredits: true };
     const root = createRoot(container);
     root.render(<OnboardingFlow {...defaults} {...props} />);
+    return root;
+};
+
+window.appUI.mountJourney = (container, props = {}) => {
+    const defaults = { credits: 5 };
+    const root = createRoot(container);
+    root.render(<JourneyPath {...defaults} {...props} />);
     return root;
 };
 
