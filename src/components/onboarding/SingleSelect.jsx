@@ -41,7 +41,7 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
     return (
         <div className="flex flex-col h-full w-full">
             {/* Content */}
-            <div className="flex-1 px-7 pt-8 pb-6 w-full overflow-y-auto">
+            <div className="flex-1 px-7 pt-8 pb-6 w-full overflow-hidden">
                 <h1 className="font-bold text-[22px] text-white leading-[30px] tracking-[0.02em] mb-8">
                     {question}
                 </h1>
