@@ -1,3 +1,5 @@
+import React from 'react';
+
 const JourneyPathSVG = ({ points, completedCount, totalHeight }) => {
     if (!points || points.length < 2) return null;
 
