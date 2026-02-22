@@ -43,7 +43,7 @@ const POPOVER_PADDING = 12;
 
 // ── Floating "START" label above current node ─────────────────────────
 const FloatingLabel = ({ text, theme }) => (
-    <div className="absolute -top-12 left-1/2 z-10 animate-float">
+    <div className="absolute -top-10 left-1/2 z-10 animate-float">
         <div className="relative border-2 border-solid rounded-xl px-4 py-1.5 whitespace-nowrap" style={{ background: theme.floatBg, borderColor: theme.floatBorder }}>
             <span className="font-jakarta font-extrabold text-[13px] tracking-[1.5px] uppercase" style={{ color: theme.textPrimary }}>
                 {text}
