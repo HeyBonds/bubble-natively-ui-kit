@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 // ── Inline SVG Icons ──────────────────────────────────────────────────
 // Static icons (no theme dependency) — created once at module level
@@ -114,7 +114,7 @@ const NodePopover = ({ node, color, onStart, nodeX }) => {
 };
 
 // ── Component ─────────────────────────────────────────────────────────
-const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap, onStart, accentColor, accentDark, theme }) => {
+const JourneyNode = memo(({ node, nodeX, style, isSelected, showFloatingLabel, onTap, onStart, accentColor, accentDark, theme }) => {
     const { title, status, milestone } = node;
     const isCompleted = status === 'completed';
     const isCurrent = status === 'current';
@@ -160,8 +160,8 @@ const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap,
                 <button
                     disabled={isLocked}
                     onClick={!isLocked ? () => onTap && onTap(node) : undefined}
-                    className={`relative rounded-full flex items-center justify-center transition-transform duration-100 overflow-hidden ${
-                        isLocked ? 'cursor-default' : 'cursor-pointer active:translate-y-[2px]'
+                    className={`relative rounded-full flex items-center justify-center overflow-hidden ${
+                        isLocked ? 'cursor-default' : 'cursor-pointer transition-transform duration-100 active:translate-y-[2px]'
                     }`}
                     style={{
                         width: size,
@@ -193,6 +193,7 @@ const JourneyNode = ({ node, nodeX, style, isSelected, showFloatingLabel, onTap,
             )}
         </div>
     );
-};
+});
+JourneyNode.displayName = 'JourneyNode';
 
 export default JourneyNode;

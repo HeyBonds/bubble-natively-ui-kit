@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import JourneyNode from './JourneyNode';
 import mockJourneyData from '../data/mockJourneyData';
 
@@ -93,8 +94,8 @@ const JourneyPath = ({ credits = 0, theme }) => {
     const [selectedNodeId, setSelectedNodeId] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
 
-    // Compute all node positions with chapter gaps
-    const { nodePositions, chapterYStarts, totalHeight } = useMemo(() => {
+    // Compute all node positions with chapter gaps + pre-baked style objects + slot sizes
+    const { nodePositions, chapterYStarts, slotSizes, totalHeight } = useMemo(() => {
         const nodePositions = [];
         const chapterYStarts = [];
         let y = PADDING_TOP;
@@ -102,56 +103,82 @@ const JourneyPath = ({ credits = 0, theme }) => {
         chapters.forEach((chapter, chapterIdx) => {
             if (chapterIdx > 0) y += CHAPTER_GAP;
             chapterYStarts.push(y);
+            const color = SECTION_COLORS[chapterIdx % SECTION_COLORS.length];
 
             chapter.nodes.forEach((node, nodeIdx) => {
+                const x = X_POSITIONS[nodeIdx % X_POSITIONS.length];
                 nodePositions.push({
                     node,
-                    x: X_POSITIONS[nodeIdx % X_POSITIONS.length],
+                    x,
                     y,
                     chapterIdx,
+                    color,
+                    posStyle: { left: x, top: y },
                 });
                 y += NODE_SPACING;
             });
         });
 
+        // Compute per-slot sizes so the virtualizer model matches actual positions.
+        // Each slot = distance from this node's y to the next node's y (includes chapter gaps).
+        const endY = y + PADDING_BOTTOM;
+        const slotSizes = nodePositions.map((item, i) =>
+            i < nodePositions.length - 1
+                ? nodePositions[i + 1].y - item.y
+                : endY - item.y
+        );
+
         return {
             nodePositions,
             chapterYStarts,
-            totalHeight: y + PADDING_BOTTOM,
+            slotSizes,
+            totalHeight: endY,
         };
     }, [chapters]);
 
+    // Virtualizer — only renders nodes in/near the viewport
+    const virtualizer = useVirtualizer({
+        count: nodePositions.length,
+        getScrollElement: () => scrollRef.current,
+        estimateSize: (i) => slotSizes[i],
+        overscan: 5,
+    });
+
     // Auto-scroll to current node on mount
     useEffect(() => {
-        if (!scrollRef.current) return;
-        const current = nodePositions.find(n => n.node.status === 'current');
-        if (current) {
-            scrollRef.current.scrollTop = Math.max(0, current.y - 200);
+        const currentIdx = nodePositions.findIndex(n => n.node.status === 'current');
+        if (currentIdx >= 0) {
+            virtualizer.scrollToIndex(currentIdx, { align: 'center' });
         }
     }, []);
 
-    // Update active chapter on scroll — only set state when value changes
+    // Update active chapter on scroll — rAF-throttled to avoid multiple setState per frame
     const activeChapterRef = useRef(activeChapterIdx);
     const selectedNodeRef = useRef(null);
+    const rafRef = useRef(0);
 
     const handleScrollWithDismiss = useCallback(() => {
-        if (!scrollRef.current) return;
-        const scrollTop = scrollRef.current.scrollTop + 150;
-        let idx = 0;
-        for (let i = chapterYStarts.length - 1; i >= 0; i--) {
-            if (scrollTop >= chapterYStarts[i]) {
-                idx = i;
-                break;
+        if (rafRef.current) return; // already scheduled
+        rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = 0;
+            if (!scrollRef.current) return;
+            const scrollTop = scrollRef.current.scrollTop + 150;
+            let idx = 0;
+            for (let i = chapterYStarts.length - 1; i >= 0; i--) {
+                if (scrollTop >= chapterYStarts[i]) {
+                    idx = i;
+                    break;
+                }
             }
-        }
-        if (idx !== activeChapterRef.current) {
-            activeChapterRef.current = idx;
-            setActiveChapterIdx(idx);
-        }
-        if (selectedNodeRef.current !== null) {
-            selectedNodeRef.current = null;
-            setSelectedNodeId(null);
-        }
+            if (idx !== activeChapterRef.current) {
+                activeChapterRef.current = idx;
+                setActiveChapterIdx(idx);
+            }
+            if (selectedNodeRef.current !== null) {
+                selectedNodeRef.current = null;
+                setSelectedNodeId(null);
+            }
+        });
     }, [chapterYStarts]);
 
     // Toggle popover on node tap
@@ -168,17 +195,15 @@ const JourneyPath = ({ credits = 0, theme }) => {
         setSelectedNodeId(null);
     }, []);
 
-    // Navigate to chapter
+    // Navigate to chapter — find first node of that chapter and scroll to it
     const handleChapterSelect = useCallback((chapterIdx) => {
         setMenuOpen(false);
         setSelectedNodeId(null);
-        if (scrollRef.current) {
-            scrollRef.current.scrollTo({
-                top: Math.max(0, chapterYStarts[chapterIdx] - 20),
-                behavior: 'smooth',
-            });
+        const firstNodeIdx = nodePositions.findIndex(n => n.chapterIdx === chapterIdx);
+        if (firstNodeIdx >= 0) {
+            virtualizer.scrollToIndex(firstNodeIdx, { align: 'start', behavior: 'smooth' });
         }
-    }, [chapterYStarts]);
+    }, [nodePositions, virtualizer]);
 
     const activeChapter = chapters[activeChapterIdx];
     const activeColor = SECTION_COLORS[activeChapterIdx % SECTION_COLORS.length];
@@ -321,7 +346,7 @@ const JourneyPath = ({ credits = 0, theme }) => {
                 />
             )}
 
-            {/* Scrollable path area */}
+            {/* Scrollable path area — virtualized */}
             <div
                 ref={scrollRef}
                 className="scrollbar-hide"
@@ -330,12 +355,13 @@ const JourneyPath = ({ credits = 0, theme }) => {
                     minHeight: 0,
                     overflowY: 'auto',
                     overflowX: 'hidden',
+                    contain: 'strict',
                 }}
                 onScroll={handleScrollWithDismiss}
             >
                 <div className="relative w-full" style={{ height: totalHeight }}>
-                    {nodePositions.map((item) => {
-                        const chapterColor = SECTION_COLORS[item.chapterIdx % SECTION_COLORS.length];
+                    {virtualizer.getVirtualItems().map((vItem) => {
+                        const item = nodePositions[vItem.index];
                         return (
                             <JourneyNode
                                 key={item.node.id}
@@ -345,13 +371,10 @@ const JourneyPath = ({ credits = 0, theme }) => {
                                 showFloatingLabel={item.node.status === 'current'}
                                 onTap={handleNodeTap}
                                 onStart={handleStartLesson}
-                                accentColor={chapterColor.bg}
-                                accentDark={chapterColor.dark}
+                                accentColor={item.color.bg}
+                                accentDark={item.color.dark}
                                 theme={theme}
-                                style={{
-                                    left: item.x,
-                                    top: item.y,
-                                }}
+                                style={item.posStyle}
                             />
                         );
                     })}
