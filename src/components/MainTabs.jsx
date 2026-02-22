@@ -179,7 +179,7 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref }) => {
                     <div key={opt} className="flex items-center">
                       <button
                         onClick={() => setDarkModePref(opt)}
-                        className="px-3 py-1.5 text-[12px] font-bold transition-all duration-200"
+                        className="px-3 py-1.5 text-[12px] font-bold transition-colors duration-200"
                         style={{
                           background: active ? '#E44B8E' : 'transparent',
                           color: active ? '#fff' : theme.textSecondary,

@@ -32,7 +32,7 @@ const getChapterStatus = (chapter) => {
 const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect, theme }) => (
     <button
         onClick={() => onSelect()}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200"
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200"
         style={{
             background: isActive ? theme.menuActive : 'transparent',
         }}
@@ -144,11 +144,16 @@ const JourneyPath = ({ credits = 0, theme }) => {
         overscan: 5,
     });
 
-    // Auto-scroll to current node on mount
+    // Auto-scroll to current node on mount + attach passive scroll listener
     useEffect(() => {
         const currentIdx = nodePositions.findIndex(n => n.node.status === 'current');
         if (currentIdx >= 0) {
             virtualizer.scrollToIndex(currentIdx, { align: 'center' });
+        }
+        const el = scrollRef.current;
+        if (el) {
+            el.addEventListener('scroll', handleScrollWithDismiss, { passive: true });
+            return () => el.removeEventListener('scroll', handleScrollWithDismiss);
         }
     }, []);
 
@@ -357,7 +362,6 @@ const JourneyPath = ({ credits = 0, theme }) => {
                     overflowX: 'hidden',
                     contain: 'strict',
                 }}
-                onScroll={handleScrollWithDismiss}
             >
                 <div className="relative w-full" style={{ height: totalHeight }}>
                     {virtualizer.getVirtualItems().map((vItem) => {
