@@ -44,7 +44,8 @@ const MainTabs = ({ userProps }) => {
   };
 
   const switchTab = (tabId) => {
-    setNavAction(null); // No animation for tab switching for now
+    if (tabId === activeTab) return;
+    setNavAction('tab');
     setActiveTab(tabId);
   };
 
@@ -82,8 +83,9 @@ const MainTabs = ({ userProps }) => {
 
     // Wrap in animated container
     // The key ensures React recreates the container (triggering CSS animation) on every stack change
-    const animationClass = navAction === 'push' ? 'animate-slide-in-right' : 
-                          navAction === 'pop' ? 'animate-slide-in-left' : '';
+    const animationClass = navAction === 'push' ? 'animate-slide-in-right' :
+                          navAction === 'pop' ? 'animate-slide-in-left' :
+                          navAction === 'tab' ? 'animate-tab-switch' : '';
 
     return (
       <div key={`${activeTab}-${currentStack.length}`} className={`w-full min-h-full ${animationClass}`}>
@@ -117,7 +119,7 @@ const MainTabs = ({ userProps }) => {
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-[#2E2740] to-[#1F1A2E] font-poppins flex flex-col overflow-hidden">
+    <div className="w-full h-full font-poppins flex flex-col overflow-hidden" style={{ background: '#1B1B2F' }}>
 
       {/* Content Area (Scrollable) */}
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide relative overflow-x-hidden">
@@ -134,7 +136,7 @@ const MainTabs = ({ userProps }) => {
       </div>
 
       {/* Bottom Navigation — flex child, never overflows */}
-      <div className="shrink-0 h-20 bg-[#1F1A2E] border-t border-solid border-white/10">
+      <div className="shrink-0 h-20 border-t border-solid border-white/10" style={{ background: '#1B1B2F' }}>
         <div className="flex items-center justify-around h-full max-w-[500px] mx-auto px-4">
             <NavButton id="journey" label="Journey" icon={Icons.journey} />
             <NavButton id="simulator" label="Simulator" icon={Icons.simulator} />
