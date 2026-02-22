@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import HomeSection from './HomeSection';
+import JourneyPath from './JourneyPath';
 import NativeStorageManager from './NativeStorageManager';
 
 // Placeholder components for other sections
@@ -13,12 +13,12 @@ const PlaceholderSection = ({ title }) => (
 const MainTabs = ({ userProps }) => {
   // Navigation State
   // We maintain a stack for each tab to allow independent navigation history
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('journey');
   const [stacks, setStacks] = useState({
-    home: ['home'],
-    learn: ['learn'],
-    act: ['act'],
-    ask: ['ask']
+    journey: ['journey'],
+    simulator: ['simulator'],
+    fun: ['fun'],
+    profile: ['profile']
   });
   const [navAction, setNavAction] = useState(null); // 'push', 'pop', or null
 
@@ -64,19 +64,17 @@ const MainTabs = ({ userProps }) => {
 
     let content;
     switch (activeTab) {
-      case 'home':
-        if (currentViewId === 'home') content = <HomeSection {...commonProps} />;
-        else if (currentViewId === 'details') content = <PlaceholderSection title="Details View (Pushed)" {...commonProps} />;
-        else content = <PlaceholderSection title="Unknown View" />;
+      case 'journey':
+        content = <JourneyPath {...commonProps} />;
         break;
-      case 'learn':
-        content = <PlaceholderSection title="Learn" />;
+      case 'simulator':
+        content = <PlaceholderSection title="Simulator" />;
         break;
-      case 'act':
-        content = <PlaceholderSection title="Act" />;
+      case 'fun':
+        content = <PlaceholderSection title="Fun" />;
         break;
-      case 'ask':
-        content = <NativeStorageManager />;
+      case 'profile':
+        content = <PlaceholderSection title="Profile" />;
         break;
       default:
         content = <PlaceholderSection title="Not Found" />;
@@ -112,10 +110,10 @@ const MainTabs = ({ userProps }) => {
 
   // SVG Icons
   const Icons = {
-    home: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>,
-    learn: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>,
-    act: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>,
-    ask: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    journey: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"/></svg>,
+    simulator: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>,
+    fun: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
+    profile: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   };
 
   return (
@@ -138,10 +136,10 @@ const MainTabs = ({ userProps }) => {
       {/* Bottom Navigation — flex child, never overflows */}
       <div className="shrink-0 h-20 bg-[#1F1A2E] border-t border-solid border-white/10">
         <div className="flex items-center justify-around h-full max-w-[500px] mx-auto px-4">
-            <NavButton id="home" label="Home" icon={Icons.home} />
-            <NavButton id="learn" label="Learn" icon={Icons.learn} />
-            <NavButton id="act" label="Act" icon={Icons.act} />
-            <NavButton id="ask" label="Ask" icon={Icons.ask} />
+            <NavButton id="journey" label="Journey" icon={Icons.journey} />
+            <NavButton id="simulator" label="Simulator" icon={Icons.simulator} />
+            <NavButton id="fun" label="Fun" icon={Icons.fun} />
+            <NavButton id="profile" label="Profile" icon={Icons.profile} />
         </div>
       </div>
 
