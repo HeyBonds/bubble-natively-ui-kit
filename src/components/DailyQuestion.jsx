@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { sendToBubble } from '../utils/bubble';
 
 const DailyQuestion = ({ category, question, options, userName, credits: initialCredits, selectedAnswer: initialSelectedAnswer }) => {
@@ -6,8 +6,10 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
     const [selectedAnswer, setSelectedAnswer] = useState(initialSelectedAnswer);
     const [isVoted, setIsVoted] = useState(initialSelectedAnswer !== undefined && initialSelectedAnswer !== null);
     const [showFooterAfter, setShowFooterAfter] = useState(isVoted);
+    const [floatingCredit, setFloatingCredit] = useState(null); // null | 'center' | 'flying'
+    const [dimOverlay, setDimOverlay] = useState(false);
+    const [flyTarget, setFlyTarget] = useState({ top: 0, left: 0 });
     const creditsCircleRef = useRef(null);
-    const creditsNumberRef = useRef(null);
 
     const handleVote = (answerText, index) => {
         if (isVoted) return;
@@ -23,102 +25,38 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
         // Send to Bubble
         sendToBubble('bubble_fn_daily_question', 'vote', { answer: answerText, index });
 
-        // Credit Animation Logic (Ported from legacy)
+        // Credit animation after 2s
         setTimeout(() => {
-            triggerCreditAnimation();
-        }, 2000);
-    };
+            // Step 1: Dim screen + show "+1" at center with pop-in
+            setDimOverlay(true);
+            setFloatingCredit('center');
 
-    const triggerCreditAnimation = () => {
-        // Create dim overlay
-        const dimOverlay = document.createElement('div');
-        dimOverlay.className = 'dim-overlay active';
-        document.body.appendChild(dimOverlay);
+            // Step 2: After pop-in holds, start flying to credit counter + fade dim
+            setTimeout(() => {
+                if (creditsCircleRef.current) {
+                    const rect = creditsCircleRef.current.getBoundingClientRect();
+                    setFlyTarget({ top: rect.top + rect.height / 2, left: rect.left + rect.width / 2 });
+                }
+                setDimOverlay(false);
+                setFloatingCredit('flying');
 
-        // Create overlay credit circle in center
-        const overlay = document.createElement('div');
-        overlay.className = 'credit-overlay credit-center-animation';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 9999;
-            pointer-events: none;
-        `;
-        
-        overlay.innerHTML = `
-            <div class="w-24 h-24 bg-[#FF2258] rounded-full flex items-center justify-center shadow-2xl">
-                <span id="overlayCreditsNumber" class="font-jakarta font-extrabold text-4xl text-white tracking-wide leading-none">
-                    ${credits}
-                </span>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-
-        // Step 2: Increment number
-        setTimeout(() => {
-            const overlayNum = document.getElementById('overlayCreditsNumber');
-            let start = credits;
-            let end = credits + 1;
-            let duration = 600;
-            let startTime = null;
-            
-            function animateNumber(timestamp) {
-                if (!startTime) startTime = timestamp;
-                const progress = Math.min((timestamp - startTime) / duration, 1);
-                const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-                const current = Math.round(start + (end - start) * easeOutQuart);
-                if (overlayNum) overlayNum.innerText = current;
-                if (progress < 1) requestAnimationFrame(animateNumber);
-            }
-            requestAnimationFrame(animateNumber);
-        }, 600);
-
-        // Step 3: Move to corner
-        setTimeout(() => {
-            overlay.classList.remove('credit-center-animation');
-            overlay.classList.add('credit-move-animation');
-            dimOverlay.classList.remove('active');
-            
-            // Force reflow
-            overlay.offsetHeight;
-
-            if (creditsCircleRef.current) {
-                const targetRect = creditsCircleRef.current.getBoundingClientRect();
-                
-                // Match original logic: move to top-left of target rect
-                overlay.style.top = targetRect.top + 'px';
-                overlay.style.left = targetRect.left + 'px';
-                overlay.style.transform = 'scale(1)'; // This REMOVES the translate(-50%, -50%)
-                
-                const overlayCircle = overlay.querySelector('div');
-                overlayCircle.style.transition = 'all 600ms cubic-bezier(0.4, 0, 0.2, 1)';
-                overlayCircle.style.width = '32px';
-                overlayCircle.style.height = '32px';
-                overlayCircle.querySelector('span').style.fontSize = '0.75rem';
-            }
-        }, 1200);
-
-        // Step 4: Cleanup and pulse
-        setTimeout(() => {
-            setCredits(prev => prev + 1);
-            
-            if (creditsCircleRef.current) {
-                // Original subtle pulse logic
-                creditsCircleRef.current.style.transition = 'transform 0.3s ease';
-                creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1.2)';
-                
+                // Step 3: On arrival — increment credits, pulse counter, cleanup
                 setTimeout(() => {
-                    if (creditsCircleRef.current) {
-                        creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1)';
-                    }
-                }, 300);
-            }
+                    setFloatingCredit(null);
+                    setCredits(prev => prev + 1);
 
-            overlay.remove();
-            dimOverlay.remove();
-        }, 1800);
+                    if (creditsCircleRef.current) {
+                        creditsCircleRef.current.style.transition = 'transform 0.3s ease';
+                        creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1.2)';
+                        setTimeout(() => {
+                            if (creditsCircleRef.current) {
+                                creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1)';
+                            }
+                        }, 300);
+                    }
+                }, 600);
+            }, 1200);
+        }, 2000);
     };
 
     const handleStart = () => {
@@ -210,6 +148,45 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
 
               </div>
             </div>
+
+            {/* Dim overlay */}
+            <div
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    opacity: dimOverlay ? 1 : 0,
+                    transition: 'opacity 600ms ease',
+                    zIndex: 9998,
+                    pointerEvents: dimOverlay ? 'auto' : 'none',
+                }}
+            />
+
+            {/* Floating "+1" credit animation */}
+            {floatingCredit && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        zIndex: 9999,
+                        pointerEvents: 'none',
+                        top: floatingCredit === 'flying' ? flyTarget.top : '50%',
+                        left: floatingCredit === 'flying' ? flyTarget.left : '50%',
+                        transform: floatingCredit === 'center'
+                            ? 'translate(-50%, -50%) scale(1)'
+                            : 'translate(-50%, -50%) scale(0.5)',
+                        transition: floatingCredit === 'flying'
+                            ? 'top 0.6s cubic-bezier(0.4, 0, 0.2, 1), left 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                            : 'none',
+                    }}
+                >
+                    <div className="w-20 h-20 bg-[#FF2258] rounded-full flex items-center justify-center shadow-2xl"
+                         style={{
+                             animation: floatingCredit === 'center' ? 'creditPopIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none',
+                         }}>
+                        <span className="font-jakarta font-extrabold text-3xl text-white leading-none">+1</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

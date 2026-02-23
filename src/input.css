@@ -54,32 +54,11 @@
     transform: translateY(3px) !important;
   }
 
-  /* Credit Animations */
-  @keyframes creditFadeInScale {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-    100% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+  /* Credit "+1" pop-in */
+  @keyframes creditPopIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
   }
-  .credit-center-animation {
-    animation: creditFadeInScale 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
-  .credit-move-animation {
-    transition: all 600ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Dim Overlay */
-  .dim-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    opacity: 0;
-    transition: opacity 600ms ease;
-    z-index: 9998;
-    pointer-events: auto;
-  }
-  .dim-overlay.active { opacity: 1; }
 
   /* Tab Selection Shimmer */
   @keyframes shimmer {
