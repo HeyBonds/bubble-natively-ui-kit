@@ -3,13 +3,18 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import JourneyNode from './JourneyNode';
 import mockJourneyData from '../data/mockJourneyData';
 
-const NODE_SPACING = 95;
-const CHAPTER_GAP = 40;
+const NODE_SPACING = 130;
+const CHAPTER_GAP = 80;
 const PADDING_TOP = 15;
 const PADDING_BOTTOM = 80;
 
-// Wider S-curve swing — nodes go far left and right
-const X_POSITIONS = [260, 188, 115, 188];
+// Smooth sine-wave layout — nodes snake left-to-right in a continuous curve
+const PATH_CENTER = 187;   // horizontal center of the path (in 375px viewport)
+const PATH_AMPLITUDE = 68; // how far left/right nodes swing from center
+const WAVE_PERIOD = 10;    // nodes per full sine cycle (peak → trough → peak)
+
+const getNodeX = (globalIndex) =>
+    PATH_CENTER + Math.sin((globalIndex * 2 * Math.PI) / WAVE_PERIOD) * PATH_AMPLITUDE;
 
 // Section banner colors — each chapter gets a themed color
 const SECTION_COLORS = [
@@ -24,8 +29,10 @@ const SECTION_COLORS = [
 const getChapterStatus = (chapter) => {
     const allCompleted = chapter.nodes.every(n => n.status === 'completed');
     const hasCurrent = chapter.nodes.some(n => n.status === 'current');
+    const hasPaused = chapter.nodes.some(n => n.status === 'paused');
     if (allCompleted) return 'completed';
     if (hasCurrent) return 'current';
+    if (hasPaused) return 'paused';
     return 'locked';
 };
 
@@ -55,6 +62,11 @@ const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect, theme }) 
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
                 </svg>
+            ) : status === 'paused' ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" />
+                    <path d="M12 6v6l4 2" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                </svg>
             ) : (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <rect x="5" y="11" width="14" height="10" rx="2" stroke={theme.lockedIcon} strokeWidth="2" />
@@ -66,7 +78,7 @@ const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect, theme }) 
         {/* Chapter info */}
         <div className="flex-1 text-left">
             <p className="font-bold text-[10px] uppercase tracking-widest" style={{ color: status === 'locked' ? theme.textMuted : theme.textSecondary }}>
-                Chapter {chapter.index}
+                Chapter {chapter.index}{status === 'paused' ? ' · Paused' : ''}
             </p>
             <p className="font-extrabold text-[14px] leading-tight" style={{ color: status === 'locked' ? theme.lockedIcon : theme.textPrimary }}>
                 {chapter.title}
@@ -87,7 +99,7 @@ const JourneyPath = ({ credits = 0, theme }) => {
     const scrollRef = useRef(null);
     const [activeChapterIdx, setActiveChapterIdx] = useState(() => {
         for (let i = 0; i < chapters.length; i++) {
-            if (chapters[i].nodes.some(n => n.status === 'current')) return i;
+            if (chapters[i].nodes.some(n => n.status === 'current' || n.status === 'paused')) return i;
         }
         return 0;
     });
@@ -95,18 +107,29 @@ const JourneyPath = ({ credits = 0, theme }) => {
     const [menuOpen, setMenuOpen] = useState(false);
 
     // Compute all node positions with chapter gaps + pre-baked style objects + slot sizes
-    const { nodePositions, chapterYStarts, slotSizes, totalHeight } = useMemo(() => {
+    const { nodePositions, chapterYStarts, chapterSeparators, slotSizes, totalHeight } = useMemo(() => {
         const nodePositions = [];
         const chapterYStarts = [];
+        const chapterSeparators = [];
         let y = PADDING_TOP;
+        let globalNodeIdx = 0;
 
         chapters.forEach((chapter, chapterIdx) => {
-            if (chapterIdx > 0) y += CHAPTER_GAP;
+            if (chapterIdx > 0) {
+                // Separator sits in the middle of the chapter gap
+                chapterSeparators.push({
+                    y: y + CHAPTER_GAP / 2,
+                    title: chapter.title,
+                    chapterIdx,
+                });
+                y += CHAPTER_GAP;
+            }
             chapterYStarts.push(y);
             const color = SECTION_COLORS[chapterIdx % SECTION_COLORS.length];
 
-            chapter.nodes.forEach((node, nodeIdx) => {
-                const x = X_POSITIONS[nodeIdx % X_POSITIONS.length];
+            chapter.nodes.forEach((node) => {
+                const x = getNodeX(globalNodeIdx);
+                globalNodeIdx++;
                 nodePositions.push({
                     node,
                     x,
@@ -131,6 +154,7 @@ const JourneyPath = ({ credits = 0, theme }) => {
         return {
             nodePositions,
             chapterYStarts,
+            chapterSeparators,
             slotSizes,
             totalHeight: endY,
         };
@@ -169,11 +193,12 @@ const JourneyPath = ({ credits = 0, theme }) => {
 
     // Auto-scroll to current node on mount
     useEffect(() => {
-        const currentIdx = nodePositions.findIndex(n => n.node.status === 'current');
-        if (currentIdx >= 0) {
-            virtualizer.scrollToIndex(currentIdx, { align: 'center' });
+        let targetIdx = nodePositions.findIndex(n => n.node.status === 'current');
+        if (targetIdx < 0) targetIdx = nodePositions.findIndex(n => n.node.status === 'paused');
+        if (targetIdx >= 0) {
+            virtualizer.scrollToIndex(targetIdx, { align: 'center' });
         }
-    }, []);
+    }, [nodePositions, virtualizer]);
 
     // Toggle popover on node tap
     const handleNodeTap = useCallback((node) => {
@@ -185,7 +210,7 @@ const JourneyPath = ({ credits = 0, theme }) => {
         setMenuOpen(false);
     }, []);
 
-    const handleStartLesson = useCallback((node) => {
+    const handleStartLesson = useCallback((_node) => {
         setSelectedNodeId(null);
     }, []);
 
@@ -222,8 +247,8 @@ const JourneyPath = ({ credits = 0, theme }) => {
             <div className="flex items-center justify-center gap-7 px-4 pt-3 pb-4" style={{ flexShrink: 0 }}>
                 {/* Coins */}
                 <div className="flex items-center gap-2">
-                    <div className="coin-shimmer" style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 35% 30%, #E0E0E0, #A0A0A0 70%, #888)', boxShadow: '0 2px 0 0 #707070' }}>
-                        <span className="font-extrabold text-[14px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>B</span>
+                    <div className="coin-shimmer" style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)', boxShadow: '0 2px 0 0 #555' }}>
+                        <span className="font-extrabold text-[14px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.25)' }}>B</span>
                     </div>
                     <span className="font-extrabold text-[18px]" style={{ color: theme.creditsText }}>{credits}</span>
                 </div>
@@ -353,6 +378,31 @@ const JourneyPath = ({ credits = 0, theme }) => {
                 }}
             >
                 <div className="relative w-full" style={{ height: totalHeight }}>
+                    {/* Chapter separators — thin line with title centered */}
+                    {chapterSeparators.map((sep) => (
+                        <div
+                            key={`sep-${sep.chapterIdx}`}
+                            style={{
+                                position: 'absolute',
+                                top: sep.y,
+                                left: 0,
+                                right: 0,
+                                transform: 'translateY(-50%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                paddingLeft: 24,
+                                paddingRight: 24,
+                            }}
+                        >
+                            <div style={{ flex: 1, height: 1, background: theme.separatorLine }} />
+                            <span className="font-jakarta font-bold" style={{ fontSize: 13, letterSpacing: 0.3, color: theme.separatorText, whiteSpace: 'nowrap' }}>
+                                {sep.title}
+                            </span>
+                            <div style={{ flex: 1, height: 1, background: theme.separatorLine }} />
+                        </div>
+                    ))}
+
                     {virtualizer.getVirtualItems().map((vItem) => {
                         const item = nodePositions[vItem.index];
                         return (

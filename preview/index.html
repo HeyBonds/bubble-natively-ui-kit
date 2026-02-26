@@ -55,10 +55,10 @@
                 <option value="390x844">iPhone 12/13/14 (390x844)</option>
                 <option value="430x932">iPhone 14 Pro Max (430x932)</option>
                 <option value="360x640">Android Small (360x640)</option>
-                <option value="360x780">Android Medium (360x780)</option>
+                <option value="360x780" selected>Android Medium (360x780)</option>
                 <option value="412x915">Pixel 7 (412x915)</option>
             </select>
-            <div id="device-info">375 x 812</div>
+            <div id="device-info">360 x 780</div>
         </div>
     </div>
 
@@ -89,6 +89,9 @@
             const currentKey = document.getElementById('component-select').value;
             if (currentKey) loadComponent(currentKey);
         }
+
+        // Apply selected device size on load
+        changeDevice(document.getElementById('device-select').value);
 
         function loadComponent(componentKey) {
             if (!componentKey) return;

@@ -25,7 +25,7 @@ export const useNativelyStorage = () => {
         }
         return null;
     }
-  }, []);
+  }, [isNativelyAvailable, isLocalhost]);
 
   const setItem = (key, value) => {
     localStorage.setItem(key, value);

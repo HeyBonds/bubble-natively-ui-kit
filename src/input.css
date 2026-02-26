@@ -348,15 +348,25 @@
     background: linear-gradient(
       105deg,
       transparent 30%,
-      rgba(255,255,255,0.45) 45%,
-      rgba(255,255,255,0.6) 50%,
-      rgba(255,255,255,0.45) 55%,
+      rgba(255,255,255,0.2) 45%,
+      rgba(255,255,255,0.3) 50%,
+      rgba(255,255,255,0.2) 55%,
       transparent 70%
     );
     background-size: 200% 100%;
     background-position: -150% center;
     animation: coinShimmer 10s ease-in-out infinite;
     pointer-events: none;
+  }
+
+  /* Breathing glow for unanswered DQ banner.
+     The 0 4px 0 #3A8A01 matches the card's inline boxShadow in FunZoneSection.jsx — keep in sync. */
+  @keyframes breathingGlow {
+    0%, 100% { box-shadow: 0 4px 0 #3A8A01, 0 0 15px rgba(88, 204, 2, 0.25); }
+    50% { box-shadow: 0 4px 0 #3A8A01, 0 0 28px rgba(88, 204, 2, 0.5); }
+  }
+  .animate-breathing-glow {
+    animation: breathingGlow 2s ease-in-out infinite;
   }
 
   /* Floating bob for journey tooltip */
@@ -366,5 +376,13 @@
   }
   .animate-float {
     animation: float-bob 2s ease-in-out infinite;
+  }
+
+  @keyframes paused-clock {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.12); opacity: 0.8; }
+  }
+  .animate-paused-clock {
+    animation: paused-clock 2.5s ease-in-out infinite;
   }
 }

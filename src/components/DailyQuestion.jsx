@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { sendToBubble } from '../utils/bubble';
 
-const DailyQuestion = ({ category, question, options, userName, credits: initialCredits, selectedAnswer: initialSelectedAnswer }) => {
+const DUOLINGO_GREEN = '#58CC02';
+const GREEN_SHADOW = '#46A302';
+
+// Darker silver coin — matches JourneyPath but toned down so the "B" is legible
+const COIN_BG = 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)';
+const COIN_SHADOW = '0 2px 0 0 #555';
+
+const DailyQuestion = ({ category, question, options, userName, credits: initialCredits, selectedAnswer: initialSelectedAnswer, theme, pop: _pop }) => {
     const [credits, setCredits] = useState(initialCredits || 0);
     const [selectedAnswer, setSelectedAnswer] = useState(initialSelectedAnswer);
     const [isVoted, setIsVoted] = useState(initialSelectedAnswer !== undefined && initialSelectedAnswer !== null);
     const [showFooterAfter, setShowFooterAfter] = useState(isVoted);
-    const creditsCircleRef = useRef(null);
-    const creditsNumberRef = useRef(null);
+    const coinRef = useRef(null);
 
     const handleVote = (answerText, index) => {
         if (isVoted) return;
@@ -15,27 +21,24 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
         setIsVoted(true);
         setSelectedAnswer(index);
 
-        // Visual reveal delay
         setTimeout(() => {
             setShowFooterAfter(true);
         }, 800);
 
-        // Send to Bubble
         sendToBubble('bubble_fn_daily_question', 'vote', { answer: answerText, index });
 
-        // Credit Animation Logic (Ported from legacy)
         setTimeout(() => {
             triggerCreditAnimation();
         }, 2000);
     };
 
     const triggerCreditAnimation = () => {
-        // Create dim overlay
+        // Dim overlay
         const dimOverlay = document.createElement('div');
         dimOverlay.className = 'dim-overlay active';
         document.body.appendChild(dimOverlay);
 
-        // Create overlay credit circle in center
+        // B coin + "+1" label — center pop
         const overlay = document.createElement('div');
         overlay.className = 'credit-overlay credit-center-animation';
         overlay.style.cssText = `
@@ -46,164 +49,184 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
             z-index: 9999;
             pointer-events: none;
         `;
-        
+
         overlay.innerHTML = `
-            <div class="w-24 h-24 bg-[#FF2258] rounded-full flex items-center justify-center shadow-2xl">
-                <span id="overlayCreditsNumber" class="font-jakarta font-extrabold text-4xl text-white tracking-wide leading-none">
-                    ${credits}
-                </span>
+            <div id="overlayCoin" style="width: 80px; height: 80px; border-radius: 50%; background: ${COIN_BG}; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 24px rgba(0,0,0,0.3), ${COIN_SHADOW};">
+                <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); line-height: 1;">B</span>
             </div>
+            <span id="overlayPlus" style="position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 10px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.4); opacity: 0; transition: opacity 300ms ease;">+1</span>
         `;
         document.body.appendChild(overlay);
 
-        // Step 2: Increment number
+        // Step 2: Fade in the "+1" label
         setTimeout(() => {
-            const overlayNum = document.getElementById('overlayCreditsNumber');
-            let start = credits;
-            let end = credits + 1;
-            let duration = 600;
-            let startTime = null;
-            
-            function animateNumber(timestamp) {
-                if (!startTime) startTime = timestamp;
-                const progress = Math.min((timestamp - startTime) / duration, 1);
-                const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-                const current = Math.round(start + (end - start) * easeOutQuart);
-                if (overlayNum) overlayNum.innerText = current;
-                if (progress < 1) requestAnimationFrame(animateNumber);
-            }
-            requestAnimationFrame(animateNumber);
-        }, 600);
+            const plus = document.getElementById('overlayPlus');
+            if (plus) plus.style.opacity = '1';
+        }, 500);
 
-        // Step 3: Move to corner
+        // Step 3: Fade out "+1", then fly coin to the target
+        setTimeout(() => {
+            // Hide "+1"
+            const plus = document.getElementById('overlayPlus');
+            if (plus) plus.style.opacity = '0';
+        }, 1100);
+
         setTimeout(() => {
             overlay.classList.remove('credit-center-animation');
             overlay.classList.add('credit-move-animation');
             dimOverlay.classList.remove('active');
-            
+
             // Force reflow
             overlay.offsetHeight;
 
-            if (creditsCircleRef.current) {
-                const targetRect = creditsCircleRef.current.getBoundingClientRect();
-                
-                // Match original logic: move to top-left of target rect
+            if (coinRef.current) {
+                const targetRect = coinRef.current.getBoundingClientRect();
                 overlay.style.top = targetRect.top + 'px';
                 overlay.style.left = targetRect.left + 'px';
-                overlay.style.transform = 'scale(1)'; // This REMOVES the translate(-50%, -50%)
-                
-                const overlayCircle = overlay.querySelector('div');
-                overlayCircle.style.transition = 'width 600ms cubic-bezier(0.4, 0, 0.2, 1), height 600ms cubic-bezier(0.4, 0, 0.2, 1)';
-                overlayCircle.style.width = '32px';
-                overlayCircle.style.height = '32px';
-                overlayCircle.querySelector('span').style.fontSize = '0.75rem';
-            }
-        }, 1200);
+                overlay.style.transform = 'scale(1)';
 
-        // Step 4: Cleanup and pulse
+                const coinEl = document.getElementById('overlayCoin');
+                if (coinEl) {
+                    coinEl.style.transition = 'width 600ms cubic-bezier(0.4, 0, 0.2, 1), height 600ms cubic-bezier(0.4, 0, 0.2, 1)';
+                    coinEl.style.width = '32px';
+                    coinEl.style.height = '32px';
+                    coinEl.querySelector('span').style.fontSize = '0.75rem';
+                }
+            }
+        }, 1300);
+
+        // Step 4: Cleanup, pulse coin, animate number increment
         setTimeout(() => {
-            setCredits(prev => prev + 1);
-            
-            if (creditsCircleRef.current) {
-                // Original subtle pulse logic
-                creditsCircleRef.current.style.transition = 'transform 0.3s ease';
-                creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1.2)';
-                
+            overlay.remove();
+            dimOverlay.remove();
+
+            // Pulse the target coin
+            if (coinRef.current) {
+                coinRef.current.style.transition = 'transform 0.3s ease';
+                coinRef.current.style.transform = 'scale(1.3)';
                 setTimeout(() => {
-                    if (creditsCircleRef.current) {
-                        creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1)';
-                    }
+                    if (coinRef.current) coinRef.current.style.transform = 'scale(1)';
                 }, 300);
             }
 
-            overlay.remove();
-            dimOverlay.remove();
-        }, 1800);
+            // Animate the number counting up
+            setCredits(prev => {
+                const start = prev;
+                const end = prev + 1;
+                const duration = 400;
+                let startTime = null;
+                const numEl = document.getElementById('creditsNumber');
+
+                function tick(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    const easeOut = 1 - Math.pow(1 - progress, 3);
+                    const current = Math.round(start + (end - start) * easeOut);
+                    if (numEl) numEl.textContent = current;
+                    if (progress < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+                return end;
+            });
+        }, 1900);
     };
 
     const handleStart = () => {
         sendToBubble('bubble_fn_daily_question', 'start_planning');
     };
 
-    const handleClose = () => {
-        sendToBubble('bubble_fn_daily_question', 'close');
-    };
-
     return (
-        <div className="relative w-full h-full overflow-x-hidden gradient-purple-orange font-poppins flex flex-col">
+        <div className="relative w-full h-full overflow-x-hidden font-poppins flex flex-col" style={{ background: theme.bg }}>
 
-            {/* Top Bar */}
-            <div className="absolute top-0 left-0 w-full z-20 pointer-events-none">
-                <button onClick={handleClose}
-                        className="pointer-events-auto absolute top-[18px] left-[18px] w-8 h-8 flex items-center justify-center hover:opacity-80 transition-opacity z-20">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M13.6675 1.99162C14.1108 1.53601 14.1108 0.79732 13.6675 0.341709C13.2243 -0.113903 12.5056 -0.113903 12.0623 0.341709L7 5.54491L1.9377 0.341709C1.49442 -0.113903 0.775732 -0.113903 0.332457 0.341708C-0.110818 0.79732 -0.110818 1.53601 0.332457 1.99162L5.20521 7L0.332456 12.0084C-0.110819 12.464 -0.110819 13.2027 0.332456 13.6583C0.77573 14.1139 1.49442 14.1139 1.93769 13.6583L7 8.45509L12.0623 13.6583C12.5056 14.1139 13.2243 14.1139 13.6675 13.6583C14.1108 13.2027 14.1108 12.464 13.6675 12.0084L8.79479 7L13.6675 1.99162Z" fill="white"/>
-                  </svg>
-                </button>
-
-                <div className="absolute top-4 -right-[95px] z-10">
-                  <div className="relative w-[180px] h-10 rounded-full flex items-center border border-solid border-white/50">
-                    <div ref={creditsCircleRef} id="creditsCircle"
-                         className="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center shadow-lg">
-                      <span className="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">{credits}</span>
-                    </div>
-                    <span className="absolute left-[42px] top-1/2 translate-y-[6px] font-jakarta font-medium text-[10px] text-white tracking-wide leading-none">Credits</span>
-                  </div>
+            {/* Credits coin — top right, clears back button on left */}
+            <div className="absolute top-5 right-5 z-20 flex items-center gap-2">
+                <div
+                    ref={coinRef}
+                    className="coin-shimmer"
+                    style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: COIN_BG,
+                        boxShadow: COIN_SHADOW,
+                    }}
+                >
+                    <span className="font-extrabold text-[12px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.25)' }}>B</span>
                 </div>
+                <span id="creditsNumber" className="font-extrabold text-[16px]" style={{ color: theme.creditsText }}>{credits}</span>
             </div>
 
-            <div className="flex flex-col flex-1 min-h-0 px-9 pt-[78px] pb-8 max-w-[375px] mx-auto relative z-10 overflow-y-auto">
+            <div className="flex flex-col flex-1 min-h-0 px-7 pt-16 pb-8 max-w-[375px] mx-auto relative overflow-y-auto">
 
-              <div className="font-jakarta font-medium text-lg text-white mb-8">
+              {/* Category */}
+              <div className="font-jakarta font-medium text-lg mb-6" style={{ color: theme.textSecondary }}>
                 {category || 'Time Together'}
               </div>
 
-              <div className="font-poppins font-semibold text-xl text-white leading-[30px] tracking-[0.02em] mb-8 max-w-[303px]">
+              {/* Question */}
+              <div className="font-poppins font-bold text-xl leading-[30px] tracking-[0.02em] mb-8 max-w-[303px]" style={{ color: theme.textPrimary }}>
                 {question}
               </div>
 
-              <div className="space-y-4">
+              {/* Options — Duolingo chunky style */}
+              <div className="space-y-3">
                 {options.map((opt, i) => {
                     const optIndex = opt.index !== undefined ? opt.index : (i + 1);
                     const isSelected = isVoted && (selectedAnswer === optIndex);
 
                     return (
-                        <div key={optIndex}
-                             className={`daily-question-option relative w-full max-w-[315px] h-9 bg-white/[0.07] border border-solid border-white/10 rounded-lg cursor-pointer overflow-hidden transition-[background-color] duration-200 hover:bg-white/10 ${isVoted ? 'voted pointer-events-none' : ''} ${isSelected ? 'selected-option' : ''}`}
+                        <button key={optIndex}
+                             className={`relative w-full h-12 rounded-xl border-2 border-solid cursor-pointer overflow-hidden transition-all duration-200 text-left ${isVoted ? 'pointer-events-none' : 'active:translate-y-[2px]'}`}
+                             style={{
+                                 background: theme.surface,
+                                 borderColor: isSelected ? DUOLINGO_GREEN : theme.border,
+                                 boxShadow: isSelected
+                                     ? `0 4px 0 ${GREEN_SHADOW}`
+                                     : isVoted ? 'none' : `0 4px 0 ${theme.cardShadow}`,
+                             }}
                              onClick={() => handleVote(opt.text, optIndex)}>
 
-                             <div className="option-bar absolute left-0 top-0 h-full bg-[#6D6987]/70 rounded-lg"
-                                  style={{ width: isVoted ? `${opt.percent}%` : '0%' }}></div>
+                             {/* Percentage fill bar */}
+                             <div className="option-bar absolute left-0 top-0 h-full rounded-xl"
+                                  style={{
+                                      width: isVoted ? `${opt.percent}%` : '0%',
+                                      background: isSelected ? `${DUOLINGO_GREEN}4D` : `${DUOLINGO_GREEN}30`,
+                                  }}></div>
 
-                             <div className="relative flex items-center justify-between h-full px-[42px] z-10">
-                                <span className="font-poppins font-bold text-sm text-[#F8F8F8] tracking-[0.02em]">{opt.text}</span>
-                                <span className={`percentage font-poppins text-xs text-[#F8F8F8] tracking-[0.02em] ${isVoted ? 'opacity-100' : 'opacity-0'}`}
-                                      style={{ fontWeight: isSelected ? 'bold' : 'normal' }}>
+                             <div className="relative flex items-center justify-between h-full px-4 z-10">
+                                <span className="font-poppins font-bold text-sm tracking-[0.02em]" style={{ color: theme.textPrimary }}>{opt.text}</span>
+                                <span className={`percentage font-poppins text-xs tracking-[0.02em] ${isVoted ? 'opacity-100' : 'opacity-0'}`}
+                                      style={{ color: theme.textPrimary, fontWeight: isSelected ? 'bold' : 'normal' }}>
                                     {opt.percent}%
                                 </span>
                              </div>
-                        </div>
+                        </button>
                     );
                 })}
               </div>
 
               <div className="flex-1" />
 
+              {/* Footer */}
               <div className="flex flex-col items-center justify-center py-4">
 
                   {!showFooterAfter ? (
-                      <div className="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[295px]">
+                      <div className="font-poppins text-base text-center leading-6 tracking-[0.02em] max-w-[295px]" style={{ color: theme.textSecondary }}>
                         Vote and see the live results and also gain 1 credits
                       </div>
                   ) : (
                       <>
-                        <div className="font-poppins text-base text-white text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in">
+                        <div className="font-poppins text-base text-center leading-6 tracking-[0.02em] max-w-[309px] mb-6 animate-fade-in" style={{ color: theme.textSecondary }}>
                           {userName}, We would love to answer any follow up question you might have about {category}
                         </div>
 
                         <button onClick={handleStart}
-                                className="px-10 py-3 bg-white rounded-[64px] btn-pressed animate-fade-in pointer-events-auto">
-                          <span className="font-jakarta font-semibold text-[17px] text-[#E76B0C] tracking-[0.7px] pointer-events-none">Start</span>
+                                className="px-10 py-3 rounded-xl border-b-[3px] border-solid border-[#D4D4D4] active:border-b-0 active:mt-[3px] animate-fade-in pointer-events-auto"
+                                style={{ background: '#FFFFFF', color: DUOLINGO_GREEN }}>
+                          <span className="font-jakarta font-extrabold text-[15px] pointer-events-none">Start</span>
                         </button>
                       </>
                   )}

@@ -12,7 +12,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
         stops.forEach((_, i) => {
             setTimeout(() => setRevealed(r => Math.max(r, i + 1)), 120 * (i + 1));
         });
-    }, []);
+    }, [previousAnswer, stops]);
 
     const handleSelect = (stop, index) => {
         prevSelectedRef.current = selectedIndex;
@@ -25,13 +25,6 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
         if (selectedIndex === null) return;
         const stop = stops[selectedIndex];
         onAnswer({ answer: stop.label, variable: stop.variable, index: selectedIndex });
-    };
-
-    // Calculate filled track height based on stop positions
-    const getTrackHeight = () => {
-        if (selectedIndex === null || stops.length <= 1) return 0;
-        // Each stop is evenly distributed; track goes from first dot center to selected dot center
-        return (selectedIndex / (stops.length - 1)) * 100;
     };
 
     return (

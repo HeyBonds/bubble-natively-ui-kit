@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import JourneyPath from './JourneyPath';
-import NativeStorageManager from './NativeStorageManager';
+import DailyQuestion from './DailyQuestion';
+import FunZoneSection from './FunZoneSection';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
 
 const THEMES = {
@@ -26,6 +27,9 @@ const THEMES = {
     creditsText: '#D4D4D4',
     glassBg: 'rgba(37,37,56,0.97)',
     glassBorder: 'rgba(255,255,255,0.08)',
+    cardShadow: '#0A0A16',
+    separatorLine: 'rgba(255,255,255,0.2)',
+    separatorText: 'rgba(255,255,255,0.4)',
   },
   light: {
     bg: '#F0F0F5',
@@ -49,6 +53,9 @@ const THEMES = {
     creditsText: '#555555',
     glassBg: 'rgba(240,240,245,0.97)',
     glassBorder: 'rgba(0,0,0,0.06)',
+    cardShadow: '#D0D0D8',
+    separatorLine: 'rgba(0,0,0,0.15)',
+    separatorText: 'rgba(0,0,0,0.35)',
   },
 };
 
@@ -297,9 +304,9 @@ const MainTabs = ({ userProps }) => {
   // Hydrate from native storage (handles OS clearing localStorage)
   useEffect(() => {
     storage.getItem(STORAGE_KEY).then(val => {
-      if (val && val !== darkModePref) setDarkModePrefRaw(val);
+      if (val) setDarkModePrefRaw(prev => val !== prev ? val : prev);
     });
-  }, []);
+  }, [storage]);
 
   // Listen to OS theme changes when pref is 'system'
   const [systemTheme, setSystemTheme] = useState(getSystemTheme);
@@ -375,7 +382,13 @@ const MainTabs = ({ userProps }) => {
         content = <PlaceholderSection title="Simulator" theme={t} />;
         break;
       case 'fun':
-        content = <PlaceholderSection title="Fun" theme={t} />;
+        if (currentViewId === 'daily-question') {
+          content = <DailyQuestion {...commonProps} />;
+        } else if (currentViewId === 'activity-detail') {
+          content = <PlaceholderSection title={currentViewProps.name || 'Activity'} theme={t} />;
+        } else {
+          content = <FunZoneSection {...commonProps} />;
+        }
         break;
       case 'profile':
         content = <ProfileSection theme={t} darkModePref={darkModePref} setDarkModePref={setDarkModePref} />;
@@ -391,7 +404,7 @@ const MainTabs = ({ userProps }) => {
                           navAction === 'tab' ? 'animate-tab-switch' : '';
 
     return (
-      <div key={`${activeTab}-${currentStack.length}`} className={`w-full min-h-full ${animationClass}`}>
+      <div key={`${activeTab}-${currentStack.length}`} className={`w-full flex-1 ${animationClass}`}>
         {content}
       </div>
     );
@@ -426,7 +439,7 @@ const MainTabs = ({ userProps }) => {
     <div className="w-full h-full font-poppins flex flex-col overflow-hidden" style={{ background: t.bg, transition: 'background 0.3s ease' }}>
 
       {/* Content Area (Scrollable) */}
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide relative overflow-x-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide relative overflow-x-hidden flex flex-col">
          {/* Simple header if deep in stack */}
          {currentStack.length > 1 && (
              <div className="absolute top-4 left-4 z-50">

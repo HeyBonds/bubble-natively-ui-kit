@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
 
 /**
@@ -13,12 +13,7 @@ const NativeStorageManager = () => {
 
   const STORAGE_KEY = 'bubble_current_user_id';
 
-  // Load the stored user ID on mount
-  useEffect(() => {
-    refreshStoredValue();
-  }, []);
-
-  const refreshStoredValue = async () => {
+  const refreshStoredValue = useCallback(async () => {
     try {
       const value = await getItem(STORAGE_KEY);
       setCurrentUserId(value || 'Not set');
@@ -26,7 +21,11 @@ const NativeStorageManager = () => {
       console.error('Failed to get storage value:', err);
       setStatus('Error retrieving value');
     }
-  };
+  }, [getItem]);
+
+  useEffect(() => {
+    refreshStoredValue();
+  }, [refreshStoredValue]);
 
   const handleSave = () => {
     if (!inputValue) {

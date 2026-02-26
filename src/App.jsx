@@ -74,10 +74,72 @@ const App = () => {
     }, []);
 
     useEffect(() => {
+        const initializeAnalytics = async () => {
+            try {
+                const token = window.APP_CONFIG?.MIXPANEL_TOKEN;
+
+                if (token) {
+                    mixpanel.init(token, { debug: true, track_pageview: false, persistence: 'localStorage' });
+                    console.log('📊 Mixpanel Initialized');
+
+                    let storedId = await getItem(DEVICE_ID_KEY);
+
+                    if (storedId) {
+                        if (storedId.startsWith('$device:')) {
+                            console.log('🧹 Cleaning polluted Device ID:', storedId);
+                            storedId = storedId.replace(/^\$device:/, '');
+                            await setItem(DEVICE_ID_KEY, storedId);
+                        }
+                        console.log('📂 Loaded Existing Device ID:', storedId);
+                        mixpanel.identify(storedId);
+                    } else {
+                        const rawId = mixpanel.get_distinct_id();
+                        storedId = rawId.replace(/^\$device:/, '');
+                        console.log('🆕 Generated New Device ID:', storedId, '(Raw:', rawId, ')');
+                        await setItem(DEVICE_ID_KEY, storedId);
+                        mixpanel.identify(storedId);
+                    }
+
+                    setDeviceId(storedId);
+                } else {
+                    console.warn('⚠️ Mixpanel Token NOT found in window.APP_CONFIG. Analytics disabled.');
+                }
+            } catch (err) {
+                console.error('❌ Analytics Init Failed:', err);
+            }
+        };
+
+        const checkSession = async () => {
+            try {
+                console.log('🔄 App: Starting session check...');
+                const sessionResult = await getItem(SESSION_KEY);
+
+                console.log(`💾 App: Session check result: ${sessionResult}`);
+
+                if (sessionResult === 'true') {
+                    const obResult = await getItem(ONBOARDING_KEY);
+                    transitionTo(obResult === 'true' ? 'main' : 'onboarding');
+                } else {
+                    const onboardingState = await getItem('onboarding_state');
+                    if (onboardingState) {
+                        console.log('📋 App: Found saved onboarding progress, resuming.');
+                        setItem(SESSION_KEY, 'true');
+                        transitionTo('onboarding');
+                    } else {
+                        transitionTo('welcome');
+                    }
+                }
+            } catch (err) {
+                console.error('❌ App: Failed to check session:', err);
+                transitionTo('welcome');
+            } finally {
+                console.log('✅ App: Loading finished. Rendering UI.');
+            }
+        };
+
         initializeAnalytics();
 
         window.appUI = window.appUI || {};
-
         window.appUI.setLoginState = (isLogged) => {
             console.log(`🔑 Bubble Setting Login State: ${isLogged}`);
             if (isLogged) {
@@ -92,72 +154,7 @@ const App = () => {
         };
 
         checkSession();
-    }, []);
-
-    const initializeAnalytics = async () => {
-        try {
-            const token = window.APP_CONFIG?.MIXPANEL_TOKEN;
-
-            if (token) {
-                mixpanel.init(token, { debug: true, track_pageview: false, persistence: 'localStorage' });
-                console.log('📊 Mixpanel Initialized');
-
-                let storedId = await getItem(DEVICE_ID_KEY);
-
-                if (storedId) {
-                    if (storedId.startsWith('$device:')) {
-                        console.log('🧹 Cleaning polluted Device ID:', storedId);
-                        storedId = storedId.replace(/^\$device:/, '');
-                        await setItem(DEVICE_ID_KEY, storedId);
-                    }
-                    console.log('📂 Loaded Existing Device ID:', storedId);
-                    mixpanel.identify(storedId);
-                } else {
-                    const rawId = mixpanel.get_distinct_id();
-                    storedId = rawId.replace(/^\$device:/, '');
-                    console.log('🆕 Generated New Device ID:', storedId, '(Raw:', rawId, ')');
-                    await setItem(DEVICE_ID_KEY, storedId);
-                    mixpanel.identify(storedId);
-                }
-
-                setDeviceId(storedId);
-            } else {
-                console.warn('⚠️ Mixpanel Token NOT found in window.APP_CONFIG. Analytics disabled.');
-            }
-        } catch (err) {
-            console.error('❌ Analytics Init Failed:', err);
-        }
-    };
-
-    const checkSession = async () => {
-        try {
-            console.log('🔄 App: Starting session check...');
-            // getItem reads from localStorage (instant) — no timeout needed
-            const sessionResult = await getItem(SESSION_KEY);
-
-            console.log(`💾 App: Session check result: ${sessionResult}`);
-
-            if (sessionResult === 'true') {
-                const obResult = await getItem(ONBOARDING_KEY);
-                transitionTo(obResult === 'true' ? 'main' : 'onboarding');
-            } else {
-                // No active session — but check if there's saved onboarding progress
-                const onboardingState = await getItem('onboarding_state');
-                if (onboardingState) {
-                    console.log('📋 App: Found saved onboarding progress, resuming.');
-                    setItem(SESSION_KEY, 'true');
-                    transitionTo('onboarding');
-                } else {
-                    transitionTo('welcome');
-                }
-            }
-        } catch (err) {
-            console.error('❌ App: Failed to check session:', err);
-            transitionTo('welcome');
-        } finally {
-            console.log('✅ App: Loading finished. Rendering UI.');
-        }
-    };
+    }, [getItem, setItem, removeItem, transitionTo]);
 
     const handleWelcomeAction = (action) => {
         if (action === 'go') {
@@ -206,7 +203,18 @@ const App = () => {
     const userProps = {
         userName: 'Jonathan',
         userAvatar: 'https://i.pravatar.cc/150?img=12',
-        credits: 23
+        credits: 23,
+        dailyQuestion: {
+            category: 'Time Together',
+            question: 'How much intentional one-on-one time do you have in a typical week?',
+            options: [
+                { text: 'Less than 1 hour', percent: 10, index: 1 },
+                { text: '1-3 hours', percent: 45, index: 2 },
+                { text: '3-5 hours', percent: 30, index: 3 },
+                { text: 'More than 5 hours', percent: 15, index: 4 },
+            ],
+            selectedAnswer: null,
+        },
     };
 
     return (

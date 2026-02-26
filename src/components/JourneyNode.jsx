@@ -20,6 +20,51 @@ const STATIC_ICONS = {
             <path d="M8 21h8m-4-7v7" stroke="white" strokeWidth="2" strokeLinecap="round" />
         </svg>
     ),
+    clock: (
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="1.8" />
+            <path d="M12 6v6l4 2" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="12" cy="12" r="1.2" fill="white" />
+        </svg>
+    ),
+};
+
+// Step-type icons — shown for completed/current non-milestone nodes
+const STEP_TYPE_ICONS = {
+    learn: (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 7h8M8 11h5" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+    ),
+    practice: (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 10h8M8 14h4" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+    ),
+    insight: (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18h6M10 22h4" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            <path d="M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    ),
+    act: (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z" stroke="white" strokeWidth="2" />
+            <path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    ),
+};
+
+// Popover subtitles per step type
+const STEP_TYPE_SUBTITLES = {
+    learn: 'Watch & Learn',
+    practice: 'Practice the Skill',
+    insight: "Dr Leo's Insight",
+    act: 'Take Action',
+    milestone: 'Chapter Milestone',
 };
 
 // Theme-dependent icons — only lock & diamond use theme colors
@@ -58,7 +103,6 @@ const FloatingLabel = ({ text, theme }) => (
 const NodePopover = ({ node, color, onStart, nodeX }) => {
     // Clamp popover so it stays within screen bounds
     const halfPopover = POPOVER_WIDTH / 2;
-    const idealLeft = 0; // centered by default via translate
     let popoverLeft = nodeX - halfPopover;
     let popoverRight = nodeX + halfPopover;
 
@@ -93,9 +137,9 @@ const NodePopover = ({ node, color, onStart, nodeX }) => {
                     {node.title}
                 </p>
                 <p className="font-jakarta font-bold text-[11px] text-white/70 mt-0.5">
-                    {node.status === 'completed' ? 'Completed' : node.status === 'current' ? 'In progress' : 'Locked'}
+                    {node.status === 'paused' ? 'Unlocks tomorrow' : node.status === 'locked' ? 'Locked' : STEP_TYPE_SUBTITLES[node.type] || (node.status === 'completed' ? 'Completed' : 'In progress')}
                 </p>
-                {!node.milestone && node.status !== 'locked' && (
+                {node.type !== 'milestone' && node.status !== 'locked' && node.status !== 'paused' && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onStart && onStart(node); }}
                         className="mt-2.5 w-full rounded-xl py-2 font-jakarta font-extrabold text-[13px] uppercase tracking-wide"
@@ -115,13 +159,15 @@ const NodePopover = ({ node, color, onStart, nodeX }) => {
 
 // ── Component ─────────────────────────────────────────────────────────
 const JourneyNode = memo(({ node, nodeX, style, isSelected, showFloatingLabel, onTap, onStart, accentColor, accentDark, theme }) => {
-    const { title, status, milestone } = node;
+    const { title, status, type } = node;
+    const isMilestone = type === 'milestone';
     const isCompleted = status === 'completed';
     const isCurrent = status === 'current';
     const isLocked = status === 'locked';
+    const isPaused = status === 'paused';
 
-    const size = milestone ? 72 : isCurrent ? 68 : 60;
-    const depth = milestone ? 6 : 5;
+    const size = isMilestone ? 82 : isCurrent ? 78 : 70;
+    const depth = isMilestone ? 6 : 5;
 
     const chapterColor = accentColor || '#E44B8E';
     const chapterDark = accentDark || '#B83A72';
@@ -133,18 +179,21 @@ const JourneyNode = memo(({ node, nodeX, style, isSelected, showFloatingLabel, o
     const themed = themedIcons(theme);
     let bgColor, shadowColor, icon;
 
-    if (milestone) {
+    if (isMilestone) {
         if (isCompleted) {
             bgColor = goldColor; shadowColor = goldDark; icon = STATIC_ICONS.trophy;
         } else {
             bgColor = lockedColor; shadowColor = lockedDark; icon = themed.diamond;
         }
-    } else if (isCompleted) {
-        bgColor = chapterColor; shadowColor = chapterDark; icon = STATIC_ICONS.check;
-    } else if (isCurrent) {
-        bgColor = chapterColor; shadowColor = chapterDark; icon = STATIC_ICONS.star;
-    } else {
+    } else if (isLocked) {
         bgColor = lockedColor; shadowColor = lockedDark; icon = themed.lock;
+    } else if (isPaused) {
+        // 50% alpha via 8-digit hex — assumes SECTION_COLORS are always 6-digit hex (#RRGGBB)
+        bgColor = chapterColor + '80'; shadowColor = chapterDark + '80'; icon = STATIC_ICONS.clock;
+    } else {
+        // completed or current — use type-specific icon
+        bgColor = chapterColor; shadowColor = chapterDark;
+        icon = STEP_TYPE_ICONS[type] || STATIC_ICONS.star;
     }
 
     const popoverColor = accentColor || bgColor;
@@ -161,7 +210,7 @@ const JourneyNode = memo(({ node, nodeX, style, isSelected, showFloatingLabel, o
                     disabled={isLocked}
                     onClick={!isLocked ? () => onTap && onTap(node) : undefined}
                     className={`relative rounded-full flex items-center justify-center overflow-hidden ${
-                        isLocked ? 'cursor-default' : 'cursor-pointer transition-transform duration-100 active:translate-y-[2px]'
+                        isLocked ? 'cursor-default' : isPaused ? 'cursor-pointer animate-paused-clock' : 'cursor-pointer transition-transform duration-100 active:translate-y-[2px]'
                     }`}
                     style={{
                         width: size,
@@ -184,9 +233,9 @@ const JourneyNode = memo(({ node, nodeX, style, isSelected, showFloatingLabel, o
                 )}
             </div>
 
-            {!milestone && (
+            {!isMilestone && (
                 <span className="mt-2 text-[10px] font-jakarta font-bold text-center leading-tight tracking-wide" style={{
-                    color: isCompleted ? theme.labelCompleted : isCurrent ? theme.labelCurrent : theme.labelLocked,
+                    color: isCompleted ? theme.labelCompleted : (isCurrent || isPaused) ? theme.labelCurrent : theme.labelLocked,
                 }}>
                     {title}
                 </span>

@@ -60,7 +60,7 @@ const OnboardingFlow = ({
             setReady(true);
         });
         return () => { cancelled = true; };
-    }, []);
+    }, [storage]);
 
     const step = steps[currentStep];
     const totalSteps = steps.length;
@@ -163,7 +163,7 @@ const OnboardingFlow = ({
             if (isNewAnswer) triggerCreditPulse();
             advanceOrComplete();
         }
-    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete, creditIntroSeen]);
+    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete, creditIntroSeen, triggerCreditIntro, triggerCreditPulse]);
 
     const handleRefresh = useCallback(() => {
         const s = steps[currentStep];
@@ -177,7 +177,7 @@ const OnboardingFlow = ({
         sendToBubble('bubble_fn_onboarding', 'refresh', { step: currentStep });
     }, [currentStep, steps]);
 
-    const triggerCreditPulse = () => {
+    const triggerCreditPulse = useCallback(() => {
         if (showCredits && creditsCircleRef.current) {
             creditsCircleRef.current.style.transition = 'transform 0.3s ease';
             creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1.2)';
@@ -187,11 +187,11 @@ const OnboardingFlow = ({
                 }
             }, 300);
         }
-    };
+    }, [showCredits]);
 
     // First-time credit intro animation (0→1)
     // Returns a Promise that resolves when the animation is done
-    const triggerCreditIntro = () => {
+    const triggerCreditIntro = useCallback(() => {
         return new Promise((resolve) => {
             if (!creditsCircleRef.current || creditIntroRunningRef.current) { resolve(); return; }
             creditIntroRunningRef.current = true;
@@ -339,7 +339,7 @@ const OnboardingFlow = ({
                 }
             }, 1100);
         });
-    };
+    }, [triggerCreditPulse, storage]);
 
     // Wait for persisted state to load before rendering
     // Show matching background while loading persisted state (prevents white flash on mobile)

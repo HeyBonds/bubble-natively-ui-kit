@@ -5,13 +5,15 @@
   "main": "bundle.js",
   "scripts": {
     "build:css": "tailwindcss -i ./src/input.css -o ./bundle.css --minify",
-    "build:js": "esbuild src/index.jsx --bundle --outfile=bundle.js --minify --loader:.js=jsx --alias:react=preact/compat --alias:react-dom=preact/compat",
-    "build:js:dev": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --alias:react=preact/compat --alias:react-dom=preact/compat",
+    "build:js": "esbuild src/index.jsx --bundle --outfile=bundle.js --minify --loader:.js=jsx --loader:.png=dataurl --alias:react=preact/compat --alias:react-dom=preact/compat",
+    "build:js:dev": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --loader:.png=dataurl --alias:react=preact/compat --alias:react-dom=preact/compat",
     "build": "npm run build:css && npm run build:js",
-    "watch": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --alias:react=preact/compat --alias:react-dom=preact/compat --watch",
+    "watch": "esbuild src/index.jsx --bundle --outfile=bundle.js --loader:.js=jsx --loader:.png=dataurl --alias:react=preact/compat --alias:react-dom=preact/compat --watch",
     "dev": "npm run build:js:dev && ./preview-server.sh",
     "prod": "npm run build && ./preview-server.sh",
-    "preview": "./preview-server.sh"
+    "preview": "./preview-server.sh",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
   },
   "keywords": [
     "bubble",
@@ -19,11 +21,17 @@
     "ui-kit",
     "headless"
   ],
+  "type": "module",
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@eslint/js": "^9.39.3",
     "autoprefixer": "^10.4.24",
     "esbuild": "^0.27.3",
+    "eslint": "^9.39.3",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^15.15.0",
     "postcss": "^8.5.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
