@@ -71,43 +71,16 @@ Preview URL: `http://localhost:8000/preview/index.html`
 
 ## Deployment
 
-1. `npm run build` to generate `bundle.js` and `bundle.css`
+1. `npm run build` — generates `bundle.js`, `bundle.css`, and auto-bumps `CACHE_VERSION` in `service-worker.js` (content-hash based, only changes when bundles change)
 2. Upload `bundle.js`, `bundle.css`, and `service-worker.js` to Bubble SEO > "Hosting files in the root directory"
-3. Bump `CACHE_VERSION` in `service-worker.js` and re-upload it
 
 ### Bubble SEO Snippets
 
-Assets are loaded via a dynamic loader that detects whether we're on a Bubble test branch (`/version-xxx/`) or live (`/`), so the same SEO config works in both environments.
+The complete, copy-paste-ready snippets for both Bubble SEO fields live in **[`docs/bubble-seo-snippets.html`](docs/bubble-seo-snippets.html)**. That file is the single source of truth — always copy from there when updating Bubble.
 
-**Header** (loads CSS):
-```html
-<script>
-  (function() {
-    var m = window.location.pathname.match(/\/version-[^\/]+/);
-    var base = m ? m[0] + '/' : '/';
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = base + 'bundle.css';
-    document.head.appendChild(link);
-  })();
-</script>
-```
-
-**Body** (loads JS + registers service worker):
-```html
-<script>
-  (function() {
-    var m = window.location.pathname.match(/\/version-[^\/]+/);
-    var base = m ? m[0] + '/' : '/';
-    var s = document.createElement('script');
-    s.src = base + 'bundle.js';
-    document.head.appendChild(s);
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register(base + 'service-worker.js').catch(function() {});
-    }
-  })();
-</script>
-```
+Summary of what each section does:
+- **Header**: Sets `APP_CONFIG` (Mixpanel token) + dynamically loads `bundle.css`
+- **Body**: Dynamically loads `bundle.js` + registers service worker + Eruda debug console (remove for production)
 
 ### Service Worker & Caching
 

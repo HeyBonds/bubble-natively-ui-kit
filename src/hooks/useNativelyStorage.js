@@ -8,12 +8,16 @@ const verified = new Set();
  * useNativelyStorage — Fast reads via localStorage, durable writes via NativelyStorage.
  *
  * Strategy:
- * - Reads: Return localStorage synchronously (instant). In the background, verify
- *   against NativelyStorage (once per key per session). If native has a different
- *   value, update localStorage. Handles the rare case where the OS clears the
- *   WebView's localStorage but native storage persists.
+ * - Reads (getItem): Return localStorage value instantly. Background-verify against
+ *   NativelyStorage once per key per session.
+ * - Critical reads (reconcile): Wait for NativelyStorage response (with timeout) before
+ *   returning. Use this at startup for session-critical keys.
  * - Writes: Always write to both localStorage (sync) and NativelyStorage (async).
  * - On localhost: skip NativelyStorage entirely.
+ *
+ * NativelyStorage uses window.$agent.trigger() to call native storage via the Natively
+ * bridge. Each read is a JS→native→JS round-trip (~50-500ms). No batching API exists,
+ * but concurrent reads via Promise.all() are supported.
  */
 export const useNativelyStorage = () => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -24,7 +28,7 @@ export const useNativelyStorage = () => {
         return new NativelyStorage();
     } else {
         if (isLocalhost) {
-             console.log('🔧 Storage: localhost → localStorage only (instant).');
+             console.log('🔧 Storage: localhost → localStorage only.');
         }
         return null;
     }
@@ -49,20 +53,77 @@ export const useNativelyStorage = () => {
         verified.add(key);
 
         const timeout = setTimeout(() => {
-            console.warn(`⏱️ [NativelyStorage] Background verify timeout for "${key}".`);
+            console.warn(`⏱️ [Storage] Background verify timeout for "${key}" (5s).`);
         }, 5000);
 
         storage.getStorageValue(key, (resp) => {
             clearTimeout(timeout);
             const nativeValue = resp.value;
             if (nativeValue != null && nativeValue !== localValue) {
-                console.log(`🔄 [NativelyStorage] Reconciled "${key}": native="${nativeValue}" wins over local="${localValue}".`);
+                console.log(`🔄 [Storage] Reconciled "${key}": native="${nativeValue}" wins over local="${localValue}".`);
                 localStorage.setItem(key, nativeValue);
             }
         });
     }
 
     return Promise.resolve(localValue);
+  };
+
+  /**
+   * reconcile — Wait for NativelyStorage to respond for a set of critical keys.
+   * Updates localStorage with native values where they differ (native wins).
+   * Returns a Promise that resolves when all keys are reconciled or timeout fires.
+   *
+   * Use this BEFORE making session-critical decisions (e.g. which screen to show).
+   * Typical latency: 50-500ms. Timeout: 2s (falls back to localStorage values).
+   */
+  const reconcile = (keys) => {
+    if (!storage) {
+        console.log('🔧 [Storage] No native bridge — using localStorage values.');
+        return Promise.resolve();
+    }
+
+    console.log(`🔄 [Storage] Reconciling ${keys.length} keys from NativelyStorage...`);
+    const start = Date.now();
+
+    return new Promise((resolve) => {
+        let settled = false;
+        let remaining = keys.length;
+
+        const finish = (reason) => {
+            if (settled) return;
+            settled = true;
+            const ms = Date.now() - start;
+            console.log(`✅ [Storage] Reconciliation ${reason} in ${ms}ms.`);
+            // Mark all keys as verified so background getItem skips them
+            keys.forEach(k => verified.add(k));
+            resolve();
+        };
+
+        // Timeout: don't block the app longer than 2s
+        const timeout = setTimeout(() => finish('timed out'), 2000);
+
+        keys.forEach((key) => {
+            const localValue = localStorage.getItem(key);
+
+            storage.getStorageValue(key, (resp) => {
+                const nativeValue = resp.value;
+                if (nativeValue != null && nativeValue !== localValue) {
+                    console.log(`🔄 [Storage] "${key}": native="${nativeValue}" wins over local="${localValue}".`);
+                    localStorage.setItem(key, nativeValue);
+                } else if (nativeValue == null && localValue != null) {
+                    // localStorage has value but native doesn't — seed native
+                    console.log(`📤 [Storage] "${key}": seeding native from local="${localValue}".`);
+                    storage.setStorageValue(key, localValue);
+                }
+                remaining--;
+                if (remaining <= 0) {
+                    clearTimeout(timeout);
+                    finish('complete');
+                }
+            });
+        });
+    });
   };
 
   const removeItem = (key) => {
@@ -79,33 +140,11 @@ export const useNativelyStorage = () => {
     }
   };
 
-  // Probe: write a test key, read it back via native bridge to confirm it's working
-  const probeNative = () => {
-    return new Promise((resolve) => {
-      if (!storage) {
-        resolve('localStorage-only');
-        return;
-      }
-      const testKey = '__natively_probe__';
-      storage.setStorageValue(testKey, 'ok');
-
-      const timeout = setTimeout(() => {
-        resolve('timeout (localStorage fallback)');
-      }, 1500);
-
-      storage.getStorageValue(testKey, (resp) => {
-        clearTimeout(timeout);
-        storage.removeStorageValue(testKey);
-        resolve(resp.value === 'ok' ? 'native bridge active' : `unexpected: ${resp.value}`);
-      });
-    });
-  };
-
   return {
     setItem,
     getItem,
     removeItem,
     clear,
-    probeNative,
+    reconcile,
   };
 };

@@ -1,0 +1,148 @@
+<!--
+  ============================================================================
+  Bubble SEO Snippets — Single Source of Truth
+  ============================================================================
+
+  This file contains EVERYTHING that goes into Bubble's SEO settings.
+  Copy-paste the relevant section whenever you update Bubble.
+
+  Bubble location: Settings > SEO > Script/meta tags in the header / body
+
+  Last updated: 2026-02-27
+  ============================================================================
+-->
+
+
+<!-- ========================================================================
+     SECTION 1: HEADER
+     Bubble > Settings > SEO > Script/meta tags in the HEADER
+     Copy everything between the ===HEADER START=== and ===HEADER END=== lines.
+     ======================================================================== -->
+
+<!-- ===HEADER START=== -->
+
+<!-- 1a. App config + CSS loader (REQUIRED — without this, styles won't load) -->
+<script>
+  window.APP_CONFIG = { MIXPANEL_TOKEN: '67d776f0ab57ae77027280ff93e1bc32' };
+  (function() {
+    var m = window.location.pathname.match(/\/version-[^\/]+/);
+    var base = m ? m[0] + '/' : '/';
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = base + 'bundle.css';
+    document.head.appendChild(link);
+  })();
+</script>
+
+<!-- ===HEADER END=== -->
+
+
+<!-- ========================================================================
+     SECTION 2: BODY
+     Bubble > Settings > SEO > Script/meta tags in the BODY
+     Copy everything between the ===BODY START=== and ===BODY END=== lines.
+     ======================================================================== -->
+
+<!-- ===BODY START=== -->
+
+<!-- 2a. App loader + Service Worker (REQUIRED — without this, the app won't start) -->
+<script>
+  (function() {
+    var m = window.location.pathname.match(/\/version-[^\/]+/);
+    var base = m ? m[0] + '/' : '/';
+    var s = document.createElement('script');
+    s.src = base + 'bundle.js';
+    document.head.appendChild(s);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(base + 'service-worker.js')
+        .then(function(reg) { console.log('[SW] Registered, scope:', reg.scope); })
+        .catch(function(err) { console.error('[SW] Registration FAILED:', err.message); });
+    }
+  })();
+</script>
+
+<!-- 2b. Eruda debug console (REMOVE for production) -->
+<script src="https://cdn.jsdelivr.net/npm/eruda" crossorigin="anonymous"></script>
+<script>
+  eruda.init();
+
+  // --- Debug Snippets (Eruda > Snippets tab > tap to run) ---
+
+  eruda.get('snippets').add('Reset Storage', function () {
+    window.appUI.resetAllStorage();
+  }, 'Clear all Bonds storage (localStorage + NativelyStorage) and reload');
+
+  eruda.get('snippets').add('SW Status', function () {
+    console.log('[SW] Page URL:', location.href);
+    console.log('[SW] Controller:', navigator.serviceWorker.controller ? navigator.serviceWorker.controller.scriptURL : 'NONE');
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg) {
+        console.log('[SW] getRegistration() → no match for current page scope');
+      } else {
+        console.log('[SW] Registration found:');
+        console.log('  Scope:', reg.scope);
+        console.log('  Active:', reg.active ? reg.active.scriptURL : 'none');
+        console.log('  Waiting:', reg.waiting ? reg.waiting.scriptURL : 'none');
+        console.log('  Installing:', reg.installing ? reg.installing.scriptURL : 'none');
+      }
+    });
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      console.log('[SW] Total registrations:', regs.length);
+      regs.forEach(function (r, i) {
+        console.log('  [' + i + '] scope=' + r.scope + ' active=' + (r.active ? r.active.scriptURL : 'none'));
+      });
+    });
+  }, 'Full SW diagnostic: controller, registrations, scopes');
+
+  eruda.get('snippets').add('SW Cache Contents', function () {
+    caches.keys().then(function (names) {
+      console.log('[SW] Cache names:', names);
+      names.forEach(function (name) {
+        caches.open(name).then(function (cache) {
+          cache.keys().then(function (requests) {
+            console.log('[SW] ' + name + ' (' + requests.length + ' entries):');
+            requests.forEach(function (r) { console.log('  ', r.url); });
+          });
+        });
+      });
+    });
+  }, 'List all cached URLs in every service worker cache');
+
+  eruda.get('snippets').add('SW Force Register', function () {
+    var m = location.pathname.match(/\/version-[^\/]+/);
+    var base = m ? m[0] + '/' : '/';
+    var swUrl = base + 'service-worker.js';
+    console.log('[SW] Registering:', swUrl, 'scope:', base);
+    navigator.serviceWorker.register(swUrl, { scope: base }).then(function (reg) {
+      console.log('[SW] Registered! Scope:', reg.scope);
+      console.log('[SW] Active:', reg.active ? reg.active.scriptURL : 'none');
+      console.log('[SW] Installing:', reg.installing ? reg.installing.scriptURL : 'none');
+      reg.update().then(function () { console.log('[SW] Update check triggered.'); });
+    }).catch(function (err) {
+      console.error('[SW] Registration failed:', err.message);
+    });
+  }, 'Force (re-)register the service worker and trigger update');
+
+  eruda.get('snippets').add('Nuke Caches', function () {
+    caches.keys().then(function (names) {
+      console.log('[SW] Deleting', names.length, 'caches:', names);
+      return Promise.all(names.map(function (n) { return caches.delete(n); }));
+    }).then(function () {
+      console.log('[SW] All caches deleted.');
+      return navigator.serviceWorker.getRegistrations();
+    }).then(function (regs) {
+      return Promise.all(regs.map(function (r) { return r.unregister(); }));
+    }).then(function () {
+      console.log('[SW] All registrations unregistered. Reloading...');
+      location.reload();
+    });
+  }, 'Delete ALL caches + unregister SWs + reload (nuclear option)');
+
+  eruda.get('snippets').add('Storage Dump', function () {
+    var keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_dark_mode'];
+    console.log('--- localStorage ---');
+    keys.forEach(function (k) { console.log('  ' + k + ':', localStorage.getItem(k)); });
+  }, 'Dump all Bonds localStorage keys');
+</script>
+
+<!-- ===BODY END=== -->

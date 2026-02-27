@@ -31,7 +31,7 @@ const App = () => {
     const transitionRef = useRef(false);
     const displayedPhaseRef = useRef('loading');
 
-    const { getItem, setItem, removeItem } = useNativelyStorage();
+    const { getItem, setItem, removeItem, reconcile } = useNativelyStorage();
     const SESSION_KEY = 'bonds_session_active';
     const DEVICE_ID_KEY = 'bonds_device_id';
     const ONBOARDING_KEY = 'onboarding_complete';
@@ -100,19 +100,24 @@ const App = () => {
 
         const checkSession = async () => {
             try {
-                const sessionResult = await getItem(SESSION_KEY);
+                // Wait for NativelyStorage to reconcile critical keys before deciding.
+                // This prevents stale localStorage (cleared by OS) from sending users
+                // to the wrong screen. Resolves in ~50-500ms, times out at 2s.
+                await reconcile([SESSION_KEY, ONBOARDING_KEY, DEVICE_ID_KEY, 'onboarding_state']);
+
+                const sessionResult = localStorage.getItem(SESSION_KEY);
+                const obResult = localStorage.getItem(ONBOARDING_KEY);
+                const onboardingState = localStorage.getItem('onboarding_state');
+
+                console.log(`📋 [App] Session check — session=${sessionResult}, onboarding=${obResult}, state=${onboardingState ? 'saved' : 'none'}`);
 
                 if (sessionResult === 'true') {
-                    const obResult = await getItem(ONBOARDING_KEY);
                     transitionTo(obResult === 'true' ? 'main' : 'onboarding');
+                } else if (onboardingState) {
+                    setItem(SESSION_KEY, 'true');
+                    transitionTo('onboarding');
                 } else {
-                    const onboardingState = await getItem('onboarding_state');
-                    if (onboardingState) {
-                        setItem(SESSION_KEY, 'true');
-                        transitionTo('onboarding');
-                    } else {
-                        transitionTo('welcome');
-                    }
+                    transitionTo('welcome');
                 }
             } catch (err) {
                 console.error('❌ App: Failed to check session:', err);
@@ -136,7 +141,7 @@ const App = () => {
         };
 
         checkSession();
-    }, [getItem, setItem, removeItem, transitionTo]);
+    }, [getItem, setItem, removeItem, reconcile, transitionTo]);
 
     const handleWelcomeAction = (action) => {
         if (action === 'go') {
