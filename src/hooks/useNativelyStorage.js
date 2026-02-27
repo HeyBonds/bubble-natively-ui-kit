@@ -78,7 +78,7 @@ export const useNativelyStorage = () => {
    * Typical latency: 50-500ms. Timeout: 2s (falls back to localStorage values).
    */
   const reconcile = useCallback((keys) => {
-    if (!storage) {
+    if (!storage || keys.length === 0) {
         console.log('🔧 [Storage] No native bridge — using localStorage values.');
         return Promise.resolve();
     }
