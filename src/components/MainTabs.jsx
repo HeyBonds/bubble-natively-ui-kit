@@ -3,65 +3,7 @@ import JourneyPath from './JourneyPath';
 import DailyQuestion from './DailyQuestion';
 import FunZoneSection from './FunZoneSection';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
-
-const THEMES = {
-  dark: {
-    bg: '#1B1B2F',
-    surface: '#252538',
-    textPrimary: '#FFFFFF',
-    textSecondary: 'rgba(255,255,255,0.6)',
-    textMuted: 'rgba(255,255,255,0.3)',
-    border: 'rgba(255,255,255,0.1)',
-    navInactive: 'rgba(255,255,255,0.6)',
-    lockedBg: '#3C3C4E',
-    lockedShadow: '#2A2A3A',
-    lockedIcon: 'rgba(255,255,255,0.35)',
-    labelCompleted: 'rgba(255,255,255,0.5)',
-    labelCurrent: '#FFFFFF',
-    labelLocked: 'rgba(255,255,255,0.25)',
-    floatBg: '#2B2B3D',
-    floatBorder: '#4A4A5E',
-    menuActive: 'rgba(255,255,255,0.1)',
-    menuShadow: '0 8px 24px rgba(0,0,0,0.4)',
-    backdrop: 'rgba(0,0,0,0.4)',
-    creditsText: '#D4D4D4',
-    glassBg: 'rgba(37,37,56,0.97)',
-    glassBorder: 'rgba(255,255,255,0.08)',
-    cardShadow: '#0A0A16',
-    separatorLine: 'rgba(255,255,255,0.2)',
-    separatorText: 'rgba(255,255,255,0.4)',
-  },
-  light: {
-    bg: '#F0F0F5',
-    surface: '#FFFFFF',
-    textPrimary: '#1B1B2F',
-    textSecondary: 'rgba(0,0,0,0.55)',
-    textMuted: 'rgba(0,0,0,0.3)',
-    border: 'rgba(0,0,0,0.08)',
-    navInactive: 'rgba(0,0,0,0.45)',
-    lockedBg: '#D0D0D8',
-    lockedShadow: '#B0B0B8',
-    lockedIcon: 'rgba(0,0,0,0.25)',
-    labelCompleted: 'rgba(0,0,0,0.45)',
-    labelCurrent: '#1B1B2F',
-    labelLocked: 'rgba(0,0,0,0.2)',
-    floatBg: '#FFFFFF',
-    floatBorder: '#D0D0D8',
-    menuActive: 'rgba(0,0,0,0.06)',
-    menuShadow: '0 8px 24px rgba(0,0,0,0.12)',
-    backdrop: 'rgba(0,0,0,0.25)',
-    creditsText: '#555555',
-    glassBg: 'rgba(240,240,245,0.97)',
-    glassBorder: 'rgba(0,0,0,0.06)',
-    cardShadow: '#D0D0D8',
-    separatorLine: 'rgba(0,0,0,0.15)',
-    separatorText: 'rgba(0,0,0,0.35)',
-  },
-};
-
-// Dark mode options: system follows OS preference, on = always dark, off = always light
-const DARK_MODE_OPTIONS = ['system', 'on', 'off'];
-const DARK_MODE_LABELS = { system: 'System', on: 'On', off: 'Off' };
+import { THEMES, DARK_MODE_OPTIONS, DARK_MODE_LABELS, getSystemTheme } from '../theme';
 
 // ── Reusable profile building blocks ──────────────────────────────────
 
@@ -284,9 +226,6 @@ const PlaceholderSection = ({ title, theme }) => (
 );
 
 const STORAGE_KEY = 'bonds_dark_mode';
-
-const getSystemTheme = () =>
-  window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
 const MainTabs = ({ userProps }) => {
   const storage = useNativelyStorage();

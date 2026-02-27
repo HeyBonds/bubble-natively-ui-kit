@@ -21,9 +21,11 @@ const OnboardingFlow = ({
     initialStep = 0,
     initialAnswers = {},
     showCredits = true,
+    theme,
     onComplete,
     onBack: onBackOut,
 }) => {
+    const ob = theme?.onboarding || {};
     const [currentStep, setCurrentStep] = useState(initialStep);
     const [credits, setCredits] = useState(initialCredits);
     const [answers, setAnswers] = useState(initialAnswers);
@@ -117,171 +119,186 @@ const OnboardingFlow = ({
     const triggerCreditPulse = useCallback(() => {
         if (showCredits && creditsCircleRef.current) {
             creditsCircleRef.current.style.transition = 'transform 0.3s ease';
-            creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1.2)';
+            creditsCircleRef.current.style.transform = 'scale(1.3)';
             setTimeout(() => {
                 if (creditsCircleRef.current) {
-                    creditsCircleRef.current.style.transform = 'translateY(-50%) scale(1)';
+                    creditsCircleRef.current.style.transform = 'scale(1)';
                 }
             }, 300);
         }
     }, [showCredits]);
 
     // First-time credit intro animation (0→1)
-    // Returns a Promise that resolves when the animation is done
+    // DailyQ-style coin entry (center pop, "+1") → message + button → tap dismisses → coin flies to target → pulse → increment
     const triggerCreditIntro = useCallback(() => {
         return new Promise((resolve) => {
             if (!creditsCircleRef.current || creditIntroRunningRef.current) { resolve(); return; }
             creditIntroRunningRef.current = true;
 
-            // Cleanup helper — safely removes elements and resolves
-            const elements = [];
-            let dismissed = false;
-            const cleanup = () => {
-                if (dismissed) return;
-                dismissed = true;
-                elements.forEach(el => { try { el.remove(); } catch (_) { /* noop */ } });
-                triggerCreditPulse();
-                setCreditIntroSeen(true);
-                storage.setItem('credits_intro_seen', 'true');
-                creditIntroRunningRef.current = false;
-                resolve();
-            };
+            const COIN_BG = 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)';
+            const COIN_SHADOW = '0 2px 0 0 #555';
 
-            // Safety net: auto-dismiss after 8 seconds no matter what
-            const safetyTimer = setTimeout(() => {
-                console.warn('[CreditIntro] Safety timeout — auto-dismissing');
-                cleanup();
-            }, 8000);
+            // Declare elements first so dismiss() can reference them via closure
+            let dimOverlay, coinOverlay, msgPanel;
+            let safetyTimer;
 
             const dismiss = () => {
                 clearTimeout(safetyTimer);
 
-                // Fade out overlay, fly circle back, then cleanup
-                if (overlay) overlay.style.opacity = '0';
-                setTimeout(() => {
-                    if (dim) dim.classList.remove('active');
-                    const endRect = creditsCircleRef.current?.getBoundingClientRect();
-                    if (endRect && circle) {
-                        circle.style.top = endRect.top + 'px';
-                        circle.style.left = endRect.left + 'px';
-                        circle.style.width = endRect.width + 'px';
-                        circle.style.height = endRect.height + 'px';
-                        const numEl = circle.querySelector('span');
-                        if (numEl) numEl.style.fontSize = '0.75rem';
+                // Hide "+1" via closure reference (no global DOM query)
+                const plusEl = coinOverlay.querySelector('.overlay-plus');
+                if (plusEl) plusEl.style.opacity = '0';
+
+                // Fade out message panel
+                msgPanel.style.opacity = '0';
+
+                // Snapshot current center position before removing animation class
+                const coinRect = coinOverlay.getBoundingClientRect();
+                coinOverlay.classList.remove('credit-center-animation');
+
+                // Pin to current computed position (preserve center alignment)
+                coinOverlay.style.top = coinRect.top + 'px';
+                coinOverlay.style.left = coinRect.left + 'px';
+                coinOverlay.style.transform = 'none';
+
+                // Now add fly transition and fade dim
+                coinOverlay.classList.add('credit-move-animation');
+                dimOverlay.classList.remove('active');
+
+                // Force reflow before setting target
+                coinOverlay.offsetHeight;
+
+                if (creditsCircleRef.current) {
+                    const targetRect = creditsCircleRef.current.getBoundingClientRect();
+                    coinOverlay.style.top = targetRect.top + 'px';
+                    coinOverlay.style.left = targetRect.left + 'px';
+
+                    const coinEl = coinOverlay.querySelector('.overlay-coin');
+                    if (coinEl) {
+                        coinEl.style.transition = 'width 600ms cubic-bezier(0.4, 0, 0.2, 1), height 600ms cubic-bezier(0.4, 0, 0.2, 1)';
+                        coinEl.style.width = '32px';
+                        coinEl.style.height = '32px';
+                        const spanEl = coinEl.querySelector('span');
+                        if (spanEl) spanEl.style.fontSize = '0.75rem';
                     }
-                }, 500);
-                setTimeout(cleanup, 1300);
+                }
+
+                // Cleanup after fly completes
+                setTimeout(() => {
+                    coinOverlay.remove();
+                    dimOverlay.remove();
+                    msgPanel.remove();
+
+                    // Pulse the target coin
+                    if (creditsCircleRef.current) {
+                        creditsCircleRef.current.style.transition = 'transform 0.3s ease';
+                        creditsCircleRef.current.style.transform = 'scale(1.3)';
+                        setTimeout(() => {
+                            if (creditsCircleRef.current) creditsCircleRef.current.style.transform = 'scale(1)';
+                        }, 300);
+                    }
+
+                    // Increment credits 0→1
+                    setCredits(1);
+
+                    // Mark intro as seen and resolve
+                    setCreditIntroSeen(true);
+                    storage.setItem('credits_intro_seen', 'true');
+                    creditIntroRunningRef.current = false;
+                    resolve();
+                }, 700);
             };
 
-            // Get the starting position of the real credits circle
-            const startRect = creditsCircleRef.current.getBoundingClientRect();
+            // Safety net: auto-dismiss after 10 seconds
+            safetyTimer = setTimeout(() => { dismiss(); }, 10000);
 
-            // 1. Create dim overlay — tappable as fallback dismiss
-            const dim = document.createElement('div');
-            dim.className = 'dim-overlay';
-            dim.addEventListener('click', dismiss);
-            dim.addEventListener('touchend', (e) => { e.preventDefault(); dismiss(); });
-            document.body.appendChild(dim);
-            elements.push(dim);
-            requestAnimationFrame(() => dim.classList.add('active'));
+            // 1. Dim overlay — fade in via rAF, tappable as fallback dismiss
+            dimOverlay = document.createElement('div');
+            dimOverlay.className = 'dim-overlay';
+            dimOverlay.addEventListener('click', dismiss);
+            dimOverlay.addEventListener('touchend', (e) => { e.preventDefault(); dismiss(); });
+            document.body.appendChild(dimOverlay);
+            requestAnimationFrame(() => dimOverlay.classList.add('active'));
 
-            // 2. Create the floating credit circle at the bar position
-            const circle = document.createElement('div');
-            circle.style.cssText = `
+            // 2. B coin + "+1" — center pop via credit-center-animation CSS class
+            coinOverlay = document.createElement('div');
+            coinOverlay.className = 'credit-center-animation';
+            coinOverlay.style.cssText = `
                 position: fixed;
-                top: ${startRect.top}px;
-                left: ${startRect.left}px;
-                width: ${startRect.width}px;
-                height: ${startRect.height}px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
                 z-index: 10000;
                 pointer-events: none;
-                transition: top 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                            left 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                            width 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                            height 0.7s cubic-bezier(0.16, 1, 0.3, 1);
             `;
-            circle.innerHTML = `
-                <div style="width:100%;height:100%;background:#FF2258;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(255,34,88,0.5);">
-                    <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.75rem;color:white;letter-spacing:0.05em;line-height:1;transition:font-size 0.7s cubic-bezier(0.16,1,0.3,1);">0</span>
+            coinOverlay.innerHTML = `
+                <div class="overlay-coin" style="width: 80px; height: 80px; border-radius: 50%; background: ${COIN_BG}; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 24px rgba(0,0,0,0.3), ${COIN_SHADOW};">
+                    <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); line-height: 1;">B</span>
                 </div>
+                <span class="overlay-plus" style="position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 10px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.4); opacity: 0; transition: opacity 300ms ease;">+1</span>
             `;
-            document.body.appendChild(circle);
-            elements.push(circle);
+            document.body.appendChild(coinOverlay);
 
-            // 3. Create centered overlay container (circle placeholder + text + button)
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
+            // 3. Message panel (text + button) — positioned below coin, starts hidden
+            msgPanel = document.createElement('div');
+            msgPanel.style.cssText = `
                 position: fixed;
-                inset: 0;
+                top: calc(50% + 64px);
+                left: 50%;
+                transform: translateX(-50%);
                 z-index: 9999;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                justify-content: center;
-                pointer-events: none;
                 opacity: 0;
-                transition: opacity 0.5s ease;
+                transition: opacity 0.4s ease;
+                pointer-events: none;
             `;
-            overlay.innerHTML = `
-                <div style="width:96px;height:96px;margin-bottom:24px;"></div>
-                <p style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:white;margin:0 0 8px 0;line-height:1.4;text-align:center;">
-                    Meet your Credits! &#x1F389;
+            msgPanel.innerHTML = `
+                <p style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:#FFFFFF;margin:0 0 8px 0;line-height:1.4;text-align:center;">
+                    Meet your Bonds coins!
                 </p>
                 <p style="font-family:'Poppins',sans-serif;font-weight:400;font-size:14px;color:rgba(255,255,255,0.7);margin:0 0 24px 0;line-height:1.5;text-align:center;max-width:280px;padding:0 20px;">
-                    Every answer earns you a credit.<br/>Use them to unlock experiences in Bonds.
+                    Every answer earns you a coin.<br/>Use them to unlock experiences in Bonds.
                 </p>
                 <button style="
                     pointer-events:auto;
                     font-family:'Plus Jakarta Sans',sans-serif;
                     font-weight:700;
                     font-size:16px;
-                    color:#FF2258;
-                    background:white;
+                    color:white;
+                    background:#E44B8E;
                     border:none;
-                    border-radius:40px;
+                    border-radius:16px;
                     padding:14px 48px;
                     cursor:pointer;
                     letter-spacing:0.5px;
-                    box-shadow:0 4px 20px rgba(255,34,88,0.3);
+                    box-shadow:0 4px 0 #B83A72;
                     transition:transform 0.15s ease, box-shadow 0.15s ease;
                 ">OK, Cool!</button>
             `;
-            document.body.appendChild(overlay);
-            elements.push(overlay);
+            document.body.appendChild(msgPanel);
 
-            // Attach dismiss to the CTA button immediately (not via setTimeout)
-            const cta = overlay.querySelector('button');
+            // Wire up CTA button via closure reference
+            const cta = msgPanel.querySelector('button');
             if (cta) {
                 cta.addEventListener('click', dismiss);
                 cta.addEventListener('touchstart', (e) => { e.preventDefault(); dismiss(); });
             }
 
-            // Calculate center target for the circle (aligned with placeholder)
-            const placeholderRect = overlay.querySelector('div')?.getBoundingClientRect();
-            if (!placeholderRect) { cleanup(); return; }
-
-            // 4. After a tick, fly circle to center (aligned with placeholder)
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    circle.style.top = placeholderRect.top + 'px';
-                    circle.style.left = placeholderRect.left + 'px';
-                    circle.style.width = '96px';
-                    circle.style.height = '96px';
-                    const numEl = circle.querySelector('span');
-                    if (numEl) numEl.style.fontSize = '2.5rem';
-                });
-            });
-
-            // 5. After circle arrives at center, increment 0→1
+            // 4. Fade in "+1" at 500ms
             setTimeout(() => {
-                const numEl = circle.querySelector('span');
-                if (numEl) numEl.innerText = '1';
-            }, 800);
+                const plusEl = coinOverlay.querySelector('.overlay-plus');
+                if (plusEl) plusEl.style.opacity = '1';
+            }, 500);
 
-            // 6. Fade in overlay (text + button)
-            setTimeout(() => { overlay.style.opacity = '1'; }, 1100);
+            // 5. Fade in message panel at 1000ms
+            setTimeout(() => {
+                msgPanel.style.opacity = '1';
+                msgPanel.style.pointerEvents = 'auto';
+            }, 1000);
         });
-    }, [triggerCreditPulse, storage]);
+    }, [storage]);
 
     const handleAnswer = useCallback((data) => {
         if (answeredThisVisit) return;
@@ -296,11 +313,14 @@ const OnboardingFlow = ({
         };
         const newAnswers = { ...answers, [currentStep]: stepAnswer };
 
-        // Update state
-        setAnswers(newAnswers);
-        if (isNewAnswer) setCredits(newCredits);
+        // Will the credit intro animation play? (first credit ever, intro not yet seen)
+        const willPlayIntro = isNewAnswer && credits === 0 && !creditIntroSeen && !creditIntroRunningRef.current;
 
-        // Persist locally for resume
+        // Update state — defer credit increment if intro will animate it visually (0→1)
+        setAnswers(newAnswers);
+        if (isNewAnswer && !willPlayIntro) setCredits(newCredits);
+
+        // Persist locally for resume (always persist the final credit count)
         const nextStep = currentStep + 1;
         persistState(nextStep, newAnswers, newCredits, rotationOffsets);
 
@@ -325,8 +345,8 @@ const OnboardingFlow = ({
             }
         };
 
-        // First credit ever + not seen intro → pause to let selection sink in, then play intro
-        if (isNewAnswer && credits === 0 && !creditIntroSeen && !creditIntroRunningRef.current) {
+        // First credit ever → pause, then play coin center-pop animation (mirrors DailyQuestion)
+        if (willPlayIntro) {
             setTimeout(() => triggerCreditIntro().then(advanceOrComplete), 500);
         } else {
             if (isNewAnswer) triggerCreditPulse();
@@ -349,7 +369,7 @@ const OnboardingFlow = ({
     // Wait for persisted state to load before rendering
     // Show matching background while loading persisted state (prevents white flash on mobile)
     if (!ready) return (
-        <div className="w-full h-full" style={{ background: 'linear-gradient(160deg, #2E4695 0%, #652664 100%)' }} />
+        <div className="w-full h-full" style={{ background: ob.bg }} />
     );
 
     // Resolve screen component
@@ -369,57 +389,62 @@ const OnboardingFlow = ({
 
     return (
         <div className="flex flex-col w-full h-full overflow-hidden font-jakarta" style={{
-            background: 'linear-gradient(160deg, #2E4695 0%, #652664 100%)',
+            background: ob.bg,
         }}>
             {/* Top Bar — absolute positioned like DailyQuestion */}
             <div className="relative z-20 shrink-0 pt-[18px] pb-4 px-[18px]">
                 {/* Back Button — matches DailyQuestion X button positioning */}
                 <button
                     onClick={currentStep === 0 && onBackOut ? onBackOut : goBack}
-                    className={`w-8 h-8 rounded-full border border-solid border-white/40 flex items-center justify-center transition-opacity duration-200 ${
-                        currentStep === 0 && !onBackOut ? 'opacity-0 pointer-events-none' : 'hover:bg-white/10'
+                    className={`w-8 h-8 rounded-full border border-solid flex items-center justify-center transition-opacity duration-200 ${
+                        currentStep === 0 && !onBackOut ? 'opacity-0 pointer-events-none' : ''
                     }`}
+                    style={{ background: ob.backBg, borderColor: ob.backBorder }}
                 >
                     <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                        <path d="M6 1L1 6L6 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M6 1L1 6L6 11" stroke={ob.backIcon} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                 </button>
 
                 {/* Progress — centered absolutely */}
                 <div className="absolute left-1/2 top-[18px] -translate-x-1/2 flex flex-col gap-1.5 items-center">
-                    <span className="font-semibold text-[10px] text-white tracking-[0.5px]">
+                    <span className="font-semibold text-[10px] tracking-[0.5px]" style={{ color: ob.text }}>
                         {currentStep + 1}/{totalSteps}
                     </span>
-                    <div className="h-[14px] w-[180px] rounded-[90px] border border-solid border-white/50 bg-white/[0.06] overflow-hidden">
+                    <div className="h-[14px] w-[180px] rounded-[90px] border border-solid overflow-hidden" style={{ borderColor: ob.progressBarBorder, background: ob.progressBarBg }}>
                         <div
-                            className="h-full rounded-[90px] bg-white/30 transition-[width] duration-500 ease-out"
-                            style={{ width: `${progress}%` }}
+                            className="h-full rounded-[90px] transition-[width] duration-500 ease-out"
+                            style={{ width: `${progress}%`, background: ob.progressBarFill }}
                         />
                     </div>
                 </div>
 
-                {/* Credits Widget — same pattern as DailyQuestion */}
+                {/* Credits — coin + number, matches DailyQuestion / JourneyPath */}
                 {showCredits && (
-                    <div className="absolute top-4 -right-[95px] z-10">
-                        <div className="relative w-[180px] h-10 rounded-full flex items-center border border-solid border-white/50">
-                            <div
-                                ref={creditsCircleRef}
-                                className="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#FF2258] rounded-full flex items-center justify-center shadow-lg"
-                            >
-                                <span className="font-jakarta font-extrabold text-xs text-white tracking-wide leading-none">
-                                    {credits}
-                                </span>
-                            </div>
-                            <span className="absolute left-[42px] top-1/2 translate-y-[6px] font-jakarta font-medium text-[10px] text-white tracking-wide leading-none">
-                                Credits
-                            </span>
+                    <div className="absolute top-[18px] right-[18px] z-10 flex items-center gap-2">
+                        <div
+                            ref={creditsCircleRef}
+                            className="coin-shimmer"
+                            style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)',
+                                boxShadow: '0 2px 0 0 #555',
+                            }}
+                        >
+                            <span className="font-jakarta font-extrabold text-[12px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.25)' }}>B</span>
                         </div>
+                        <span className="font-extrabold text-[16px] min-w-[16px] text-center" style={{ color: theme?.creditsText }}>{credits}</span>
                     </div>
                 )}
             </div>
 
             {/* Divider */}
-            <div className="w-full h-px bg-white/15" />
+            <div className="w-full h-px" style={{ background: ob.divider }} />
 
             {/* Screen Content */}
             <div className={`flex-1 flex flex-col overflow-hidden ${getAnimClass()}`} key={currentStep}>
@@ -428,12 +453,13 @@ const OnboardingFlow = ({
                         {...step}
                         options={visibleOptions}
                         previousAnswer={previousAnswer}
+                        theme={theme}
                         onAnswer={handleAnswer}
                         onRefresh={handleRefresh}
                     />
                 ) : (
                     <div className="flex-1 flex items-center justify-center">
-                        <span className="text-white/50 text-sm">Unknown step type: {step?.type}</span>
+                        <span className="text-sm" style={{ color: ob.textMuted }}>Unknown step type: {step?.type}</span>
                     </div>
                 )}
             </div>

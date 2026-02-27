@@ -59,6 +59,13 @@
     </div>
 
     <script src="config.js"></script>
+    <script>
+        // Clear session/completion flags so preview starts at welcome → onboarding
+        // Keep onboarding_state + credits_intro_seen so progress resumes on refresh
+        ['bonds_session_active', 'onboarding_complete'].forEach(function(k) {
+            localStorage.removeItem(k);
+        });
+    </script>
     <script src="../bundle.js"></script>
 
     <script>

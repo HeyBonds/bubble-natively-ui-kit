@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 
-const SingleSelect = ({ question, options = [], refreshable = true, previousAnswer, onAnswer, onRefresh }) => {
+const SingleSelect = ({ question, options = [], refreshable = true, previousAnswer, theme, onAnswer, onRefresh }) => {
+    const ob = theme?.onboarding || {};
     const [selectedIndex, setSelectedIndex] = useState(previousAnswer?.index ?? null);
     const [refreshAnim, setRefreshAnim] = useState(''); // '', 'out', 'in'
     const [refreshKey, setRefreshKey] = useState(0);
@@ -42,11 +43,11 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
         <div className="flex flex-col h-full w-full">
             {/* Content */}
             <div className="flex-1 px-7 pt-8 pb-6 w-full overflow-hidden">
-                <h1 className="font-bold text-[22px] text-white leading-[30px] tracking-[0.02em] mb-8">
+                <h1 className="font-bold text-[22px] leading-[30px] tracking-[0.02em] mb-8" style={{ color: ob.text }}>
                     {question}
                 </h1>
 
-                <div className={`space-y-4 ${listClass}`} key={refreshKey}>
+                <div className={`space-y-5 ${listClass}`} key={refreshKey}>
                     {options.map((opt, i) => {
                         const text = typeof opt === 'string' ? opt : opt.text;
                         const isSelected = selectedIndex === i;
@@ -55,13 +56,14 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
                             <button
                                 key={i}
                                 onClick={() => handleSelect(opt, i)}
-                                className={`w-full text-left px-5 py-4 rounded-xl border border-solid transition-colors duration-200
-                                    ${isSelected
-                                        ? 'bg-white/20 border-white/30 shadow-[inset_0_2px_8px_rgba(255,255,255,0.1)]'
-                                        : 'bg-white/[0.07] border-white/10 hover:bg-white/10'
-                                    }`}
+                                className="w-full text-left px-5 py-4 rounded-2xl border-2 border-solid transition-all duration-200 active:translate-y-[2px]"
+                                style={{
+                                    background: isSelected ? ob.optionSelectedBg : ob.optionBg,
+                                    borderColor: isSelected ? ob.optionSelectedBorder : ob.optionBorder,
+                                    boxShadow: isSelected ? ob.optionSelectedShadow : ob.optionShadow,
+                                }}
                             >
-                                <span className="font-medium text-[14px] text-white leading-[22px] tracking-[0.02em]">
+                                <span className="font-bold text-[14px] leading-[22px] tracking-[0.02em]" style={{ color: ob.text }}>
                                     {text}
                                 </span>
                             </button>
@@ -73,10 +75,10 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
             {/* Footer */}
             {refreshable && (
                 <div className="shrink-0 pb-10 w-full flex flex-col items-center gap-1">
-                    <span className="font-medium text-[14px] text-white tracking-[0.5px]">
+                    <span className="font-medium text-[14px] tracking-[0.5px]" style={{ color: ob.textSecondary }}>
                         Choose the most relevant option
                     </span>
-                    <span className="font-medium text-[10px] text-white tracking-[0.5px]">
+                    <span className="font-medium text-[10px] tracking-[0.5px]" style={{ color: ob.textMuted }}>
                         or
                     </span>
                     <button
@@ -85,10 +87,10 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
                         disabled={refreshAnim !== ''}
                     >
                         <svg ref={iconRef} width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ willChange: 'transform' }}>
-                            <path d="M1.667 3.333v5h5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M3.51 12.5a7.5 7.5 0 1 0 1.14-7.833L1.667 8.333" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M1.667 3.333v5h5" stroke={ob.refreshIcon} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M3.51 12.5a7.5 7.5 0 1 0 1.14-7.833L1.667 8.333" stroke={ob.refreshIcon} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                        <span className="font-medium text-[14px] text-white tracking-[0.5px] underline decoration-solid">
+                        <span className="font-bold text-[14px] tracking-[0.5px] underline decoration-solid" style={{ color: ob.refreshIcon }}>
                             Refresh answers
                         </span>
                     </button>

@@ -5,6 +5,7 @@ import MainTabs from './components/MainTabs';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
 import { useNativelyStorage } from './hooks/useNativelyStorage';
+import { THEMES, getSystemTheme } from './theme';
 
 // Transition map: [fromPhase][toPhase] → { exit, enter, exitDuration }
 const TRANSITIONS = {
@@ -35,6 +36,26 @@ const App = () => {
     const SESSION_KEY = 'bonds_session_active';
     const DEVICE_ID_KEY = 'bonds_device_id';
     const ONBOARDING_KEY = 'onboarding_complete';
+
+    // Theme resolution — defaults to 'system' (OS preference) during onboarding
+    const [darkModePref, setDarkModePref] = useState(() => localStorage.getItem('bonds_dark_mode') || 'system');
+    const [systemTheme, setSystemTheme] = useState(getSystemTheme);
+
+    useEffect(() => {
+        getItem('bonds_dark_mode').then(val => {
+            if (val) setDarkModePref(prev => val !== prev ? val : prev);
+        });
+    }, [getItem]);
+
+    useEffect(() => {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const handler = (e) => setSystemTheme(e.matches ? 'dark' : 'light');
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    }, []);
+
+    const themeKey = darkModePref === 'on' ? 'dark' : darkModePref === 'off' ? 'light' : systemTheme;
+    const theme = THEMES[themeKey];
 
     // Animated phase transition (uses ref to avoid stale closure)
     const transitionTo = useCallback((nextPhase) => {
@@ -201,6 +222,7 @@ const App = () => {
                         steps={mockOnboardingSteps}
                         credits={0}
                         showCredits={true}
+                        theme={theme}
                         onComplete={handleOnboardingComplete}
                         onBack={() => transitionTo('welcome')}
                     />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
+const SliderSelect = ({ question, stops = [], previousAnswer, theme, onAnswer }) => {
+    const ob = theme?.onboarding || {};
     const [selectedIndex, setSelectedIndex] = useState(previousAnswer?.index ?? null);
     const [revealed, setRevealed] = useState(previousAnswer ? stops.length : 0);
     const [bounceIndex, setBounceIndex] = useState(null);
@@ -30,7 +31,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
     return (
         <div className="flex flex-col h-full w-full">
             <div className="flex-1 px-7 pt-8 pb-6 w-full flex flex-col">
-                <h1 className="font-bold text-[22px] text-white leading-[30px] tracking-[0.02em] mb-6">
+                <h1 className="font-bold text-[22px] leading-[30px] tracking-[0.02em] mb-6" style={{ color: ob.text }}>
                     {question}
                 </h1>
 
@@ -54,30 +55,27 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
                                         {/* Connecting line above (not on first) */}
                                         {i > 0 && (
                                             <div
-                                                className={`absolute -top-[10px] w-[3px] h-[10px] rounded-full transition-[background-color] duration-300 ${
-                                                    isFilled ? 'bg-[#FF2258]' : 'bg-white/15'
-                                                }`}
+                                                className="absolute -top-[10px] w-[3px] h-[10px] rounded-full transition-[background-color] duration-300"
+                                                style={{ backgroundColor: isFilled ? ob.sliderFilled : ob.sliderUnfilled }}
                                             />
                                         )}
 
                                         {/* Dot */}
                                         <button
                                             onClick={() => handleSelect(stop, i)}
-                                            className={`relative w-6 h-6 rounded-full border-2 border-solid transition-[background-color,border-color,box-shadow] duration-200 ${
-                                                isSelected
-                                                    ? 'bg-[#FF2258] border-[#FF2258] shadow-[0_0_16px_rgba(255,34,88,0.6)]'
-                                                    : isFilled
-                                                        ? 'bg-[#FF2258] border-[#FF2258]'
-                                                        : 'bg-white/10 border-white/30'
-                                            } ${isBouncing ? 'dot-pop' : ''}`}
+                                            className={`relative w-6 h-6 rounded-full border-2 border-solid transition-[background-color,border-color,box-shadow] duration-200 ${isBouncing ? 'dot-pop' : ''}`}
+                                            style={{
+                                                backgroundColor: isFilled ? ob.sliderFilled : ob.dotEmpty,
+                                                borderColor: isFilled ? ob.sliderFilled : ob.dotEmptyBorder,
+                                                boxShadow: isFilled ? ob.dotFilledShadow : ob.dotEmptyShadow,
+                                            }}
                                         />
 
                                         {/* Connecting line below (not on last) */}
                                         {i < stops.length - 1 && (
                                             <div
-                                                className={`absolute -bottom-[10px] w-[3px] h-[10px] rounded-full transition-[background-color] duration-300 ${
-                                                    isFilled && i < selectedIndex ? 'bg-[#FF2258]' : 'bg-white/15'
-                                                }`}
+                                                className="absolute -bottom-[10px] w-[3px] h-[10px] rounded-full transition-[background-color] duration-300"
+                                                style={{ backgroundColor: (isFilled && i < selectedIndex) ? ob.sliderFilled : ob.sliderUnfilled }}
                                             />
                                         )}
                                     </div>
@@ -93,13 +91,10 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
                                         >
                                             {stop.emoji || ''}
                                         </span>
-                                        <span className={`text-[15px] leading-snug transition-colors duration-200 ${
-                                            isSelected
-                                                ? 'text-white font-bold'
-                                                : isFilled
-                                                    ? 'text-white/80 font-medium'
-                                                    : 'text-white/40 font-medium'
-                                        }`}>
+                                        <span
+                                            className={`text-[15px] leading-snug transition-colors duration-200 ${isSelected ? 'font-bold' : 'font-medium'}`}
+                                            style={{ color: isSelected ? ob.text : isFilled ? ob.labelFilled : ob.labelUnfilled }}
+                                        >
                                             {stop.label}
                                         </span>
                                     </button>
@@ -115,15 +110,18 @@ const SliderSelect = ({ question, stops = [], previousAnswer, onAnswer }) => {
                 <button
                     onClick={handleContinue}
                     disabled={selectedIndex === null}
-                    className={`w-full h-[54px] rounded-[40px] flex items-center justify-center transition-[background-color,opacity,transform] duration-200 ${
-                        selectedIndex !== null
-                            ? 'bg-gradient-to-l from-[#B900B0] to-[#D8003F] shadow-lg active:scale-95'
-                            : 'bg-white/10 border border-solid border-white/10'
+                    className={`w-full h-[54px] rounded-2xl flex items-center justify-center transition-all duration-200 border-2 border-solid ${
+                        selectedIndex !== null ? 'active:translate-y-[2px]' : ''
                     }`}
+                    style={selectedIndex !== null
+                        ? { background: ob.ctaBg, borderColor: ob.ctaBg, boxShadow: ob.ctaShadow }
+                        : { background: ob.ctaDisabledBg, borderColor: ob.ctaDisabledBorder, boxShadow: ob.ctaDisabledShadow }
+                    }
                 >
-                    <span className={`font-semibold text-[16px] tracking-[2px] uppercase ${
-                        selectedIndex !== null ? 'text-white' : 'text-white/30'
-                    }`}>
+                    <span
+                        className="font-extrabold text-[16px] tracking-[2px] uppercase"
+                        style={{ color: selectedIndex !== null ? ob.ctaText : ob.ctaDisabledText }}
+                    >
                         Continue
                     </span>
                 </button>
