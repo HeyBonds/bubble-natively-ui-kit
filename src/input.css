@@ -409,4 +409,26 @@
   .animate-paused-clock {
     animation: paused-clock 2.5s ease-in-out infinite;
   }
+
+  /* Dialog overlay + card */
+  @keyframes dialogFadeIn {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes dialogCardIn {
+    0%   { opacity: 0; transform: scale(0.92) translateZ(0); }
+    100% { opacity: 1; transform: scale(1) translateZ(0); }
+  }
+  @keyframes dialogFadeOut {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes dialogCardOut {
+    0%   { opacity: 1; transform: scale(1) translateZ(0); }
+    100% { opacity: 0; transform: scale(0.92) translateZ(0); }
+  }
+  .dialog-overlay-in  { animation: dialogFadeIn 0.2s ease-out forwards; }
+  .dialog-overlay-out { animation: dialogFadeOut 0.15s ease-in forwards; }
+  .dialog-card-in     { animation: dialogCardIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity; }
+  .dialog-card-out    { animation: dialogCardOut 0.15s ease-in forwards; will-change: transform, opacity; }
 }

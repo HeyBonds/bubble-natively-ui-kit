@@ -46,6 +46,7 @@ import DailyQuestion from './components/DailyQuestion';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
 import JourneyPath from './components/JourneyPath';
+import RT from './utils/realtime';
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
@@ -89,3 +90,6 @@ if (appContainer) {
 } else {
     console.log('📦 UI Kit loaded. Mount functions ready on window.appUI');
 }
+
+// Expose RT config for Bubble to set instruction templates
+window.RT = RT;

@@ -4,6 +4,7 @@ import DailyQuestion from './DailyQuestion';
 import FunZoneSection from './FunZoneSection';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
 import { THEMES, DARK_MODE_OPTIONS, DARK_MODE_LABELS, getSystemTheme } from '../theme';
+import SimulatorSection from './SimulatorSection';
 
 // ── Reusable profile building blocks ──────────────────────────────────
 
@@ -269,6 +270,7 @@ const MainTabs = ({ userProps }) => {
     profile: ['profile']
   });
   const [navAction, setNavAction] = useState(null); // 'push', 'pop', or null
+  const [simulatorActive, setSimulatorActive] = useState(false);
 
   // Navigation Logic
   const push = (viewId, props = {}) => {
@@ -293,6 +295,19 @@ const MainTabs = ({ userProps }) => {
 
   const switchTab = (tabId) => {
     if (tabId === activeTab) return;
+
+    // If simulator session is active, ask for confirmation
+    if (simulatorActive && activeTab === 'simulator') {
+      if (window.appUI._simulatorRequestLeave) {
+        const allowed = window.appUI._simulatorRequestLeave(() => {
+          // Callback: user confirmed leave
+          setNavAction('tab');
+          setActiveTab(tabId);
+        });
+        if (!allowed) return; // blocked, dialog shown
+      }
+    }
+
     setNavAction('tab');
     setActiveTab(tabId);
   };
@@ -318,7 +333,7 @@ const MainTabs = ({ userProps }) => {
         content = <JourneyPath {...commonProps} />;
         break;
       case 'simulator':
-        content = <PlaceholderSection title="Simulator" theme={t} />;
+        content = <SimulatorSection theme={t} onSessionChange={setSimulatorActive} />;
         break;
       case 'fun':
         if (currentViewId === 'daily-question') {
