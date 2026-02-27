@@ -490,6 +490,9 @@ RT.startPushToTalk = function () {
 
   RT.emit("state", { state: "PUSH_TO_TALK_ACTIVE" });
 
+  // Show "..." placeholder in transcript (matches original WaveformComponent.updateText("user", "...", false))
+  RT.emit("user_speaking", { text: "..." });
+
   return true;
 };
 
@@ -765,6 +768,10 @@ function handleStreamingDelta(evt) {
   }
 
   state.conversation.currentAssistantLine += chunk;
+
+  // Emit streaming delta so UI can show text as it arrives
+  const deltaType = state.stages.simulation.mode ? "partner_text_delta" : "coach_text_delta";
+  RT.emit(deltaType, { text: state.conversation.currentAssistantLine, isFinal: false, durationMs: evt.duration_ms });
 
   if (
     !state.json.waiting &&

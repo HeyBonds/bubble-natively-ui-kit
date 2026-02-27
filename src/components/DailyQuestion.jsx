@@ -23,7 +23,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
         return () => {
             timersRef.current.forEach(clearTimeout);
             timersRef.current = [];
-            overlaysRef.current.forEach(el => { try { el.remove(); } catch (_) { /* noop */ } });
+            overlaysRef.current.forEach(el => { try { el.remove(); } catch { /* noop */ } });
             overlaysRef.current = [];
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
         };

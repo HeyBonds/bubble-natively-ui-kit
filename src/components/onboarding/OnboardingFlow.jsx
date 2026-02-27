@@ -50,7 +50,7 @@ const OnboardingFlow = ({
         return () => {
             timers.current.forEach(clearTimeout);
             timers.current = [];
-            overlays.current.forEach(el => { try { el.remove(); } catch (_) { /* noop */ } });
+            overlays.current.forEach(el => { try { el.remove(); } catch { /* noop */ } });
             overlays.current = [];
             if (raf.current) cancelAnimationFrame(raf.current);
         };

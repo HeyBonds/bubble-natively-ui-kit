@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import RT, { onRTEvent, offRTEvent } from '../../utils/realtime';
 import { sendToBubble } from '../../utils/bubble';
 import Waveform from './Waveform';
@@ -9,23 +9,13 @@ const TOTAL_TURNS = 4; // 2 partner + 2 user turns in Stage 2
 
 const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
   const sim = theme.simulator;
+  const transcriptRef = useRef(null);
 
   // Session state
   const [stage, setStage] = useState(1); // 1, 'transition', 2, 3
   const [rtState, setRtState] = useState('loading');
-  const [transcript, setTranscript] = useState('');
   const [micState, setMicState] = useState('hidden');
   const [turnProgress, setTurnProgress] = useState(0);
-  const [isStreaming, setIsStreaming] = useState(false);
-
-  // Audio context for waveform
-  const audioCtxRef = useRef(null);
-  const analyserRef = useRef(null);
-
-  // Waveform mode
-  const waveformMode = rtState === 'PUSH_TO_TALK_ACTIVE' ? 'recording'
-    : ['COACH_SPEAKING', 'PARTNER_SPEAKING'].includes(rtState) ? 'speaking'
-    : 'idle';
 
   // Status text
   const statusText = micState === 'recording' ? 'Tap when done speaking'
@@ -34,9 +24,15 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
     : rtState === 'loading' ? 'Connecting...'
     : '';
 
+  // Helper to access Transcript imperative API
+  const getTranscriptAPI = useCallback(() => {
+    return transcriptRef.current?._transcriptAPI;
+  }, []);
+
   // Handle RT events
   const handleRTEvent = useCallback((evt) => {
     const { type, data } = evt;
+    const api = getTranscriptAPI();
 
     switch (type) {
       case 'state': {
@@ -47,23 +43,19 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
           case 'SESSION_STARTED':
           case 'BEGIN_SIMULATION':
             setMicState('hidden');
+            if (api) api.clearText();
             break;
           case 'COACH_SPEAKING':
             setMicState('hidden');
-            setIsStreaming(true);
-            setTranscript('');
             break;
           case 'PARTNER_SPEAKING':
             setMicState('hidden');
-            setIsStreaming(true);
-            setTranscript('');
             if (data.partnerTurnCount) {
               setTurnProgress((data.partnerTurnCount - 1) * 2 + 1);
             }
             break;
           case 'PUSH_TO_TALK_READY':
             setMicState('ready');
-            setIsStreaming(false);
             if (data.userTurnCount) {
               setTurnProgress(data.userTurnCount * 2);
             }
@@ -77,7 +69,7 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
           case 'LOADING_SIMULATION':
             setStage('transition');
             setMicState('hidden');
-            setTranscript('');
+            if (api) api.clearText();
             break;
           case 'SESSION_COMPLETED':
             setStage(3);
@@ -92,13 +84,28 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
         }
         break;
       }
+      case 'coach_text_delta':
+      case 'partner_text_delta': {
+        // Matches original: WaveformComponent.updateText(type, currentAssistantLine, false, { duration_ms })
+        const textType = type === 'partner_text_delta' ? 'assistant' : 'coach';
+        if (api) api.updateText(textType, data.text || '', false, { duration_ms: data.durationMs });
+        break;
+      }
       case 'coach_text':
+        // Matches original: WaveformComponent.updateText("coach", finalText, true)
+        if (api) api.updateText('coach', data.text || '', true);
+        break;
       case 'partner_text':
-        setTranscript(data.text || '');
-        setIsStreaming(false);
+        // Matches original: WaveformComponent.updateText("assistant", finalText, true)
+        if (api) api.updateText('assistant', data.text || '', true);
+        break;
+      case 'user_speaking':
+        // Matches original: WaveformComponent.updateText("user", "...", false)
+        if (api) api.updateText('user', data.text || '...', false);
         break;
       case 'user_transcript':
-        // Show user's own speech as transcript briefly
+        // Matches original: WaveformComponent.updateText("user", text, true)
+        if (api) api.updateText('user', data.text || '', true);
         break;
       case 'stage2_token_needed':
         // Tell Bubble to generate Stage 2 token
@@ -119,38 +126,13 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
       default:
         break;
     }
-  }, [onComplete, onStage2Start]);
+  }, [onComplete, onStage2Start, getTranscriptAPI]);
 
   // Subscribe to RT events
   useEffect(() => {
     onRTEvent(handleRTEvent);
     return () => offRTEvent(handleRTEvent);
   }, [handleRTEvent]);
-
-  // Setup AudioContext for recording waveform
-  useEffect(() => {
-    return () => {
-      if (audioCtxRef.current) {
-        try { audioCtxRef.current.close(); } catch (e) { /* noop */ }
-      }
-    };
-  }, []);
-
-  // When mic becomes active, connect to analyser
-  useEffect(() => {
-    if (micState === 'recording') {
-      const micStream = RT.getMicStream();
-      if (micStream && !audioCtxRef.current) {
-        const ctx = new AudioContext();
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        const source = ctx.createMediaStreamSource(micStream);
-        source.connect(analyser);
-        audioCtxRef.current = ctx;
-        analyserRef.current = analyser;
-      }
-    }
-  }, [micState]);
 
   // Detect Stage 2 start (LOADING_SIMULATION -> next PARTNER_SPEAKING = stage 2)
   useEffect(() => {
@@ -216,29 +198,31 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
         <div className="w-10" />
       </div>
 
-      {/* Center content -- status + waveform */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
+      {/* Center content -- status + waveform + mic overlaid */}
+      <div className="flex-1 flex flex-col items-center justify-end px-6 pb-4">
         {/* Status text */}
-        <p className="font-jakarta font-bold text-[20px]" style={{ color: sim.statusText }}>
+        <p className="font-jakarta font-bold text-[20px] mb-6" style={{ color: sim.statusText }}>
           {statusText}
         </p>
 
-        {/* Waveform + Mic */}
-        <div className="w-full flex items-center gap-0">
-          <div className="flex-1">
-            <Waveform mode={waveformMode} analyserNode={analyserRef.current} theme={theme} height={48} />
-          </div>
+        {/* Waveform wrapper with mic button centered on top */}
+        <div className="relative w-4/5" style={{ height: 72 }}>
+          <Waveform
+            rtState={rtState}
+            buttonVisible={micState !== 'hidden'}
+            theme={theme}
+          />
           {micState !== 'hidden' && (
-            <div className="shrink-0 -ml-4">
+            <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
               <MicButton state={micState} onPress={handleMicPress} theme={theme} />
             </div>
           )}
         </div>
       </div>
 
-      {/* Bottom -- Transcript */}
-      <div className="shrink-0 px-5 pb-6 pt-2">
-        <Transcript text={transcript} streaming={isStreaming} theme={theme} />
+      {/* Bottom -- Transcript (fixed height glass box, imperative API via ref) */}
+      <div className="shrink-0 px-3 pb-4 pt-3">
+        <Transcript ref={transcriptRef} theme={theme} />
       </div>
     </div>
   );
