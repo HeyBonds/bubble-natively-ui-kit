@@ -284,7 +284,6 @@ const JourneyPath = ({ credits = 0, theme }) => {
                         backgroundColor: activeColor.bg,
                         boxShadow: menuOpen ? 'none' : `0 4px 0 0 ${activeColor.dark}`,
                         borderRadius: menuOpen ? '16px 16px 0 0' : '16px',
-                        transition: 'background-color 0.3s ease, box-shadow 0.2s ease, border-radius 0.2s ease',
                     }}
                 >
                     <div className="text-left">
@@ -321,7 +320,7 @@ const JourneyPath = ({ credits = 0, theme }) => {
                         opacity: menuOpen ? 1 : 0,
                         overflowY: menuOpen ? 'auto' : 'hidden',
                         overflowX: 'hidden',
-                        transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, background-color 0.3s ease',
+                        transition: 'opacity 0.25s ease',
                         backgroundColor: theme.glassBg,
                         borderRadius: '0 0 16px 16px',
                         border: `1px solid ${theme.glassBorder}`,

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { sendToBubble } from '../utils/bubble';
 
 const DUOLINGO_GREEN = '#58CC02';
@@ -14,6 +14,26 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
     const [isVoted, setIsVoted] = useState(initialSelectedAnswer !== undefined && initialSelectedAnswer !== null);
     const [showFooterAfter, setShowFooterAfter] = useState(isVoted);
     const coinRef = useRef(null);
+    const timersRef = useRef([]);
+    const overlaysRef = useRef([]);
+    const rafRef = useRef(null);
+
+    // Cleanup all pending timers, DOM overlays, and rAF on unmount
+    useEffect(() => {
+        return () => {
+            timersRef.current.forEach(clearTimeout);
+            timersRef.current = [];
+            overlaysRef.current.forEach(el => { try { el.remove(); } catch (_) { /* noop */ } });
+            overlaysRef.current = [];
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        };
+    }, []);
+
+    const addTimer = (fn, delay) => {
+        const id = setTimeout(fn, delay);
+        timersRef.current.push(id);
+        return id;
+    };
 
     const handleVote = (answerText, index) => {
         if (isVoted) return;
@@ -21,13 +41,13 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
         setIsVoted(true);
         setSelectedAnswer(index);
 
-        setTimeout(() => {
+        addTimer(() => {
             setShowFooterAfter(true);
         }, 800);
 
         sendToBubble('bubble_fn_daily_question', 'vote', { answer: answerText, index });
 
-        setTimeout(() => {
+        addTimer(() => {
             triggerCreditAnimation();
         }, 2000);
     };
@@ -37,10 +57,11 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
         const dimOverlay = document.createElement('div');
         dimOverlay.className = 'dim-overlay active';
         document.body.appendChild(dimOverlay);
+        overlaysRef.current.push(dimOverlay);
 
         // B coin + "+1" label — center pop
         const overlay = document.createElement('div');
-        overlay.className = 'credit-overlay credit-center-animation';
+        overlay.className = 'credit-center-animation';
         overlay.style.cssText = `
             position: fixed;
             top: 50%;
@@ -51,60 +72,65 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
         `;
 
         overlay.innerHTML = `
-            <div id="overlayCoin" style="width: 80px; height: 80px; border-radius: 50%; background: ${COIN_BG}; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 24px rgba(0,0,0,0.3), ${COIN_SHADOW};">
+            <div class="overlay-coin" style="width: 80px; height: 80px; border-radius: 50%; background: ${COIN_BG}; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 24px rgba(0,0,0,0.3), ${COIN_SHADOW};">
                 <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); line-height: 1;">B</span>
             </div>
-            <span id="overlayPlus" style="position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 10px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.4); opacity: 0; transition: opacity 300ms ease;">+1</span>
+            <span class="overlay-plus" style="position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 10px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.4); opacity: 0; transition: opacity 300ms ease;">+1</span>
         `;
         document.body.appendChild(overlay);
+        overlaysRef.current.push(overlay);
 
         // Step 2: Fade in the "+1" label
-        setTimeout(() => {
-            const plus = document.getElementById('overlayPlus');
+        addTimer(() => {
+            const plus = overlay.querySelector('.overlay-plus');
             if (plus) plus.style.opacity = '1';
         }, 500);
 
-        // Step 3: Fade out "+1", then fly coin to the target
-        setTimeout(() => {
-            // Hide "+1"
-            const plus = document.getElementById('overlayPlus');
+        // Step 3: Fade out "+1"
+        addTimer(() => {
+            const plus = overlay.querySelector('.overlay-plus');
             if (plus) plus.style.opacity = '0';
         }, 1100);
 
-        setTimeout(() => {
+        // Step 4: Fly coin to target via transform (GPU-composited, no top/left)
+        addTimer(() => {
+            // Snapshot current center position
+            const startRect = overlay.getBoundingClientRect();
             overlay.classList.remove('credit-center-animation');
+            overlay.style.top = startRect.top + 'px';
+            overlay.style.left = startRect.left + 'px';
+            overlay.style.transform = 'none';
+
             overlay.classList.add('credit-move-animation');
             dimOverlay.classList.remove('active');
-
-            // Force reflow
-            overlay.offsetHeight;
+            overlay.offsetHeight; // force reflow
 
             if (coinRef.current) {
                 const targetRect = coinRef.current.getBoundingClientRect();
-                overlay.style.top = targetRect.top + 'px';
-                overlay.style.left = targetRect.left + 'px';
-                overlay.style.transform = 'scale(1)';
+                const dx = targetRect.left - startRect.left;
+                const dy = targetRect.top - startRect.top;
+                overlay.style.transform = `translate(${dx}px, ${dy}px)`;
 
-                const coinEl = document.getElementById('overlayCoin');
+                const coinEl = overlay.querySelector('.overlay-coin');
                 if (coinEl) {
-                    coinEl.style.transition = 'width 600ms cubic-bezier(0.4, 0, 0.2, 1), height 600ms cubic-bezier(0.4, 0, 0.2, 1)';
-                    coinEl.style.width = '32px';
-                    coinEl.style.height = '32px';
-                    coinEl.querySelector('span').style.fontSize = '0.75rem';
+                    coinEl.style.transition = 'transform 600ms cubic-bezier(0.4, 0, 0.2, 1)';
+                    coinEl.style.transformOrigin = 'top left';
+                    coinEl.style.transform = 'scale(0.4)'; // 80px → 32px
                 }
             }
         }, 1300);
 
-        // Step 4: Cleanup, pulse coin, animate number increment
-        setTimeout(() => {
+        // Step 5: Cleanup, pulse coin, animate number increment
+        addTimer(() => {
             overlay.remove();
             dimOverlay.remove();
+            overlaysRef.current = overlaysRef.current.filter(el => el !== overlay && el !== dimOverlay);
 
             // Pulse the target coin
             if (coinRef.current) {
                 coinRef.current.style.transition = 'transform 0.3s ease';
                 coinRef.current.style.transform = 'scale(1.3)';
-                setTimeout(() => {
+                addTimer(() => {
                     if (coinRef.current) coinRef.current.style.transform = 'scale(1)';
                 }, 300);
             }
@@ -123,9 +149,11 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                     const easeOut = 1 - Math.pow(1 - progress, 3);
                     const current = Math.round(start + (end - start) * easeOut);
                     if (numEl) numEl.textContent = current;
-                    if (progress < 1) requestAnimationFrame(tick);
+                    if (progress < 1) {
+                        rafRef.current = requestAnimationFrame(tick);
+                    }
                 }
-                requestAnimationFrame(tick);
+                rafRef.current = requestAnimationFrame(tick);
                 return end;
             });
         }, 1900);
@@ -179,7 +207,7 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
 
                     return (
                         <button key={optIndex}
-                             className={`relative w-full h-12 rounded-xl border-2 border-solid cursor-pointer overflow-hidden transition-all duration-200 text-left ${isVoted ? 'pointer-events-none' : 'active:translate-y-[2px]'}`}
+                             className={`relative w-full h-12 rounded-xl border-2 border-solid cursor-pointer overflow-hidden transition-[transform,border-color] duration-200 text-left ${isVoted ? 'pointer-events-none' : 'active:translate-y-[2px]'}`}
                              style={{
                                  background: theme.surface,
                                  borderColor: isSelected ? DUOLINGO_GREEN : theme.border,
@@ -189,10 +217,10 @@ const DailyQuestion = ({ category, question, options, userName, credits: initial
                              }}
                              onClick={() => handleVote(opt.text, optIndex)}>
 
-                             {/* Percentage fill bar */}
-                             <div className="option-bar absolute left-0 top-0 h-full rounded-xl"
+                             {/* Percentage fill bar — scaleX for GPU-composited animation */}
+                             <div className="option-bar absolute left-0 top-0 h-full w-full rounded-xl"
                                   style={{
-                                      width: isVoted ? `${opt.percent}%` : '0%',
+                                      transform: isVoted ? `scaleX(${opt.percent / 100})` : undefined,
                                       background: isSelected ? `${DUOLINGO_GREEN}4D` : `${DUOLINGO_GREEN}30`,
                                   }}></div>
 

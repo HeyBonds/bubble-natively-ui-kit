@@ -37,7 +37,30 @@ const OnboardingFlow = ({
     const [creditIntroSeen, setCreditIntroSeen] = useState(false);
     const creditsCircleRef = useRef(null);
     const creditIntroRunningRef = useRef(false);
+    const timersRef = useRef([]);
+    const overlaysRef = useRef([]);
+    const rafRef = useRef(null);
     const storage = useNativelyStorage();
+
+    // Cleanup all pending timers, DOM overlays, and rAF on unmount
+    useEffect(() => {
+        const timers = timersRef;
+        const overlays = overlaysRef;
+        const raf = rafRef;
+        return () => {
+            timers.current.forEach(clearTimeout);
+            timers.current = [];
+            overlays.current.forEach(el => { try { el.remove(); } catch (_) { /* noop */ } });
+            overlays.current = [];
+            if (raf.current) cancelAnimationFrame(raf.current);
+        };
+    }, []);
+
+    const addTimer = (fn, delay) => {
+        const id = setTimeout(fn, delay);
+        timersRef.current.push(id);
+        return id;
+    };
 
     // Restore persisted state on mount
     useEffect(() => {
@@ -98,7 +121,7 @@ const OnboardingFlow = ({
         if (animating || currentStep >= totalSteps - 1) return;
         setDirection('forward');
         setAnimating(true);
-        setTimeout(() => {
+        addTimer(() => {
             setCurrentStep(prev => prev + 1);
             setAnimating(false);
             setAnsweredThisVisit(false);
@@ -109,7 +132,7 @@ const OnboardingFlow = ({
         if (animating || currentStep === 0) return;
         setDirection('back');
         setAnimating(true);
-        setTimeout(() => {
+        addTimer(() => {
             setCurrentStep(prev => prev - 1);
             setAnimating(false);
             setAnsweredThisVisit(false);
@@ -120,7 +143,7 @@ const OnboardingFlow = ({
         if (showCredits && creditsCircleRef.current) {
             creditsCircleRef.current.style.transition = 'transform 0.3s ease';
             creditsCircleRef.current.style.transform = 'scale(1.3)';
-            setTimeout(() => {
+            addTimer(() => {
                 if (creditsCircleRef.current) {
                     creditsCircleRef.current.style.transform = 'scale(1)';
                 }
@@ -170,30 +193,30 @@ const OnboardingFlow = ({
 
                 if (creditsCircleRef.current) {
                     const targetRect = creditsCircleRef.current.getBoundingClientRect();
-                    coinOverlay.style.top = targetRect.top + 'px';
-                    coinOverlay.style.left = targetRect.left + 'px';
+                    const dx = targetRect.left - coinRect.left;
+                    const dy = targetRect.top - coinRect.top;
+                    coinOverlay.style.transform = `translate(${dx}px, ${dy}px)`;
 
                     const coinEl = coinOverlay.querySelector('.overlay-coin');
                     if (coinEl) {
-                        coinEl.style.transition = 'width 600ms cubic-bezier(0.4, 0, 0.2, 1), height 600ms cubic-bezier(0.4, 0, 0.2, 1)';
-                        coinEl.style.width = '32px';
-                        coinEl.style.height = '32px';
-                        const spanEl = coinEl.querySelector('span');
-                        if (spanEl) spanEl.style.fontSize = '0.75rem';
+                        coinEl.style.transition = 'transform 600ms cubic-bezier(0.4, 0, 0.2, 1)';
+                        coinEl.style.transformOrigin = 'top left';
+                        coinEl.style.transform = 'scale(0.4)'; // 80px → 32px
                     }
                 }
 
                 // Cleanup after fly completes
-                setTimeout(() => {
+                addTimer(() => {
                     coinOverlay.remove();
                     dimOverlay.remove();
                     msgPanel.remove();
+                    overlaysRef.current = overlaysRef.current.filter(el => el !== coinOverlay && el !== dimOverlay && el !== msgPanel);
 
                     // Pulse the target coin
                     if (creditsCircleRef.current) {
                         creditsCircleRef.current.style.transition = 'transform 0.3s ease';
                         creditsCircleRef.current.style.transform = 'scale(1.3)';
-                        setTimeout(() => {
+                        addTimer(() => {
                             if (creditsCircleRef.current) creditsCircleRef.current.style.transform = 'scale(1)';
                         }, 300);
                     }
@@ -210,7 +233,7 @@ const OnboardingFlow = ({
             };
 
             // Safety net: auto-dismiss after 10 seconds
-            safetyTimer = setTimeout(() => { dismiss(); }, 10000);
+            safetyTimer = addTimer(() => { dismiss(); }, 10000);
 
             // 1. Dim overlay — fade in via rAF, tappable as fallback dismiss
             dimOverlay = document.createElement('div');
@@ -218,6 +241,7 @@ const OnboardingFlow = ({
             dimOverlay.addEventListener('click', dismiss);
             dimOverlay.addEventListener('touchend', (e) => { e.preventDefault(); dismiss(); });
             document.body.appendChild(dimOverlay);
+            overlaysRef.current.push(dimOverlay);
             requestAnimationFrame(() => dimOverlay.classList.add('active'));
 
             // 2. B coin + "+1" — center pop via credit-center-animation CSS class
@@ -238,6 +262,7 @@ const OnboardingFlow = ({
                 <span class="overlay-plus" style="position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 10px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.4); opacity: 0; transition: opacity 300ms ease;">+1</span>
             `;
             document.body.appendChild(coinOverlay);
+            overlaysRef.current.push(coinOverlay);
 
             // 3. Message panel (text + button) — positioned below coin, starts hidden
             msgPanel = document.createElement('div');
@@ -278,6 +303,7 @@ const OnboardingFlow = ({
                 ">OK, Cool!</button>
             `;
             document.body.appendChild(msgPanel);
+            overlaysRef.current.push(msgPanel);
 
             // Wire up CTA button via closure reference
             const cta = msgPanel.querySelector('button');
@@ -287,13 +313,13 @@ const OnboardingFlow = ({
             }
 
             // 4. Fade in "+1" at 500ms
-            setTimeout(() => {
+            addTimer(() => {
                 const plusEl = coinOverlay.querySelector('.overlay-plus');
                 if (plusEl) plusEl.style.opacity = '1';
             }, 500);
 
             // 5. Fade in message panel at 1000ms
-            setTimeout(() => {
+            addTimer(() => {
                 msgPanel.style.opacity = '1';
                 msgPanel.style.pointerEvents = 'auto';
             }, 1000);
@@ -341,13 +367,13 @@ const OnboardingFlow = ({
                 });
                 if (onComplete) onComplete(newAnswers, newCredits);
             } else {
-                setTimeout(() => goForward(), 600);
+                addTimer(() => goForward(), 600);
             }
         };
 
         // First credit ever → pause, then play coin center-pop animation (mirrors DailyQuestion)
         if (willPlayIntro) {
-            setTimeout(() => triggerCreditIntro().then(advanceOrComplete), 500);
+            addTimer(() => triggerCreditIntro().then(advanceOrComplete), 500);
         } else {
             if (isNewAnswer) triggerCreditPulse();
             advanceOrComplete();
@@ -413,8 +439,8 @@ const OnboardingFlow = ({
                     </span>
                     <div className="h-[14px] w-[180px] rounded-[90px] border border-solid overflow-hidden" style={{ borderColor: ob.progressBarBorder, background: ob.progressBarBg }}>
                         <div
-                            className="h-full rounded-[90px] transition-[width] duration-500 ease-out"
-                            style={{ width: `${progress}%`, background: ob.progressBarFill }}
+                            className="w-full h-full rounded-[90px] transition-transform duration-500 ease-out origin-left"
+                            style={{ transform: `scaleX(${progress / 100})`, background: ob.progressBarFill }}
                         />
                     </div>
                 </div>

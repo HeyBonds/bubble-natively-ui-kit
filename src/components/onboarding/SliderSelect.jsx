@@ -110,7 +110,7 @@ const SliderSelect = ({ question, stops = [], previousAnswer, theme, onAnswer })
                 <button
                     onClick={handleContinue}
                     disabled={selectedIndex === null}
-                    className={`w-full h-[54px] rounded-2xl flex items-center justify-center transition-all duration-200 border-2 border-solid ${
+                    className={`w-full h-[54px] rounded-2xl flex items-center justify-center transition-[background-color,border-color,box-shadow,transform] duration-200 border-2 border-solid ${
                         selectedIndex !== null ? 'active:translate-y-[2px]' : ''
                     }`}
                     style={selectedIndex !== null

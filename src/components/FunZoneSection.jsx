@@ -70,7 +70,7 @@ const DailyQuestionBanner = ({ dailyQuestion, push, theme: _theme }) => {
   return (
     <button
       onClick={handleTap}
-      className="w-full rounded-2xl text-left relative overflow-hidden border-2 border-solid animate-breathing-glow"
+      className="w-full rounded-2xl text-left relative border-2 border-solid animate-breathing-glow"
       style={{
         background: 'linear-gradient(135deg, #58CC02 0%, #46A302 100%)',
         borderColor: '#58CC02',

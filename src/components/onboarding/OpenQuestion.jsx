@@ -49,7 +49,7 @@ const OpenQuestion = ({ question, placeholder, charGuidance, previousAnswer, the
                 <button
                     onClick={handleContinue}
                     disabled={!hasText}
-                    className={`w-full h-[54px] rounded-2xl flex items-center justify-center transition-all duration-200 border-2 border-solid ${
+                    className={`w-full h-[54px] rounded-2xl flex items-center justify-center transition-[background-color,border-color,box-shadow,transform] duration-200 border-2 border-solid ${
                         hasText ? 'active:translate-y-[2px]' : ''
                     }`}
                     style={hasText

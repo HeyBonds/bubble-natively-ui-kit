@@ -56,7 +56,7 @@ const SingleSelect = ({ question, options = [], refreshable = true, previousAnsw
                             <button
                                 key={i}
                                 onClick={() => handleSelect(opt, i)}
-                                className="w-full text-left px-5 py-4 rounded-2xl border-2 border-solid transition-all duration-200 active:translate-y-[2px]"
+                                className="w-full text-left px-5 py-4 rounded-2xl border-2 border-solid transition-[background-color,border-color,box-shadow,transform] duration-200 active:translate-y-[2px]"
                                 style={{
                                     background: isSelected ? ob.optionSelectedBg : ob.optionBg,
                                     borderColor: isSelected ? ob.optionSelectedBorder : ob.optionBorder,

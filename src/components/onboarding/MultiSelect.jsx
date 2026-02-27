@@ -56,7 +56,7 @@ const MultiSelect = ({ question, options = [], maxSelections = 3, previousAnswer
                             <button
                                 key={i}
                                 onClick={() => toggleOption(i)}
-                                className="px-5 py-3 rounded-full border-2 border-solid transition-all duration-200 active:translate-y-[1px]"
+                                className="px-5 py-3 rounded-full border-2 border-solid transition-[background-color,border-color,box-shadow,opacity,transform] duration-200 active:translate-y-[1px]"
                                 style={{
                                     background: isSelected ? ob.optionSelectedBg : isDimmed ? ob.optionDimmedBg : ob.optionBg,
                                     borderColor: isSelected ? ob.optionSelectedBorder : isDimmed ? ob.optionDimmedBorder : ob.optionBorder,
@@ -81,7 +81,7 @@ const MultiSelect = ({ question, options = [], maxSelections = 3, previousAnswer
                 <button
                     onClick={handleContinue}
                     disabled={!ready}
-                    className={`w-full h-[54px] rounded-2xl flex items-center justify-center transition-all duration-200 border-2 border-solid ${
+                    className={`w-full h-[54px] rounded-2xl flex items-center justify-center transition-[background-color,border-color,box-shadow,transform] duration-200 border-2 border-solid ${
                         ready ? 'active:translate-y-[2px]' : ''
                     }`}
                     style={ready
