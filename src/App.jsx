@@ -32,7 +32,7 @@ const App = () => {
     const transitionRef = useRef(false);
     const displayedPhaseRef = useRef('loading');
 
-    const { getItem, setItem, removeItem, reconcile } = useNativelyStorage();
+    const { getItem, setItem, removeItem } = useNativelyStorage();
     const SESSION_KEY = 'bonds_session_active';
     const DEVICE_ID_KEY = 'bonds_device_id';
     const ONBOARDING_KEY = 'onboarding_complete';
@@ -121,14 +121,14 @@ const App = () => {
 
         const checkSession = async () => {
             try {
-                // Wait for NativelyStorage to reconcile critical keys before deciding.
-                // This prevents stale localStorage (cleared by OS) from sending users
-                // to the wrong screen. Resolves in ~50-500ms, times out at 2s.
-                await reconcile([SESSION_KEY, ONBOARDING_KEY, DEVICE_ID_KEY, 'onboarding_state']);
-
-                const sessionResult = localStorage.getItem(SESSION_KEY);
-                const obResult = localStorage.getItem(ONBOARDING_KEY);
-                const onboardingState = localStorage.getItem('onboarding_state');
+                // getItem returns localStorage instantly if available, or waits for
+                // NativelyStorage recovery (up to 2s) when localStorage is empty.
+                const [sessionResult, obResult, , onboardingState] = await Promise.all([
+                    getItem(SESSION_KEY),
+                    getItem(ONBOARDING_KEY),
+                    getItem(DEVICE_ID_KEY),
+                    getItem('onboarding_state'),
+                ]);
 
                 console.log(`📋 [App] Session check — session=${sessionResult}, onboarding=${obResult}, state=${onboardingState ? 'saved' : 'none'}`);
 
@@ -162,7 +162,7 @@ const App = () => {
         };
 
         checkSession();
-    }, [getItem, setItem, removeItem, reconcile, transitionTo]);
+    }, [getItem, setItem, removeItem, transitionTo]);
 
     const handleWelcomeAction = (action) => {
         if (action === 'go') {
