@@ -133,18 +133,60 @@ const OnboardingFlow = ({
             if (!creditsCircleRef.current || creditIntroRunningRef.current) { resolve(); return; }
             creditIntroRunningRef.current = true;
 
+            // Cleanup helper — safely removes elements and resolves
+            const elements = [];
+            let dismissed = false;
+            const cleanup = () => {
+                if (dismissed) return;
+                dismissed = true;
+                elements.forEach(el => { try { el.remove(); } catch (_) { /* noop */ } });
+                triggerCreditPulse();
+                setCreditIntroSeen(true);
+                storage.setItem('credits_intro_seen', 'true');
+                creditIntroRunningRef.current = false;
+                resolve();
+            };
+
+            // Safety net: auto-dismiss after 8 seconds no matter what
+            const safetyTimer = setTimeout(() => {
+                console.warn('[CreditIntro] Safety timeout — auto-dismissing');
+                cleanup();
+            }, 8000);
+
+            const dismiss = () => {
+                clearTimeout(safetyTimer);
+
+                // Fade out overlay, fly circle back, then cleanup
+                if (overlay) overlay.style.opacity = '0';
+                setTimeout(() => {
+                    if (dim) dim.classList.remove('active');
+                    const endRect = creditsCircleRef.current?.getBoundingClientRect();
+                    if (endRect && circle) {
+                        circle.style.top = endRect.top + 'px';
+                        circle.style.left = endRect.left + 'px';
+                        circle.style.width = endRect.width + 'px';
+                        circle.style.height = endRect.height + 'px';
+                        const numEl = circle.querySelector('span');
+                        if (numEl) numEl.style.fontSize = '0.75rem';
+                    }
+                }, 500);
+                setTimeout(cleanup, 1300);
+            };
+
             // Get the starting position of the real credits circle
             const startRect = creditsCircleRef.current.getBoundingClientRect();
 
-            // 1. Create dim overlay
+            // 1. Create dim overlay — tappable as fallback dismiss
             const dim = document.createElement('div');
             dim.className = 'dim-overlay';
+            dim.addEventListener('click', dismiss);
+            dim.addEventListener('touchend', (e) => { e.preventDefault(); dismiss(); });
             document.body.appendChild(dim);
+            elements.push(dim);
             requestAnimationFrame(() => dim.classList.add('active'));
 
             // 2. Create the floating credit circle at the bar position
             const circle = document.createElement('div');
-            circle.id = 'credit-intro-circle';
             circle.style.cssText = `
                 position: fixed;
                 top: ${startRect.top}px;
@@ -160,10 +202,11 @@ const OnboardingFlow = ({
             `;
             circle.innerHTML = `
                 <div style="width:100%;height:100%;background:#FF2258;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(255,34,88,0.5);">
-                    <span id="credit-intro-num" style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.75rem;color:white;letter-spacing:0.05em;line-height:1;transition:font-size 0.7s cubic-bezier(0.16,1,0.3,1);">0</span>
+                    <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.75rem;color:white;letter-spacing:0.05em;line-height:1;transition:font-size 0.7s cubic-bezier(0.16,1,0.3,1);">0</span>
                 </div>
             `;
             document.body.appendChild(circle);
+            elements.push(circle);
 
             // 3. Create centered overlay container (circle placeholder + text + button)
             const overlay = document.createElement('div');
@@ -187,7 +230,7 @@ const OnboardingFlow = ({
                 <p style="font-family:'Poppins',sans-serif;font-weight:400;font-size:14px;color:rgba(255,255,255,0.7);margin:0 0 24px 0;line-height:1.5;text-align:center;max-width:280px;padding:0 20px;">
                     Every answer earns you a credit.<br/>Use them to unlock experiences in Bonds.
                 </p>
-                <button id="credit-intro-cta" style="
+                <button style="
                     pointer-events:auto;
                     font-family:'Plus Jakarta Sans',sans-serif;
                     font-weight:700;
@@ -204,49 +247,18 @@ const OnboardingFlow = ({
                 ">OK, Cool!</button>
             `;
             document.body.appendChild(overlay);
+            elements.push(overlay);
+
+            // Attach dismiss to the CTA button immediately (not via setTimeout)
+            const cta = overlay.querySelector('button');
+            if (cta) {
+                cta.addEventListener('click', dismiss);
+                cta.addEventListener('touchstart', (e) => { e.preventDefault(); dismiss(); });
+            }
 
             // Calculate center target for the circle (aligned with placeholder)
-            const placeholderRect = overlay.querySelector('div').getBoundingClientRect();
-
-            // Dismiss handler — triggered by the CTA button
-            let dismissed = false;
-            const dismiss = () => {
-                if (dismissed) return;
-                dismissed = true;
-
-                // Fade out overlay (text + button)
-                overlay.style.opacity = '0';
-
-                // After fade, fly circle back to bar
-                setTimeout(() => {
-                    dim.classList.remove('active');
-
-                    const endRect = creditsCircleRef.current?.getBoundingClientRect();
-                    if (endRect) {
-                        circle.style.top = endRect.top + 'px';
-                        circle.style.left = endRect.left + 'px';
-                        circle.style.width = endRect.width + 'px';
-                        circle.style.height = endRect.height + 'px';
-                        const numEl = document.getElementById('credit-intro-num');
-                        if (numEl) numEl.style.fontSize = '0.75rem';
-                    }
-                }, 500);
-
-                // Cleanup + pulse
-                setTimeout(() => {
-                    circle.remove();
-                    overlay.remove();
-                    dim.remove();
-
-                    triggerCreditPulse();
-
-                    setCreditIntroSeen(true);
-                    storage.setItem('credits_intro_seen', 'true');
-                    creditIntroRunningRef.current = false;
-
-                    resolve();
-                }, 1300);
-            };
+            const placeholderRect = overlay.querySelector('div')?.getBoundingClientRect();
+            if (!placeholderRect) { cleanup(); return; }
 
             // 4. After a tick, fly circle to center (aligned with placeholder)
             requestAnimationFrame(() => {
@@ -255,26 +267,19 @@ const OnboardingFlow = ({
                     circle.style.left = placeholderRect.left + 'px';
                     circle.style.width = '96px';
                     circle.style.height = '96px';
-                    const numEl = document.getElementById('credit-intro-num');
+                    const numEl = circle.querySelector('span');
                     if (numEl) numEl.style.fontSize = '2.5rem';
                 });
             });
 
             // 5. After circle arrives at center, increment 0→1
             setTimeout(() => {
-                const numEl = document.getElementById('credit-intro-num');
+                const numEl = circle.querySelector('span');
                 if (numEl) numEl.innerText = '1';
             }, 800);
 
             // 6. Fade in overlay (text + button)
-            setTimeout(() => {
-                overlay.style.opacity = '1';
-                const cta = document.getElementById('credit-intro-cta');
-                if (cta) {
-                    cta.addEventListener('click', dismiss);
-                    cta.addEventListener('touchend', (e) => { e.preventDefault(); dismiss(); });
-                }
-            }, 1100);
+            setTimeout(() => { overlay.style.opacity = '1'; }, 1100);
         });
     }, [triggerCreditPulse, storage]);
 

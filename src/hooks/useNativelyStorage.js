@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { NativelyStorage } from 'natively';
 
 // Module-level: track which keys have been verified this session (shared across all hook instances)
@@ -34,18 +34,18 @@ export const useNativelyStorage = () => {
     }
   }, [isNativelyAvailable, isLocalhost]);
 
-  const setItem = (key, value) => {
+  const setItem = useCallback((key, value) => {
     localStorage.setItem(key, value);
     if (storage) {
         storage.setStorageValue(key, value);
     }
-  };
+  }, [storage]);
 
   /**
    * getItem — Returns localStorage value immediately (sync, wrapped in resolved Promise).
    * Kicks off a one-time background native read to reconcile if values ever diverge.
    */
-  const getItem = (key) => {
+  const getItem = useCallback((key) => {
     const localValue = localStorage.getItem(key);
 
     // Background verify: only once per key per session
@@ -67,7 +67,7 @@ export const useNativelyStorage = () => {
     }
 
     return Promise.resolve(localValue);
-  };
+  }, [storage]);
 
   /**
    * reconcile — Wait for NativelyStorage to respond for a set of critical keys.
@@ -77,7 +77,7 @@ export const useNativelyStorage = () => {
    * Use this BEFORE making session-critical decisions (e.g. which screen to show).
    * Typical latency: 50-500ms. Timeout: 2s (falls back to localStorage values).
    */
-  const reconcile = (keys) => {
+  const reconcile = useCallback((keys) => {
     if (!storage) {
         console.log('🔧 [Storage] No native bridge — using localStorage values.');
         return Promise.resolve();
@@ -124,27 +124,27 @@ export const useNativelyStorage = () => {
             });
         });
     });
-  };
+  }, [storage]);
 
-  const removeItem = (key) => {
+  const removeItem = useCallback((key) => {
     localStorage.removeItem(key);
     if (storage) {
         storage.removeStorageValue(key);
     }
-  };
+  }, [storage]);
 
-  const clear = () => {
+  const clear = useCallback(() => {
     localStorage.clear();
     if (storage) {
         storage.resetStorage();
     }
-  };
+  }, [storage]);
 
-  return {
+  return useMemo(() => ({
     setItem,
     getItem,
     removeItem,
     clear,
     reconcile,
-  };
+  }), [setItem, getItem, removeItem, clear, reconcile]);
 };
