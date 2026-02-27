@@ -5,6 +5,9 @@ import { BUBBLE_CDN } from '../config';
 const leoThink = `${BUBBLE_CDN}/f1772112702436x988725373375085300/leo_think.png`;
 const leoYay = `${BUBBLE_CDN}/f1772112696167x295067163375400700/leo_yay.png`;
 
+// Module-level flag — activity cards animate once per session, then show instantly
+let cardsAnimated = false;
+
 const ACTIVITIES = [
   { id: 'funky-date', name: 'Funky Date', emoji: '\uD83D\uDCC5', subtitle: 'Spark something new together', cost: 4, accent: '#FF9600' },
   { id: 'dialogue-starter', name: 'Dialogue Starter', emoji: '\uD83D\uDCAC', subtitle: 'Great conversations start here', cost: 4, accent: '#1CB0F6' },
@@ -116,7 +119,7 @@ const DailyQuestionBanner = ({ dailyQuestion, push, theme: _theme }) => {
   );
 };
 
-const ActivityCard = ({ activity, index, push, theme }) => {
+const ActivityCard = ({ activity, index, push, theme, animate }) => {
   const handleTap = () => {
     sendToBubble('bubble_fn_fun', 'open_activity', { activityId: activity.id });
     push('activity-detail', { activityId: activity.id, name: activity.name });
@@ -125,10 +128,10 @@ const ActivityCard = ({ activity, index, push, theme }) => {
   return (
     <button
       onClick={handleTap}
-      className="w-full rounded-2xl text-left relative overflow-hidden border-2 border-solid animate-fade-in"
+      className={`w-full rounded-2xl text-left relative overflow-hidden border-2 border-solid ${animate ? 'animate-fade-in' : ''}`}
       style={{
-        opacity: 0,
-        animationDelay: `${index * 100}ms`,
+        opacity: animate ? 0 : 1,
+        animationDelay: animate ? `${index * 100}ms` : undefined,
         background: theme.surface,
         borderColor: theme.border,
         boxShadow: `0 4px 0 ${theme.cardShadow}`,
@@ -158,6 +161,8 @@ const ActivityCard = ({ activity, index, push, theme }) => {
 };
 
 const FunZoneSection = ({ theme, push, dailyQuestion }) => {
+  const animate = !cardsAnimated;
+  if (!cardsAnimated) cardsAnimated = true;
   return (
     <div className="px-5 pt-6 pb-10 font-poppins">
       {/* Daily Question Banner */}
@@ -176,6 +181,7 @@ const FunZoneSection = ({ theme, push, dailyQuestion }) => {
               index={i}
               push={push}
               theme={theme}
+              animate={animate}
             />
           ))}
         </div>

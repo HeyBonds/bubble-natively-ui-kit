@@ -48,6 +48,12 @@
 <!-- 2a. App loader + Service Worker (REQUIRED — without this, the app won't start) -->
 <script>
   (function() {
+    // Ensure trailing slash on test branches so the page falls within the SW scope.
+    // Without this, /version-xxxxx is outside scope /version-xxxxx/ and SW can't control the page.
+    if (/\/version-[^\/]+$/.test(location.pathname)) {
+      location.replace(location.pathname + '/' + location.search + location.hash);
+      return;
+    }
     var m = window.location.pathname.match(/\/version-[^\/]+/);
     var base = m ? m[0] + '/' : '/';
     var s = document.createElement('script');

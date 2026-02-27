@@ -60,11 +60,11 @@
 
     <script src="config.js"></script>
     <script>
-        // Clear session/completion flags so preview starts at welcome → onboarding
-        // Keep onboarding_state + credits_intro_seen so progress resumes on refresh
-        ['bonds_session_active', 'onboarding_complete'].forEach(function(k) {
-            localStorage.removeItem(k);
-        });
+        // If user completed onboarding or signed in, keep the session alive on refresh.
+        // Otherwise clear session so preview starts at welcome → onboarding.
+        if (localStorage.getItem('onboarding_complete') !== 'true') {
+            localStorage.removeItem('bonds_session_active');
+        }
     </script>
     <script src="../bundle.js"></script>
 
