@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Component Preview</title>
+    <title>Bonds Preview</title>
     <link rel="stylesheet" href="mobile-preview.css">
     <link rel="stylesheet" href="../bundle.css">
     <style>
-        #component-selector {
+        #device-bar {
             position: fixed;
             top: 20px;
             right: 20px;
             background: white;
-            padding: 15px;
+            padding: 10px 15px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             z-index: 1000;
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 10px;
         }
-        #component-selector select {
-            padding: 8px 12px;
+        #device-bar select {
+            padding: 6px 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
         }
-        #component-selector label {
+        #device-bar label {
             font-size: 12px;
             color: #666;
             font-family: sans-serif;
@@ -40,142 +40,38 @@
     </style>
 </head>
 <body>
-    <div id="component-selector">
-        <div>
-            <label for="component-select">Component</label>
-            <select id="component-select" onchange="loadComponent(this.value)">
-                <option value="">Select a component...</option>
-            </select>
-        </div>
-        <div>
-            <label for="device-select">Device</label>
-            <select id="device-select" onchange="changeDevice(this.value)">
-                <option value="375x812">iPhone X/11/12 (375x812)</option>
-                <option value="375x667">iPhone SE/6/7/8 (375x667)</option>
-                <option value="390x844">iPhone 12/13/14 (390x844)</option>
-                <option value="430x932">iPhone 14 Pro Max (430x932)</option>
-                <option value="360x640">Android Small (360x640)</option>
-                <option value="360x780" selected>Android Medium (360x780)</option>
-                <option value="412x915">Pixel 7 (412x915)</option>
-            </select>
-            <div id="device-info">360 x 780</div>
-        </div>
+    <div id="device-bar">
+        <label for="device-select">Device</label>
+        <select id="device-select" onchange="changeDevice(this.value)">
+            <option value="375x812">iPhone X/11/12 (375x812)</option>
+            <option value="375x667">iPhone SE/6/7/8 (375x667)</option>
+            <option value="390x844">iPhone 12/13/14 (390x844)</option>
+            <option value="430x932">iPhone 14 Pro Max (430x932)</option>
+            <option value="360x640">Android Small (360x640)</option>
+            <option value="360x780" selected>Android Medium (360x780)</option>
+            <option value="412x915">Pixel 7 (412x915)</option>
+        </select>
+        <span id="device-info">360 x 780</span>
     </div>
 
-    <div id="phone-wrapper"></div>
+    <div id="phone-wrapper">
+        <div id="app-content-area"></div>
+    </div>
 
     <script src="config.js"></script>
     <script src="../bundle.js"></script>
-    <script src="bubble-seo.js"></script>
-    <script src="components.js"></script>
 
     <script>
-        // Populate dropdown
-        const select = document.getElementById('component-select');
-        Object.keys(window.COMPONENTS).forEach(key => {
-            const option = document.createElement('option');
-            option.value = key;
-            option.textContent = window.COMPONENTS[key].name;
-            select.appendChild(option);
-        });
-
         function changeDevice(size) {
             const [w, h] = size.split('x').map(Number);
             const wrapper = document.getElementById('phone-wrapper');
             wrapper.style.width = w + 'px';
             wrapper.style.height = h + 'px';
             document.getElementById('device-info').textContent = w + ' x ' + h;
-            // Re-render current component to adapt
-            const currentKey = document.getElementById('component-select').value;
-            if (currentKey) loadComponent(currentKey);
         }
 
         // Apply selected device size on load
         changeDevice(document.getElementById('device-select').value);
-
-        function loadComponent(componentKey) {
-            if (!componentKey) return;
-            
-            const component = window.COMPONENTS[componentKey];
-            const wrapper = document.getElementById('phone-wrapper');
-            wrapper.innerHTML = ''; // Clear previous
-            
-            // Wait for appUI
-            if (!window.appUI) {
-                console.log('⏳ Waiting for appUI to load...');
-                setTimeout(() => loadComponent(componentKey), 100);
-                return;
-            }
-
-            // Clean up previous React root if exists
-            if (window.currentReactRoot) {
-                window.currentReactRoot.unmount();
-                window.currentReactRoot = null;
-            }
-
-            // CASE 1: React Component
-            if (component.renderReact) {
-                try {
-                    window.currentReactRoot = component.renderReact(wrapper);
-                } catch (e) {
-                    console.error(e);
-                    wrapper.innerHTML = `<p style="color: red; padding: 20px;">Error mounting React component: ${e.message}</p>`;
-                }
-                return;
-            }
-
-            // CASE 2: Mountable Component (Other)
-            if (component.mount) {
-                try {
-                    // component.mount() function takes container as argument
-                    const instance = component.mount(wrapper);
-                    // Store instance for cleanup if needed
-                    window.currentInstance = instance;
-                } catch (e) {
-                    console.error(e);
-                    wrapper.innerHTML = `<p style="color: red; padding: 20px;">Error mounting component: ${e.message}</p>`;
-                }
-                return;
-            }
-
-            // CASE 2: String Render Component (Legacy JS)
-            if (component.render) {
-                try {
-                    wrapper.innerHTML = component.render();
-                } catch (e) {
-                    console.error(e);
-                    wrapper.innerHTML = `<p style="color: red; padding: 20px;">Error rendering component: ${e.message}</p>`;
-                }
-                return;
-            }
-
-            // CASE 2: HTML File Component (Legacy)
-            if (component.path) {
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', component.path, true);
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        wrapper.innerHTML = xhr.responseText;
-                        // Execute scripts in loaded content
-                        const scripts = wrapper.getElementsByTagName('script');
-                        for (let script of scripts) {
-                            eval(script.innerText);
-                        }
-                    } else {
-                        wrapper.innerHTML = '<p style="color: red; padding: 20px;">Failed to load component</p>';
-                    }
-                };
-                xhr.send();
-            }
-        }
-
-        // Auto-load from hash or first component
-        const hashKey = window.location.hash.slice(1);
-        const initialKey = (hashKey && window.COMPONENTS[hashKey]) ? hashKey : Object.keys(window.COMPONENTS)[0];
-        if (initialKey) {
-            select.value = initialKey;
-            loadComponent(initialKey);
-        }
     </script>
 </body>
 </html>

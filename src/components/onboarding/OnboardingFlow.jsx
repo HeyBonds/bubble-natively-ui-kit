@@ -114,69 +114,6 @@ const OnboardingFlow = ({
         }, 300);
     }, [currentStep, animating]);
 
-    const handleAnswer = useCallback((data) => {
-        if (answeredThisVisit) return;
-        setAnsweredThisVisit(true);
-
-        const isNewAnswer = !answers[currentStep];
-        const newCredits = isNewAnswer ? credits + 1 : credits;
-        const stepAnswer = {
-            questionId: step?.questionId,
-            type: step?.type,
-            ...data,
-        };
-        const newAnswers = { ...answers, [currentStep]: stepAnswer };
-
-        // Update state
-        setAnswers(newAnswers);
-        if (isNewAnswer) setCredits(newCredits);
-
-        // Persist locally for resume
-        const nextStep = currentStep + 1;
-        persistState(nextStep, newAnswers, newCredits, rotationOffsets);
-
-        // Notify Bubble of step completion
-        sendToBubble('bubble_fn_onboarding', 'step_complete', {
-            step: currentStep,
-            answer: data.answer || '',
-            variable: data.variable || '',
-        });
-
-        // Determine what happens after the answer
-        const advanceOrComplete = () => {
-            if (currentStep >= totalSteps - 1) {
-                storage.removeItem(STORAGE_KEY);
-                sendToBubble('bubble_fn_onboarding', 'complete', {
-                    answers: JSON.stringify(newAnswers),
-                    credits: newCredits,
-                });
-                if (onComplete) onComplete(newAnswers, newCredits);
-            } else {
-                setTimeout(() => goForward(), 600);
-            }
-        };
-
-        // First credit ever + not seen intro → pause to let selection sink in, then play intro
-        if (isNewAnswer && credits === 0 && !creditIntroSeen && !creditIntroRunningRef.current) {
-            setTimeout(() => triggerCreditIntro().then(advanceOrComplete), 500);
-        } else {
-            if (isNewAnswer) triggerCreditPulse();
-            advanceOrComplete();
-        }
-    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete, creditIntroSeen, triggerCreditIntro, triggerCreditPulse]);
-
-    const handleRefresh = useCallback(() => {
-        const s = steps[currentStep];
-        if (!s || !s.optionPool || !s.visibleCount) return;
-
-        setRotationOffsets(prev => {
-            const currentOffset = prev[currentStep] || 0;
-            return { ...prev, [currentStep]: currentOffset + s.visibleCount };
-        });
-
-        sendToBubble('bubble_fn_onboarding', 'refresh', { step: currentStep });
-    }, [currentStep, steps]);
-
     const triggerCreditPulse = useCallback(() => {
         if (showCredits && creditsCircleRef.current) {
             creditsCircleRef.current.style.transition = 'transform 0.3s ease';
@@ -340,6 +277,69 @@ const OnboardingFlow = ({
             }, 1100);
         });
     }, [triggerCreditPulse, storage]);
+
+    const handleAnswer = useCallback((data) => {
+        if (answeredThisVisit) return;
+        setAnsweredThisVisit(true);
+
+        const isNewAnswer = !answers[currentStep];
+        const newCredits = isNewAnswer ? credits + 1 : credits;
+        const stepAnswer = {
+            questionId: step?.questionId,
+            type: step?.type,
+            ...data,
+        };
+        const newAnswers = { ...answers, [currentStep]: stepAnswer };
+
+        // Update state
+        setAnswers(newAnswers);
+        if (isNewAnswer) setCredits(newCredits);
+
+        // Persist locally for resume
+        const nextStep = currentStep + 1;
+        persistState(nextStep, newAnswers, newCredits, rotationOffsets);
+
+        // Notify Bubble of step completion
+        sendToBubble('bubble_fn_onboarding', 'step_complete', {
+            step: currentStep,
+            answer: data.answer || '',
+            variable: data.variable || '',
+        });
+
+        // Determine what happens after the answer
+        const advanceOrComplete = () => {
+            if (currentStep >= totalSteps - 1) {
+                storage.removeItem(STORAGE_KEY);
+                sendToBubble('bubble_fn_onboarding', 'complete', {
+                    answers: JSON.stringify(newAnswers),
+                    credits: newCredits,
+                });
+                if (onComplete) onComplete(newAnswers, newCredits);
+            } else {
+                setTimeout(() => goForward(), 600);
+            }
+        };
+
+        // First credit ever + not seen intro → pause to let selection sink in, then play intro
+        if (isNewAnswer && credits === 0 && !creditIntroSeen && !creditIntroRunningRef.current) {
+            setTimeout(() => triggerCreditIntro().then(advanceOrComplete), 500);
+        } else {
+            if (isNewAnswer) triggerCreditPulse();
+            advanceOrComplete();
+        }
+    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete, creditIntroSeen, triggerCreditIntro, triggerCreditPulse]);
+
+    const handleRefresh = useCallback(() => {
+        const s = steps[currentStep];
+        if (!s || !s.optionPool || !s.visibleCount) return;
+
+        setRotationOffsets(prev => {
+            const currentOffset = prev[currentStep] || 0;
+            return { ...prev, [currentStep]: currentOffset + s.visibleCount };
+        });
+
+        sendToBubble('bubble_fn_onboarding', 'refresh', { step: currentStep });
+    }, [currentStep, steps]);
 
     // Wait for persisted state to load before rendering
     // Show matching background while loading persisted state (prevents white flash on mobile)

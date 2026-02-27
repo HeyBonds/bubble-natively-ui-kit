@@ -268,7 +268,7 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref }) => {
         <button className="text-[12px] font-semibold" style={{ color: theme.textMuted }}>
           Delete Account
         </button>
-        <p className="text-[10px] mt-2" style={{ color: theme.textMuted }}>v1.0.0</p>
+        <p className="text-[10px] mt-2" style={{ color: theme.textMuted }}>v1.0.0-alpha</p>
       </div>
 
     </div>

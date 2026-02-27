@@ -1,14 +1,17 @@
 import { useMemo } from 'react';
 import { NativelyStorage } from 'natively';
 
+// Module-level: track which keys have been verified this session (shared across all hook instances)
+const verified = new Set();
+
 /**
  * useNativelyStorage — Fast reads via localStorage, durable writes via NativelyStorage.
  *
  * Strategy:
  * - Reads: Return localStorage synchronously (instant). In the background, verify
- *   against NativelyStorage. If native has a different value, update localStorage.
- *   This handles the rare case where the OS clears the WebView's localStorage
- *   but native storage persists.
+ *   against NativelyStorage (once per key per session). If native has a different
+ *   value, update localStorage. Handles the rare case where the OS clears the
+ *   WebView's localStorage but native storage persists.
  * - Writes: Always write to both localStorage (sync) and NativelyStorage (async).
  * - On localhost: skip NativelyStorage entirely.
  */
@@ -36,21 +39,22 @@ export const useNativelyStorage = () => {
 
   /**
    * getItem — Returns localStorage value immediately (sync, wrapped in resolved Promise).
-   * Kicks off a background native read to reconcile if values ever diverge.
+   * Kicks off a one-time background native read to reconcile if values ever diverge.
    */
   const getItem = (key) => {
     const localValue = localStorage.getItem(key);
 
-    // Background verify: if native has a different value, update localStorage
-    if (storage) {
+    // Background verify: only once per key per session
+    if (storage && !verified.has(key)) {
+        verified.add(key);
+
         const timeout = setTimeout(() => {
             console.warn(`⏱️ [NativelyStorage] Background verify timeout for "${key}".`);
-        }, 2000);
+        }, 5000);
 
         storage.getStorageValue(key, (resp) => {
             clearTimeout(timeout);
             const nativeValue = resp.value;
-            // If native has data that localStorage doesn't, sync it
             if (nativeValue != null && nativeValue !== localValue) {
                 console.log(`🔄 [NativelyStorage] Reconciled "${key}": native="${nativeValue}" wins over local="${localValue}".`);
                 localStorage.setItem(key, nativeValue);

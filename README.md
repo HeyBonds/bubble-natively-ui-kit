@@ -36,26 +36,44 @@ This repository hosts a React-based UI (optimized with Preact) that powers the a
 4.  **Preview**: Open `http://localhost:8000/preview/index.html`.
 4.  **Build**: `npm run build`
     - Generates minified `bundle.js` and `bundle.css`.
-5.  **Push**: Commit changes to GitHub (`main` branch).
-6.  **Refresh Bubble**: Increment the version query param in Bubble's SEO Settings (e.g., `bundle.js?v=6`).
+5.  **Upload to Bubble**: Upload `bundle.js`, `bundle.css`, and `service-worker.js` to Bubble SEO > "Hosting files in the root directory".
+6.  **Bump version**: Update `CACHE_VERSION` in `service-worker.js` and re-upload it to invalidate cached assets.
 
 ## 🔌 Bubble Integration
 
-### Link the Styles (Setting > SEO > Header)
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/HeyBonds/bubble-natively-ui-kit@main/bundle.css">
-```
+All three files are hosted via Bubble's "Hosting files in the root directory" (Settings > SEO):
+- `bundle.js`
+- `bundle.css`
+- `service-worker.js`
 
-### Link the App (Setting > SEO > Body)
+A dynamic loader detects Bubble test branches (`/version-xxx/`) vs live (`/`) so the same SEO config works in both environments.
+
+### Load Styles (Settings > SEO > Header)
 ```html
 <script>
   (function() {
-    var v = "6"; // Change this to bust cache
-    var src = "https://cdn.jsdelivr.net/gh/HeyBonds/bubble-natively-ui-kit@main/bundle.js?v=" + v;
-    var script = document.createElement('script');
-    script.src = src;
-    script.defer = true;
-    document.head.appendChild(script);
+    var m = window.location.pathname.match(/\/version-[^\/]+/);
+    var base = m ? m[0] + '/' : '/';
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = base + 'bundle.css';
+    document.head.appendChild(link);
+  })();
+</script>
+```
+
+### Load App + Register Service Worker (Settings > SEO > Body)
+```html
+<script>
+  (function() {
+    var m = window.location.pathname.match(/\/version-[^\/]+/);
+    var base = m ? m[0] + '/' : '/';
+    var s = document.createElement('script');
+    s.src = base + 'bundle.js';
+    document.head.appendChild(s);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(base + 'service-worker.js').catch(function() {});
+    }
   })();
 </script>
 ```

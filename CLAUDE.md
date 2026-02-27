@@ -66,14 +66,69 @@ Preview URL: `http://localhost:8000/preview/index.html`
 - `src/index.jsx` — Entry point; exposes `window.appUI` mount functions
 - `src/input.css` — Tailwind directives + custom keyframe animations
 - `preview/` — Local component preview system
+- `service-worker.js` — Precaches bundle assets on device; uploaded to Bubble root hosting
 - `bundle.js`, `bundle.css` — **Generated build artifacts. Never edit directly.**
 
 ## Deployment
 
 1. `npm run build` to generate `bundle.js` and `bundle.css`
-2. Commit and push to `main`
-3. jsDelivr serves files from GitHub main automatically
-4. Bust cache in Bubble: increment `?v=X` query param in SEO settings
+2. Upload `bundle.js`, `bundle.css`, and `service-worker.js` to Bubble SEO > "Hosting files in the root directory"
+3. Bump `CACHE_VERSION` in `service-worker.js` and re-upload it
+
+### Bubble SEO Snippets
+
+Assets are loaded via a dynamic loader that detects whether we're on a Bubble test branch (`/version-xxx/`) or live (`/`), so the same SEO config works in both environments.
+
+**Header** (loads CSS):
+```html
+<script>
+  (function() {
+    var m = window.location.pathname.match(/\/version-[^\/]+/);
+    var base = m ? m[0] + '/' : '/';
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = base + 'bundle.css';
+    document.head.appendChild(link);
+  })();
+</script>
+```
+
+**Body** (loads JS + registers service worker):
+```html
+<script>
+  (function() {
+    var m = window.location.pathname.match(/\/version-[^\/]+/);
+    var base = m ? m[0] + '/' : '/';
+    var s = document.createElement('script');
+    s.src = base + 'bundle.js';
+    document.head.appendChild(s);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(base + 'service-worker.js').catch(function() {});
+    }
+  })();
+</script>
+```
+
+### Service Worker & Caching
+
+**What is cached on the user's device:**
+- `bundle.js` (~560KB) — the entire React UI app
+- `bundle.css` (~31KB) — compiled Tailwind styles
+- Google Fonts (Plus Jakarta Sans, Poppins) — cached on first fetch at runtime
+- Bubble CDN images (e.g. Leo mascot PNGs) — cached on first fetch at runtime
+
+**When to bump `CACHE_VERSION`:**
+- After uploading new `bundle.js` or `bundle.css` — users will keep getting old cached files until the SW version changes
+- The browser automatically checks `service-worker.js` for byte-level changes on each page load; when it detects the bumped version string, it installs the new SW, re-fetches assets into a fresh cache, and deletes the old one
+
+**When you do NOT need to bump it:**
+- Bubble-only changes (workflows, database, page layout, plugins) — these are not cached by the SW
+- Changes to Bubble HTML components (the `<div id="app-root">` snippets) — served by Bubble, not cached
+
+### Natively Setup
+
+- Service Worker feature: **enabled** in Natively dashboard > Features
+- Trusted hosts: `bonds.heybonds.com`, `0fc323560b9c4d8afc3a7d487716abb6.cdn.bubble.io`, `fonts.googleapis.com`, `fonts.gstatic.com`
 
 ## Generated Files
 

@@ -3,7 +3,6 @@ import mixpanel from 'mixpanel-browser';
 import WelcomeScreen from './components/WelcomeScreen';
 import MainTabs from './components/MainTabs';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
-import DailyQuestion from './components/DailyQuestion';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
 import { useNativelyStorage } from './hooks/useNativelyStorage';
 
@@ -26,18 +25,13 @@ const TRANSITIONS = {
 const DEFAULT_TRANSITION = { exit: 'phase-fade-out', enter: 'phase-fade-in', exitDuration: 300 };
 
 const App = () => {
-    const [appPhase, setAppPhase] = useState('loading');
     const [displayedPhase, setDisplayedPhase] = useState('loading');
     const [animClass, setAnimClass] = useState('');
-    const [debugMode, setDebugMode] = useState(false);
     const [deviceId, setDeviceId] = useState(null);
-    const [storageStatus, setStorageStatus] = useState('...');
     const transitionRef = useRef(false);
     const displayedPhaseRef = useRef('loading');
-    const tapCountRef = useRef(0);
-    const tapTimerRef = useRef(null);
 
-    const { getItem, setItem, removeItem, probeNative } = useNativelyStorage();
+    const { getItem, setItem, removeItem } = useNativelyStorage();
     const SESSION_KEY = 'bonds_session_active';
     const DEVICE_ID_KEY = 'bonds_device_id';
     const ONBOARDING_KEY = 'onboarding_complete';
@@ -52,7 +46,6 @@ const App = () => {
         if (fromPhase === 'loading') {
             displayedPhaseRef.current = nextPhase;
             setDisplayedPhase(nextPhase);
-            setAppPhase(nextPhase);
             setAnimClass('phase-fade-in');
             return;
         }
@@ -67,7 +60,6 @@ const App = () => {
         setTimeout(() => {
             displayedPhaseRef.current = nextPhase;
             setDisplayedPhase(nextPhase);
-            setAppPhase(nextPhase);
             setAnimClass(t.enter);
             transitionRef.current = false;
         }, t.exitDuration);
@@ -77,33 +69,30 @@ const App = () => {
         const initializeAnalytics = async () => {
             try {
                 const token = window.APP_CONFIG?.MIXPANEL_TOKEN;
-
-                if (token) {
-                    mixpanel.init(token, { debug: true, track_pageview: false, persistence: 'localStorage' });
-                    console.log('📊 Mixpanel Initialized');
-
-                    let storedId = await getItem(DEVICE_ID_KEY);
-
-                    if (storedId) {
-                        if (storedId.startsWith('$device:')) {
-                            console.log('🧹 Cleaning polluted Device ID:', storedId);
-                            storedId = storedId.replace(/^\$device:/, '');
-                            await setItem(DEVICE_ID_KEY, storedId);
-                        }
-                        console.log('📂 Loaded Existing Device ID:', storedId);
-                        mixpanel.identify(storedId);
-                    } else {
-                        const rawId = mixpanel.get_distinct_id();
-                        storedId = rawId.replace(/^\$device:/, '');
-                        console.log('🆕 Generated New Device ID:', storedId, '(Raw:', rawId, ')');
-                        await setItem(DEVICE_ID_KEY, storedId);
-                        mixpanel.identify(storedId);
-                    }
-
-                    setDeviceId(storedId);
-                } else {
+                if (!token) {
                     console.warn('⚠️ Mixpanel Token NOT found in window.APP_CONFIG. Analytics disabled.');
+                    return;
                 }
+
+                mixpanel.init(token, { debug: true, track_pageview: false, persistence: 'localStorage' });
+                console.log('📊 Mixpanel Initialized');
+
+                let storedId = await getItem(DEVICE_ID_KEY);
+
+                if (storedId) {
+                    if (storedId.startsWith('$device:')) {
+                        storedId = storedId.replace(/^\$device:/, '');
+                        await setItem(DEVICE_ID_KEY, storedId);
+                    }
+                    mixpanel.identify(storedId);
+                } else {
+                    const rawId = mixpanel.get_distinct_id();
+                    storedId = rawId.replace(/^\$device:/, '');
+                    await setItem(DEVICE_ID_KEY, storedId);
+                    mixpanel.identify(storedId);
+                }
+
+                setDeviceId(storedId);
             } catch (err) {
                 console.error('❌ Analytics Init Failed:', err);
             }
@@ -111,10 +100,7 @@ const App = () => {
 
         const checkSession = async () => {
             try {
-                console.log('🔄 App: Starting session check...');
                 const sessionResult = await getItem(SESSION_KEY);
-
-                console.log(`💾 App: Session check result: ${sessionResult}`);
 
                 if (sessionResult === 'true') {
                     const obResult = await getItem(ONBOARDING_KEY);
@@ -122,7 +108,6 @@ const App = () => {
                 } else {
                     const onboardingState = await getItem('onboarding_state');
                     if (onboardingState) {
-                        console.log('📋 App: Found saved onboarding progress, resuming.');
                         setItem(SESSION_KEY, 'true');
                         transitionTo('onboarding');
                     } else {
@@ -132,8 +117,6 @@ const App = () => {
             } catch (err) {
                 console.error('❌ App: Failed to check session:', err);
                 transitionTo('welcome');
-            } finally {
-                console.log('✅ App: Loading finished. Rendering UI.');
             }
         };
 
@@ -141,7 +124,6 @@ const App = () => {
 
         window.appUI = window.appUI || {};
         window.appUI.setLoginState = (isLogged) => {
-            console.log(`🔑 Bubble Setting Login State: ${isLogged}`);
             if (isLogged) {
                 setItem(SESSION_KEY, 'true');
                 getItem(ONBOARDING_KEY).then(ob => {
@@ -170,20 +152,6 @@ const App = () => {
     const handleOnboardingComplete = () => {
         setItem(ONBOARDING_KEY, 'true');
         transitionTo('main');
-    };
-
-    const handleDebugTap = () => {
-        tapCountRef.current += 1;
-        clearTimeout(tapTimerRef.current);
-        tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0; }, 600);
-        if (tapCountRef.current >= 3) {
-            tapCountRef.current = 0;
-            const opening = !debugMode;
-            setDebugMode(opening);
-            if (opening) {
-                probeNative().then(setStorageStatus);
-            }
-        }
     };
 
     if (displayedPhase === 'loading') {
@@ -218,8 +186,7 @@ const App = () => {
     };
 
     return (
-        <div className="absolute inset-0" onClick={handleDebugTap}>
-            {/* Animated phase wrapper */}
+        <div className="absolute inset-0">
             <div className={`w-full h-full ${animClass}`}>
                 {displayedPhase === 'welcome' && (
                     <WelcomeScreen deviceId={deviceId} onAction={handleWelcomeAction} />
@@ -236,70 +203,7 @@ const App = () => {
                 {displayedPhase === 'main' && (
                     <MainTabs userProps={userProps} />
                 )}
-                {displayedPhase === 'daily-question' && (
-                    <DailyQuestion
-                        credits={13}
-                        category="Time Together"
-                        question="How much intentional one-on-one time do you have in a typical week?"
-                        userName="Danny"
-                        options={[
-                            { text: 'Less than 1 hour', percent: 10, index: 1 },
-                            { text: '1-3 hours', percent: 45, index: 2 },
-                            { text: '4-7 hours', percent: 30, index: 3 },
-                            { text: 'More than 7 hours', percent: 15, index: 4 },
-                        ]}
-                    />
-                )}
             </div>
-
-            {/* Debug Overlay */}
-            {debugMode && (
-                <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 scale-75 origin-top-right">
-                    <div className="bg-black/80 text-white p-2 text-[10px] font-mono rounded border border-white/20">
-                        <p>Phase: {appPhase.toUpperCase()}</p>
-                        <p>Device ID: {deviceId || 'N/A (no Mixpanel token)'}</p>
-                        <p>Mixpanel: {window.APP_CONFIG?.MIXPANEL_TOKEN ? 'configured' : 'NO TOKEN'}</p>
-                        <p>Storage: {storageStatus}</p>
-                    </div>
-                    <button
-                        onClick={() => transitionTo('welcome')}
-                        className="bg-blue-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
-                    >
-                        → Welcome
-                    </button>
-                    <button
-                        onClick={() => transitionTo('onboarding')}
-                        className="bg-purple-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
-                    >
-                        → Onboarding
-                    </button>
-                    <button
-                        onClick={() => transitionTo('main')}
-                        className="bg-green-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
-                    >
-                        → Main
-                    </button>
-                    <button
-                        onClick={() => transitionTo('daily-question')}
-                        className="bg-orange-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
-                    >
-                        → Daily Q
-                    </button>
-                    <button
-                        onClick={() => {
-                            removeItem(SESSION_KEY);
-                            removeItem(DEVICE_ID_KEY);
-                            removeItem(ONBOARDING_KEY);
-                            removeItem('onboarding_state');
-                            removeItem('credits_intro_seen');
-                            window.location.reload();
-                        }}
-                        className="bg-red-600 text-white text-[10px] px-2 py-1 rounded shadow-lg font-mono opacity-80 hover:opacity-100"
-                    >
-                        Reset All Storage
-                    </button>
-                </div>
-            )}
         </div>
     );
 };

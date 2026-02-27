@@ -22,12 +22,12 @@ Since we are using jsDelivr to serve the file directly from GitHub, you just nee
 4.  **Add** the following link:
 
     ```html
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/HeyBonds/bubble-natively-ui-kit@main/bundle.css">
+    <link rel="stylesheet" href="/bundle.css">
     ```
 
-    *Tip: You might want to add a version query parameter like `?v=1` and increment it when you push updates to bust the cache, similar to how you handle `bundle.js`.*
+    The file is hosted via Bubble's "Hosting files in the root directory" (Settings > SEO). Cache invalidation is handled by the service worker.
 
 ## 4. Development Workflow
 - Run `npm run dev` locally.
 - The preview server will serve the local `bundle.css`.
-- When ready to deploy, commit `bundle.css` and push to main.
+- When ready to deploy, upload `bundle.css` to Bubble root hosting and bump `CACHE_VERSION` in `service-worker.js`.

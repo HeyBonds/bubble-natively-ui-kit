@@ -1,6 +1,6 @@
 {
   "name": "bubble-natively-ui-kit",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha",
   "description": "Headless UI Component Library for Bubble.io apps wrapped with Natively",
   "main": "bundle.js",
   "scripts": {

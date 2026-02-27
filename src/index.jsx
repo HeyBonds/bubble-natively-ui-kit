@@ -22,12 +22,24 @@ const initGlobals = () => {
             if (window[fnName]) window[fnName](data);
         }
     };
+    // 3. Debug: reset all storage (localStorage + NativelyStorage) and reload
+    window.appUI.resetAllStorage = () => {
+        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen'];
+        keys.forEach(k => localStorage.removeItem(k));
+        try {
+            const ns = new NativelyStorage();
+            keys.forEach(k => ns.removeStorageValue(k));
+        } catch (e) { console.warn('NativelyStorage unavailable:', e.message); }
+        window.location.reload();
+    };
+
     console.log('🌍 Globals Initialized');
 };
 initGlobals();
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { NativelyStorage } from 'natively';
 import App from './App';
 import WelcomeScreen from './components/WelcomeScreen';
 import DailyQuestion from './components/DailyQuestion';
@@ -74,8 +86,6 @@ const appContainer = document.getElementById('app-content-area');
 if (appContainer) {
     window.appUI.mountMainApp(appContainer);
     console.log('🚀 Main App Auto-Mounted into #app-content-area');
-} else if (document.getElementById('component-selector')) {
-    console.log('🛠️ Preview Mode detected: Waiting for manual mount.');
 } else {
     console.log('📦 UI Kit loaded. Mount functions ready on window.appUI');
 }

@@ -1,7 +1,9 @@
 import React from 'react';
 import { sendToBubble } from '../utils/bubble';
-import leoThink from '../assets/leo_think.png';
-import leoYay from '../assets/leo_yay.png';
+import { BUBBLE_CDN } from '../config';
+
+const leoThink = `${BUBBLE_CDN}/f1772112702436x988725373375085300/leo_think.png`;
+const leoYay = `${BUBBLE_CDN}/f1772112696167x295067163375400700/leo_yay.png`;
 
 const ACTIVITIES = [
   { id: 'funky-date', name: 'Funky Date', emoji: '\uD83D\uDCC5', subtitle: 'Spark something new together', cost: 4, accent: '#FF9600' },
