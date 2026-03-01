@@ -21,7 +21,32 @@
 
 <!-- ===HEADER START=== -->
 
-<!-- 1a. App config + CSS loader + command queue (REQUIRED) -->
+<!-- 1a. Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-P3MTRRX2');</script>
+
+<!-- 1b. Insight audio events — forwards postMessage events to Bubble -->
+<script>
+  window.addEventListener("message", function (event) {
+    const data = event.data;
+    if (!data || data.source !== "audio-event") return;
+
+    if (typeof window.bubble_fn_audio_event === "function") {
+      window.bubble_fn_audio_event(String(data.event || ""));
+    }
+  });
+</script>
+
+<!-- 1c. Mixpanel CDN loader -->
+<script type="text/javascript">
+(function(f,b){if(!b.__SV){var e,g,i,h;window.mixpanel=b;b._i=[];b.init=function(e,f,c){function g(a,d){var b=d.split(".");2==b.length&&(a=a[b[0]],d=b[1]);a[d]=function(){a.push([d].concat(Array.prototype.slice.call(arguments,0)))}}var a=b;"undefined"!==typeof c?a=b[c]=[]:c="mixpanel";a.people=a.people||[];a.toString=function(b){var d="mixpanel";"mixpanel"!==c&&(d+="."+c);b||(d+=" (stub)");return d};a.people.toString=function(){return a.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unalias identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opted_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");
+for(h=0;h<i.length;h++)g(a.people,i[h]);for(h=0;h<i.length;h++)g(a,i[h]);b._i.push([e,f,c])};b.__SV=1.2;e=f.createElement("script");e.type="text/javascript";e.async=!0;e.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===f.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";g=f.getElementsByTagName("script")[0];g.parentNode.insertBefore(e,g)}})(document,window.mixpanel||[]);
+</script>
+
+<!-- 1d. App config + CSS loader + command queue (REQUIRED) -->
 <script>
   window.APP_CONFIG = { MIXPANEL_TOKEN: '67d776f0ab57ae77027280ff93e1bc32' };
 
@@ -53,7 +78,50 @@
 
 <!-- ===BODY START=== -->
 
-<!-- 2a. App loader + Service Worker (REQUIRED — without this, the app won't start) -->
+<!-- 2a. Google Tag Manager (noscript fallback) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P3MTRRX2"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<!-- 2b. Background gradient styles (Bubble loading screen) -->
+<style>
+    #backcolordown{
+        background: #420926 !important;
+    }
+
+    #backcolorup{
+        background: linear-gradient(137.54deg, rgba(23, 118, 234, 0.6) 5.75%, rgba(96, 70, 165, 0.55) 37.81%, rgba(225, 50, 127, 0.5) 72.94%, rgba(198, 8, 2, 0.4) 110.29%)!important;
+    }
+</style>
+
+<!-- 2c. Text flash animation (used by Bubble workflows) -->
+<style>
+  @keyframes textFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .isFlashing {
+    animation: textFlash 2000ms ease-in-out infinite;
+  }
+</style>
+
+<script>
+  window.startFlash = function(id) {
+    if (!id) return;
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add("isFlashing");
+  };
+
+  window.stopFlash = function(id) {
+    if (!id) return;
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("isFlashing");
+  };
+</script>
+
+<!-- 2d. App loader + Service Worker (REQUIRED — without this, the app won't start) -->
 <script>
   (function() {
     // Ensure trailing slash on test branches so the page falls within the SW scope.
@@ -88,9 +156,16 @@
   })();
 </script>
 
-<!-- 2b. Eruda debug console (REMOVE for production) -->
-<script src="https://cdn.jsdelivr.net/npm/eruda" crossorigin="anonymous"></script>
+<!-- 2e. Eruda debug console (auto-skipped on production) -->
 <script>
+  if (/\/version-/.test(location.pathname)) {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/eruda';
+    s.crossOrigin = 'anonymous';
+    s.onload = function() { initEruda(); };
+    document.head.appendChild(s);
+  }
+  function initEruda() {
   eruda.init();
 
   // --- Debug Snippets (Eruda > Snippets tab > tap to run) ---
@@ -166,10 +241,11 @@
   }, 'Delete ALL caches + unregister SWs + reload (nuclear option)');
 
   eruda.get('snippets').add('Storage Dump', function () {
-    var keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_dark_mode', 'bonds_user_data'];
+    var keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_dark_mode', 'bonds_user_data', 'bonds_daily_question'];
     console.log('--- localStorage ---');
     keys.forEach(function (k) { console.log('  ' + k + ':', localStorage.getItem(k)); });
   }, 'Dump all Bonds localStorage keys');
+  }
 </script>
 
 <!-- ===BODY END=== -->

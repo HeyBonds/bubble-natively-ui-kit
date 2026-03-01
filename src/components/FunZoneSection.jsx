@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { sendToBubble } from '../utils/bubble';
 import { BUBBLE_CDN } from '../config';
+import { useDailyQuestion } from '../contexts/DailyQuestionContext';
 
 const leoThink = `${BUBBLE_CDN}/f1772112702436x988725373375085300/leo_think.png`;
 const leoYay = `${BUBBLE_CDN}/f1772112696167x295067163375400700/leo_yay.png`;
@@ -15,17 +16,14 @@ const ACTIVITIES = [
 ];
 
 const DailyQuestionBanner = ({ dailyQuestion, push, theme: _theme }) => {
+  // No question loaded yet, or stale cache from a previous day — hide banner
+  if (!dailyQuestion?.question || dailyQuestion?.isStale) return null;
+
   const isAnswered = dailyQuestion?.selectedAnswer !== undefined && dailyQuestion?.selectedAnswer !== null;
 
   const handleTap = () => {
-    if (!dailyQuestion) return;
     sendToBubble('bubble_fn_fun', 'open_daily_question');
-    push('daily-question', {
-      category: dailyQuestion.category,
-      question: dailyQuestion.question,
-      options: dailyQuestion.options,
-      selectedAnswer: dailyQuestion.selectedAnswer,
-    });
+    push('daily-question');
   };
 
   if (isAnswered) {
@@ -160,7 +158,15 @@ const ActivityCard = ({ activity, index, push, theme, animate }) => {
   );
 };
 
-const FunZoneSection = ({ theme, push, dailyQuestion }) => {
+const FunZoneSection = ({ theme, push }) => {
+  const dailyQuestion = useDailyQuestion();
+  const { isStale, fetchIfStale } = dailyQuestion;
+
+  // Lazy fetch: request fresh data from Bubble when cache is stale or missing
+  useEffect(() => {
+    if (isStale) fetchIfStale();
+  }, [isStale, fetchIfStale]);
+
   const animate = !cardsAnimated;
   if (!cardsAnimated) cardsAnimated = true;
   return (

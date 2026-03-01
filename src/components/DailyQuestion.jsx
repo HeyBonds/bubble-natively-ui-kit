@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
+import { useDailyQuestion } from '../contexts/DailyQuestionContext';
 import { sendToBubble } from '../utils/bubble';
 
 const DUOLINGO_GREEN = '#58CC02';
@@ -9,8 +10,9 @@ const GREEN_SHADOW = '#46A302';
 const COIN_BG = 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)';
 const COIN_SHADOW = '0 2px 0 0 #555';
 
-const DailyQuestion = ({ category, question, options, selectedAnswer: initialSelectedAnswer, theme, pop: _pop }) => {
+const DailyQuestion = ({ theme, pop: _pop }) => {
     const { name: userName, credits: userCredits } = useUser();
+    const { category, question, options, selectedAnswer: initialSelectedAnswer, markAnswered } = useDailyQuestion();
     const [credits, setCredits] = useState(userCredits || 0);
     const [selectedAnswer, setSelectedAnswer] = useState(initialSelectedAnswer);
     const [isVoted, setIsVoted] = useState(initialSelectedAnswer !== undefined && initialSelectedAnswer !== null);
@@ -48,6 +50,7 @@ const DailyQuestion = ({ category, question, options, selectedAnswer: initialSel
         }, 800);
 
         sendToBubble('bubble_fn_daily_question', 'vote', { answer: answerText, index });
+        markAnswered(index);
 
         addTimer(() => {
             triggerCreditAnimation();

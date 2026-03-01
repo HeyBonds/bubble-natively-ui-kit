@@ -24,7 +24,7 @@ const initGlobals = () => {
     };
     // 3. Debug: reset all storage (localStorage + NativelyStorage) and reload
     window.appUI.resetAllStorage = () => {
-        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_user_data'];
+        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_user_data', 'bonds_daily_question'];
         keys.forEach(k => localStorage.removeItem(k));
         try {
             const ns = new NativelyStorage();
@@ -47,6 +47,8 @@ import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
 import JourneyPath from './components/JourneyPath';
 import RT from './utils/realtime';
+import { UserProvider } from './contexts/UserContext';
+import { DailyQuestionProvider } from './contexts/DailyQuestionContext';
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
@@ -63,7 +65,13 @@ window.appUI.mountWelcome = (container, props = {}) => {
 
 window.appUI.mountDailyQuestion = (container, props = {}) => {
     const root = createRoot(container);
-    root.render(<DailyQuestion {...props} />);
+    root.render(
+        <UserProvider>
+            <DailyQuestionProvider>
+                <DailyQuestion {...props} />
+            </DailyQuestionProvider>
+        </UserProvider>
+    );
     return root;
 };
 
@@ -94,8 +102,6 @@ if (appContainer) {
 // Expose RT config for Bubble to set instruction templates
 window.RT = RT;
 
-// Drain the command queue (calls made before bundle loaded) and switch
-// whenReady to immediate execution. Follows the Google GTM/GPT pattern.
-(window.appUI._q || []).forEach(fn => fn());
-delete window.appUI._q;
-window.appUI.whenReady = function(fn) { fn(); };
+// Queue drain moved to UserProvider useEffect — ensures all bridge
+// functions (setUserData, setLoginState, etc.) are registered before
+// queued callbacks execute. See src/contexts/UserContext.jsx.

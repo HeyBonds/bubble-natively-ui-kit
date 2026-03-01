@@ -67,6 +67,18 @@ export const UserProvider = ({ children }) => {
         return () => { delete window.appUI.setUserData; };
     }, [updateUser]);
 
+    // Drain the whenReady command queue after all bridge functions are registered.
+    // Parent effects run after child effects, so setLoginState (AppInner) and
+    // setUserData (above) are both available by now.
+    useEffect(() => {
+        const q = window.appUI._q;
+        if (q) {
+            delete window.appUI._q;
+            window.appUI.whenReady = function(fn) { fn(); };
+            q.forEach(fn => fn());
+        }
+    }, []);
+
     return (
         <UserContext.Provider value={{ ...user, updateUser, clearUser }}>
             {children}

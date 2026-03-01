@@ -8,6 +8,7 @@ import mockOnboardingSteps from './data/mockOnboardingSteps';
 import { useNativelyStorage } from './hooks/useNativelyStorage';
 import { THEMES, getSystemTheme } from './theme';
 import { UserProvider, useUser } from './contexts/UserContext';
+import { DailyQuestionProvider, useDailyQuestion } from './contexts/DailyQuestionContext';
 
 // Transition map: [fromPhase][toPhase] → { exit, enter, exitDuration }
 const TRANSITIONS = {
@@ -35,6 +36,7 @@ const DEFAULT_TRANSITION = { exit: 'phase-fade-out', enter: 'phase-fade-in', exi
 
 const AppInner = () => {
     const { clearUser } = useUser();
+    const { clearDailyQuestion } = useDailyQuestion();
     const [displayedPhase, setDisplayedPhase] = useState('loading');
     const [animClass, setAnimClass] = useState('');
     const [deviceId, setDeviceId] = useState(null);
@@ -198,6 +200,7 @@ const AppInner = () => {
 
     const handleLogout = () => {
         clearUser();
+        clearDailyQuestion();
         removeItem(SESSION_KEY);
         removeItem(ONBOARDING_KEY);
         removeItem('onboarding_state');
@@ -252,7 +255,9 @@ const AppInner = () => {
 
 const App = () => (
     <UserProvider>
-        <AppInner />
+        <DailyQuestionProvider>
+            <AppInner />
+        </DailyQuestionProvider>
     </UserProvider>
 );
 
