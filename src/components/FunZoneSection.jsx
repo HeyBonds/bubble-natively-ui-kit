@@ -15,9 +15,29 @@ const ACTIVITIES = [
   { id: 'gift-inspiration', name: 'Gift Inspiration', emoji: '\uD83C\uDF81', subtitle: 'Find the perfect surprise', cost: 4, accent: '#CE82FF' },
 ];
 
-const DailyQuestionBanner = ({ dailyQuestion, push, theme: _theme }) => {
-  // No question loaded yet, or stale cache from a previous day — hide banner
-  if (!dailyQuestion?.question || dailyQuestion?.isStale) return null;
+const DailyQuestionSkeleton = ({ theme }) => (
+  <div
+    className="w-full rounded-2xl overflow-hidden border-2 border-solid animate-pulse"
+    style={{ background: theme.surface, borderColor: theme.border }}
+  >
+    <div className="flex items-center p-4 pr-2">
+      <div className="flex-1 min-w-0">
+        <div className="h-3 w-24 rounded-full mb-3" style={{ background: theme.border }} />
+        <div className="h-4 w-full rounded-full mb-2" style={{ background: theme.border }} />
+        <div className="h-4 w-3/4 rounded-full mb-3" style={{ background: theme.border }} />
+        <div className="h-9 w-28 rounded-xl" style={{ background: theme.border }} />
+      </div>
+      <div className="w-24 h-24 rounded-full flex-shrink-0 -mr-1" style={{ background: theme.border, opacity: 0.5 }} />
+    </div>
+  </div>
+);
+
+const DailyQuestionBanner = ({ dailyQuestion, push, theme }) => {
+  // Loading — show skeleton while fetching
+  if (!dailyQuestion?.question && dailyQuestion?.isStale) return <DailyQuestionSkeleton theme={theme} />;
+
+  // No data and not stale — shouldn't happen, but guard
+  if (!dailyQuestion?.question) return null;
 
   const isAnswered = dailyQuestion?.selectedAnswer !== undefined && dailyQuestion?.selectedAnswer !== null;
 
