@@ -7,6 +7,7 @@ import { THEMES, DARK_MODE_OPTIONS, DARK_MODE_LABELS, getSystemTheme } from '../
 import SimulatorSection from './SimulatorSection';
 import { APP_VERSION } from '../config';
 import { sendToBubble } from '../utils/bubble';
+import { useUser } from '../contexts/UserContext';
 
 // ── Reusable profile building blocks ──────────────────────────────────
 
@@ -40,19 +41,11 @@ const Chevron = ({ theme }) => (
   </svg>
 );
 
-// ── Mock data (will come from userProps later) ──────────────────────
-const MOCK_PROFILE = {
-  name: 'Testjan28',
-  email: 'testjan28@gmail.com',
-  partner: null,
-  pillars: ['Support', 'Work-life-balance', 'Flexibility'],
-};
-
 // ── Profile Section ─────────────────────────────────────────────────
 
 const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout }) => {
   const glass = glassStyle(theme);
-  const profile = MOCK_PROFILE;
+  const { name, email, pillars } = useUser();
 
   const handleLogout = () => {
     sendToBubble('bubble_fn_profile', 'logout');
@@ -72,8 +65,8 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout }) => {
           </svg>
         </div>
         <div>
-          <p className="font-extrabold text-[20px]" style={{ color: theme.textPrimary }}>{profile.name}</p>
-          <p className="text-[12px]" style={{ color: theme.textSecondary }}>{profile.email}</p>
+          <p className="font-extrabold text-[20px]" style={{ color: theme.textPrimary }}>{name}</p>
+          <p className="text-[12px]" style={{ color: theme.textSecondary }}>{email}</p>
         </div>
       </div>
 
@@ -102,7 +95,7 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout }) => {
             <div className="flex-1">
               <p className="font-semibold text-[14px] mb-2" style={{ color: theme.textPrimary }}>Your Pillars</p>
               <div className="flex flex-wrap gap-2">
-                {profile.pillars.map(p => (
+                {pillars.map(p => (
                   <span key={p} className="rounded-full px-3 py-1 text-[11px] font-bold border border-solid" style={{ borderColor: theme.border, color: theme.textSecondary }}>
                     {p}
                   </span>
@@ -236,7 +229,7 @@ const PlaceholderSection = ({ title, theme }) => (
 
 const STORAGE_KEY = 'bonds_dark_mode';
 
-const MainTabs = ({ userProps, onLogout }) => {
+const MainTabs = ({ onLogout }) => {
   const storage = useNativelyStorage();
 
   // Dark mode preference: 'system' | 'on' | 'off'
@@ -328,7 +321,6 @@ const MainTabs = ({ userProps, onLogout }) => {
 
   const renderView = () => {
     const commonProps = {
-        ...userProps,
         push,
         pop,
         theme: t,

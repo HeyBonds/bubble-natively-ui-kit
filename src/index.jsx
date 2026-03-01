@@ -24,7 +24,7 @@ const initGlobals = () => {
     };
     // 3. Debug: reset all storage (localStorage + NativelyStorage) and reload
     window.appUI.resetAllStorage = () => {
-        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen'];
+        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_user_data'];
         keys.forEach(k => localStorage.removeItem(k));
         try {
             const ns = new NativelyStorage();
@@ -93,3 +93,9 @@ if (appContainer) {
 
 // Expose RT config for Bubble to set instruction templates
 window.RT = RT;
+
+// Drain the command queue (calls made before bundle loaded) and switch
+// whenReady to immediate execution. Follows the Google GTM/GPT pattern.
+(window.appUI._q || []).forEach(fn => fn());
+delete window.appUI._q;
+window.appUI.whenReady = function(fn) { fn(); };

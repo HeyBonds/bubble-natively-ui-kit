@@ -7,6 +7,7 @@ import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
 import { useNativelyStorage } from './hooks/useNativelyStorage';
 import { THEMES, getSystemTheme } from './theme';
+import { UserProvider, useUser } from './contexts/UserContext';
 
 // Transition map: [fromPhase][toPhase] → { exit, enter, exitDuration }
 const TRANSITIONS = {
@@ -32,7 +33,8 @@ const TRANSITIONS = {
 
 const DEFAULT_TRANSITION = { exit: 'phase-fade-out', enter: 'phase-fade-in', exitDuration: 300 };
 
-const App = () => {
+const AppInner = () => {
+    const { clearUser } = useUser();
     const [displayedPhase, setDisplayedPhase] = useState('loading');
     const [animClass, setAnimClass] = useState('');
     const [deviceId, setDeviceId] = useState(null);
@@ -195,6 +197,7 @@ const App = () => {
     };
 
     const handleLogout = () => {
+        clearUser();
         removeItem(SESSION_KEY);
         removeItem(ONBOARDING_KEY);
         removeItem('onboarding_state');
@@ -216,23 +219,6 @@ const App = () => {
             </div>
         );
     }
-
-    const userProps = {
-        userName: 'Jonathan',
-        userAvatar: 'https://i.pravatar.cc/150?img=12',
-        credits: 23,
-        dailyQuestion: {
-            category: 'Time Together',
-            question: 'How much intentional one-on-one time do you have in a typical week?',
-            options: [
-                { text: 'Less than 1 hour', percent: 10, index: 1 },
-                { text: '1-3 hours', percent: 45, index: 2 },
-                { text: '3-5 hours', percent: 30, index: 3 },
-                { text: 'More than 5 hours', percent: 15, index: 4 },
-            ],
-            selectedAnswer: null,
-        },
-    };
 
     return (
         <div className="absolute inset-0">
@@ -257,11 +243,17 @@ const App = () => {
                     />
                 )}
                 {displayedPhase === 'main' && (
-                    <MainTabs userProps={userProps} onLogout={handleLogout} />
+                    <MainTabs onLogout={handleLogout} />
                 )}
             </div>
         </div>
     );
 };
+
+const App = () => (
+    <UserProvider>
+        <AppInner />
+    </UserProvider>
+);
 
 export default App;

@@ -1,7 +1,9 @@
 import React from 'react';
 import { sendToBubble } from '../utils/bubble';
+import { useUser } from '../contexts/UserContext';
 
-const HomeSection = ({ userName, userAvatar, credits, push }) => {
+const HomeSection = ({ push }) => {
+    const { name, avatar, credits } = useUser();
     // Default journey data
     const currentJourney = {
         title: 'Intimacy',
@@ -22,10 +24,10 @@ const HomeSection = ({ userName, userAvatar, credits, push }) => {
                     
                     {/* User Info */}
                     <div className="flex items-center gap-3">
-                        <img src={userAvatar} 
-                             alt={userName} 
+                        <img src={avatar} 
+                             alt={name} 
                              className="w-12 h-12 rounded-full border-2 border-solid border-white/20" />
-                        <span className="font-jakarta font-semibold text-lg text-white">{userName}</span>
+                        <span className="font-jakarta font-semibold text-lg text-white">{name}</span>
                     </div>
                     
                     {/* Action Icons */}

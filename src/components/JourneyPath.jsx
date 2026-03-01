@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useUser } from '../contexts/UserContext';
 import JourneyNode from './JourneyNode';
 import mockJourneyData from '../data/mockJourneyData';
 
@@ -94,7 +95,8 @@ const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect, theme }) 
     </button>
 );
 
-const JourneyPath = ({ credits = 0, theme }) => {
+const JourneyPath = ({ theme }) => {
+    const { credits } = useUser();
     const { chapters } = mockJourneyData;
     const scrollRef = useRef(null);
     const [activeChapterIdx, setActiveChapterIdx] = useState(() => {
