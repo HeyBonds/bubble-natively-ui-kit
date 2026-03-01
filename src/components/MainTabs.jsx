@@ -5,6 +5,7 @@ import FunZoneSection from './FunZoneSection';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
 import { THEMES, DARK_MODE_OPTIONS, DARK_MODE_LABELS, getSystemTheme } from '../theme';
 import SimulatorSection from './SimulatorSection';
+import { APP_VERSION } from '../config';
 
 // ── Reusable profile building blocks ──────────────────────────────────
 
@@ -211,7 +212,7 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref }) => {
         <button className="text-[12px] font-semibold" style={{ color: theme.textMuted }}>
           Delete Account
         </button>
-        <p className="text-[10px] mt-2" style={{ color: theme.textMuted }}>v1.0.0-alpha</p>
+        <p className="text-[10px] mt-2" style={{ color: theme.textMuted }}>{APP_VERSION}</p>
       </div>
 
     </div>

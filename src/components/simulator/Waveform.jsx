@@ -46,7 +46,12 @@ const Waveform = ({ rtState, buttonVisible = false, theme }) => {
     dataArray: null,
     micStream: null,
     simulatedData: new Array(CONFIG.SIMULATED_SAMPLES).fill(128),
+    buttonVisible: false,
   });
+
+  // Keep mutable refs in sync so the rAF loop always reads latest values
+  stateRef.current.buttonVisible = buttonVisible;
+  stateRef.current.theme = theme;
 
   // --- Audio handling (ported from original) ---
 
@@ -144,7 +149,7 @@ const Waveform = ({ rtState, buttonVisible = false, theme }) => {
     const w = canvas.width / dpr;
     const h = canvas.height / dpr;
     const centerY = h / 2;
-    const strokeColor = theme.simulator.waveformLine;
+    const strokeColor = s.theme.simulator.waveformLine;
     const strokeColorTransparent = 'rgba(255,255,255,0)';
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -153,10 +158,12 @@ const Waveform = ({ rtState, buttonVisible = false, theme }) => {
     ctx.lineCap = 'round';
 
     // Button gap calculation — exact from original
+    // Read from mutable ref (not closure) so rAF loop always uses latest value
+    const btnVisible = s.buttonVisible;
     const buttonCenterX = w / 2;
     const buttonGap = CONFIG.BUTTON_RADIUS + CONFIG.BUTTON_STROKE_WIDTH / 2 + CONFIG.LINE_WIDTH / 2 + CONFIG.BUTTON_VISUAL_GAP;
-    const leftGap = buttonVisible ? buttonCenterX - buttonGap : w;
-    const rightGap = buttonVisible ? buttonCenterX + buttonGap : w;
+    const leftGap = btnVisible ? buttonCenterX - buttonGap : w;
+    const rightGap = btnVisible ? buttonCenterX + buttonGap : w;
 
     const createFadeGradient = (startX, endX, fadeLeft, fadeRight) => {
       const length = endX - startX;
@@ -208,7 +215,7 @@ const Waveform = ({ rtState, buttonVisible = false, theme }) => {
     };
 
     if (s.mode === 'baseline') {
-      if (buttonVisible) {
+      if (btnVisible) {
         if (leftGap > 0) drawBaseline(0, leftGap, true, false);
         if (rightGap < w) drawBaseline(rightGap, w, false, true);
       } else {
@@ -238,7 +245,7 @@ const Waveform = ({ rtState, buttonVisible = false, theme }) => {
       }
 
       if (audioData.length > 0) {
-        if (buttonVisible) {
+        if (btnVisible) {
           if (leftGap > 0) drawWaveform(audioData, 0, leftGap, true, false);
           if (rightGap < w) drawWaveform(audioData, rightGap, w, false, true);
         } else {
@@ -249,7 +256,7 @@ const Waveform = ({ rtState, buttonVisible = false, theme }) => {
 
     ctx.strokeStyle = strokeColor;
     s.rafId = requestAnimationFrame(drawFrame);
-  }, [theme, buttonVisible]);
+  }, []);
 
   // --- State handling (ported from original stateHandlers) ---
 

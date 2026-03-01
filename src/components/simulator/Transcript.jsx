@@ -50,7 +50,7 @@ const Transcript = forwardRef(({ theme }, ref) => {
     function updateDOM(type, text, isFinal) {
       let inner = container.querySelector('.ts-inner');
       if (!inner) {
-        container.innerHTML = '<div class="ts-inner" style="width:100%;height:100%;padding:12px 30px;overflow-y:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 15px,black 100%);mask-image:linear-gradient(to bottom,transparent 0%,black 15px,black 100%);box-sizing:border-box;"></div>';
+        container.innerHTML = '<div class="ts-inner" style="width:100%;height:100%;padding:0.8em 30px;overflow-y:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 15px,black 100%);mask-image:linear-gradient(to bottom,transparent 0%,black 15px,black 100%);box-sizing:border-box;"></div>';
         inner = container.querySelector('.ts-inner');
       }
       let lineEl = s.currentLines[type];
@@ -62,7 +62,7 @@ const Transcript = forwardRef(({ theme }, ref) => {
           inner.removeChild(inner.firstChild);
         }
         lineEl = document.createElement('div');
-        lineEl.style.cssText = 'margin:0 0 8px;line-height:24px;font-size:15px;opacity:0.8;word-wrap:break-word;display:block;min-height:24px;text-align:center;color:#ffffff;font-family:Poppins,sans-serif;transition:opacity 0.3s ease;';
+        lineEl.style.cssText = 'margin:0;line-height:1.6;font-size:inherit;opacity:0.8;word-wrap:break-word;display:block;text-align:center;color:#ffffff;font-family:Poppins,sans-serif;transition:opacity 0.3s ease;';
         // Active = streaming
         lineEl.style.opacity = '1';
         lineEl.style.fontWeight = '500';
@@ -170,7 +170,9 @@ const Transcript = forwardRef(({ theme }, ref) => {
       style={{
         width: '95%',
         maxWidth: 900,
-        height: 72,
+        fontSize: 15,
+        lineHeight: '1.6',
+        height: '6.4em',
         margin: '15px auto 10px',
         padding: 0,
         textAlign: 'center',
@@ -186,7 +188,7 @@ const Transcript = forwardRef(({ theme }, ref) => {
         style={{
           width: '100%',
           height: '100%',
-          padding: '12px 30px',
+          padding: '0.8em 30px',
           overflowY: 'auto',
           scrollbarWidth: 'none',
           WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15px, black 100%)',
