@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import mixpanel from 'mixpanel-browser';
 import WelcomeScreen from './components/WelcomeScreen';
+import SignInScreen from './components/SignInScreen';
 import MainTabs from './components/MainTabs';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
@@ -10,8 +11,14 @@ import { THEMES, getSystemTheme } from './theme';
 // Transition map: [fromPhase][toPhase] → { exit, enter, exitDuration }
 const TRANSITIONS = {
     welcome: {
+        signin:     { exit: 'phase-fade-out', enter: 'phase-slide-up', exitDuration: 300 },
         onboarding: { exit: 'phase-zoom-out', enter: 'phase-slide-up', exitDuration: 450 },
         main:       { exit: 'phase-zoom-out', enter: 'phase-scale-in', exitDuration: 450 },
+    },
+    signin: {
+        welcome:    { exit: 'phase-slide-down', enter: 'phase-zoom-in', exitDuration: 400 },
+        main:       { exit: 'phase-zoom-out', enter: 'phase-scale-in', exitDuration: 450 },
+        onboarding: { exit: 'phase-zoom-out', enter: 'phase-slide-up', exitDuration: 450 },
     },
     onboarding: {
         main:       { exit: 'phase-complete-out', enter: 'phase-scale-in', exitDuration: 600 },
@@ -36,6 +43,7 @@ const App = () => {
     const SESSION_KEY = 'bonds_session_active';
     const DEVICE_ID_KEY = 'bonds_device_id';
     const ONBOARDING_KEY = 'onboarding_complete';
+    const AUTH_PENDING_KEY = 'bonds_auth_pending';
 
     // Theme resolution — defaults to 'system' (OS preference) during onboarding
     const [darkModePref, setDarkModePref] = useState(() => localStorage.getItem('bonds_dark_mode') || 'system');
@@ -137,6 +145,14 @@ const App = () => {
                 } else if (onboardingState) {
                     setItem(SESSION_KEY, 'true');
                     transitionTo('onboarding');
+                } else if (localStorage.getItem(AUTH_PENDING_KEY) === 'true') {
+                    // OAuth redirect just happened — stay on loading until setLoginState fires
+                    setTimeout(() => {
+                        if (displayedPhaseRef.current === 'loading') {
+                            localStorage.removeItem(AUTH_PENDING_KEY);
+                            transitionTo('welcome');
+                        }
+                    }, 10000);
                 } else {
                     transitionTo('welcome');
                 }
@@ -150,11 +166,11 @@ const App = () => {
 
         window.appUI = window.appUI || {};
         window.appUI.setLoginState = (isLogged) => {
+            localStorage.removeItem(AUTH_PENDING_KEY);
             if (isLogged) {
                 setItem(SESSION_KEY, 'true');
-                getItem(ONBOARDING_KEY).then(ob => {
-                    transitionTo(ob === 'true' ? 'main' : 'onboarding');
-                });
+                setItem(ONBOARDING_KEY, 'true');
+                transitionTo('main');
             } else {
                 removeItem(SESSION_KEY);
                 transitionTo('welcome');
@@ -169,15 +185,22 @@ const App = () => {
             setItem(SESSION_KEY, 'true');
             transitionTo('onboarding');
         } else if (action === 'signin') {
-            setItem(SESSION_KEY, 'true');
-            setItem(ONBOARDING_KEY, 'true');
-            transitionTo('main');
+            transitionTo('signin');
         }
     };
 
     const handleOnboardingComplete = () => {
         setItem(ONBOARDING_KEY, 'true');
         transitionTo('main');
+    };
+
+    const handleLogout = () => {
+        removeItem(SESSION_KEY);
+        removeItem(ONBOARDING_KEY);
+        removeItem('onboarding_state');
+        removeItem(DEVICE_ID_KEY);
+        removeItem('bonds_dark_mode');
+        transitionTo('welcome');
     };
 
     if (displayedPhase === 'loading') {
@@ -217,6 +240,12 @@ const App = () => {
                 {displayedPhase === 'welcome' && (
                     <WelcomeScreen deviceId={deviceId} onAction={handleWelcomeAction} />
                 )}
+                {displayedPhase === 'signin' && (
+                    <SignInScreen
+                        theme={theme}
+                        onBack={() => transitionTo('welcome')}
+                    />
+                )}
                 {displayedPhase === 'onboarding' && (
                     <OnboardingFlow
                         steps={mockOnboardingSteps}
@@ -228,7 +257,7 @@ const App = () => {
                     />
                 )}
                 {displayedPhase === 'main' && (
-                    <MainTabs userProps={userProps} />
+                    <MainTabs userProps={userProps} onLogout={handleLogout} />
                 )}
             </div>
         </div>

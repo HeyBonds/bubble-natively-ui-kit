@@ -6,6 +6,7 @@ import { useNativelyStorage } from '../hooks/useNativelyStorage';
 import { THEMES, DARK_MODE_OPTIONS, DARK_MODE_LABELS, getSystemTheme } from '../theme';
 import SimulatorSection from './SimulatorSection';
 import { APP_VERSION } from '../config';
+import { sendToBubble } from '../utils/bubble';
 
 // ── Reusable profile building blocks ──────────────────────────────────
 
@@ -49,9 +50,15 @@ const MOCK_PROFILE = {
 
 // ── Profile Section ─────────────────────────────────────────────────
 
-const ProfileSection = ({ theme, darkModePref, setDarkModePref }) => {
+const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout }) => {
   const glass = glassStyle(theme);
   const profile = MOCK_PROFILE;
+
+  const handleLogout = () => {
+    sendToBubble('bubble_fn_profile', 'logout');
+    localStorage.clear();
+    if (onLogout) onLogout();
+  };
 
   return (
     <div className="px-5 pt-6 pb-10 font-jakarta">
@@ -206,7 +213,7 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref }) => {
 
       {/* ── Bottom actions ── */}
       <div className="mt-8 flex flex-col items-center gap-3">
-        <button className="font-bold text-[14px] py-2 px-8 rounded-full border border-solid" style={{ borderColor: theme.border, color: theme.textSecondary }}>
+        <button onClick={handleLogout} className="font-bold text-[14px] py-2 px-8 rounded-full border border-solid" style={{ borderColor: theme.border, color: theme.textSecondary }}>
           Log Out
         </button>
         <button className="text-[12px] font-semibold" style={{ color: theme.textMuted }}>
@@ -229,7 +236,7 @@ const PlaceholderSection = ({ title, theme }) => (
 
 const STORAGE_KEY = 'bonds_dark_mode';
 
-const MainTabs = ({ userProps }) => {
+const MainTabs = ({ userProps, onLogout }) => {
   const storage = useNativelyStorage();
 
   // Dark mode preference: 'system' | 'on' | 'off'
@@ -346,7 +353,7 @@ const MainTabs = ({ userProps }) => {
         }
         break;
       case 'profile':
-        content = <ProfileSection theme={t} darkModePref={darkModePref} setDarkModePref={setDarkModePref} />;
+        content = <ProfileSection theme={t} darkModePref={darkModePref} setDarkModePref={setDarkModePref} onLogout={onLogout} />;
         break;
       default:
         content = <PlaceholderSection title="Not Found" theme={t} />;

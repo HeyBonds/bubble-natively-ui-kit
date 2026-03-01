@@ -1,12 +1,14 @@
 import React from 'react';
 import { sendToBubble } from '../utils/bubble';
-import { BUBBLE_CDN } from '../config';
+import { BUBBLE_CDN, APP_VERSION } from '../config';
 
 const WelcomeScreen = ({ deviceId: _deviceId, onAction }) => {
     const bgImage = `${BUBBLE_CDN}/f1744960311608x780031988693140400/BG%20%281%29.png`;
 
     const handleAction = (action) => {
-        sendToBubble('bubble_fn_welcome', action);
+        if (action !== 'signin') {
+            sendToBubble('bubble_fn_welcome', action);
+        }
         if (onAction) onAction(action);
     };
 
@@ -64,6 +66,7 @@ const WelcomeScreen = ({ deviceId: _deviceId, onAction }) => {
                             </button>
                         </span>
                     </div>
+                    <p className="text-center text-white/20 text-[10px] mt-4">{APP_VERSION}</p>
                 </div>
 
             </div>
