@@ -70,6 +70,9 @@ export const DailyQuestionProvider = ({ children }) => {
                 }
                 if (!Array.isArray(opts)) opts = [];
             }
+            if (opts.length && opts[0].index !== undefined) {
+                opts.sort((a, b) => a.index - b.index);
+            }
             overrides.options = opts;
         }
         setDq(prev => {

@@ -1,5 +1,5 @@
 // Bump this on every deploy to invalidate the old cache.
-const CACHE_VERSION = 'bonds-alpha-20a0e994e9f8';
+const CACHE_VERSION = 'bonds-alpha-e0f4db493d71';
 
 // Derive base path from the service worker's own location.
 // Test branch: /version-434vi/service-worker.js → basePath = /version-434vi/
