@@ -11,8 +11,8 @@ const COIN_BG = 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6
 const COIN_SHADOW = '0 2px 0 0 #555';
 
 const DailyQuestion = ({ theme, pop: _pop }) => {
-    const { name: userName, credits: userCredits } = useUser();
-    const { category, question, options, selectedAnswer: initialSelectedAnswer, markAnswered } = useDailyQuestion();
+    const { name: userName, credits: userCredits, updateUser } = useUser();
+    const { questionId, category, question, options, selectedAnswer: initialSelectedAnswer, markAnswered } = useDailyQuestion();
     const [credits, setCredits] = useState(userCredits || 0);
     const [selectedAnswer, setSelectedAnswer] = useState(initialSelectedAnswer);
     const [isVoted, setIsVoted] = useState(initialSelectedAnswer !== undefined && initialSelectedAnswer !== null);
@@ -21,6 +21,18 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
     const timersRef = useRef([]);
     const overlaysRef = useRef([]);
     const rafRef = useRef(null);
+
+    // Sync local state when context updates (e.g. Bubble vote response)
+    useEffect(() => {
+        if (initialSelectedAnswer !== undefined && initialSelectedAnswer !== null) {
+            setSelectedAnswer(initialSelectedAnswer);
+            setIsVoted(true);
+        }
+    }, [initialSelectedAnswer]);
+
+    useEffect(() => {
+        setCredits(userCredits || 0);
+    }, [userCredits]);
 
     // Cleanup all pending timers, DOM overlays, and rAF on unmount
     useEffect(() => {
@@ -39,7 +51,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
         return id;
     };
 
-    const handleVote = (answerText, index) => {
+    const handleVote = (_answerText, index) => {
         if (isVoted) return;
 
         setIsVoted(true);
@@ -49,8 +61,9 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
             setShowFooterAfter(true);
         }, 800);
 
-        sendToBubble('bubble_fn_daily_question', 'vote', { answer: answerText, index });
+        sendToBubble('bubble_fn_daily_question', 'vote', { questionId, index });
         markAnswered(index);
+        updateUser({ credits: (userCredits || 0) + 1 });
 
         addTimer(() => {
             triggerCreditAnimation();

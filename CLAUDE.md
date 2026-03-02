@@ -32,12 +32,12 @@ Preview URL: `http://localhost:8000/preview/index.html`
 
 - **React → Preact**: esbuild aliases `react` and `react-dom` to `preact/compat`. Write standard React code; Preact is transparent.
 - **Component mounting**: Components are exposed via `window.appUI` (defined in `src/index.jsx`). Bubble calls these to render UI into containers.
-- **Bubble communication (JS→Bubble)**: Always use `sendToBubble(fnName, action, ...values)` from `src/utils/bubble.js`. Never call `window.BubbleBridge.send` directly.
-  - Uses Toolbox **Multiple Outputs** so Bubble reads typed values directly — no JSON parsing needed.
-  - **Output mapping**: `output1` = action, `output2+` = extra values. All outputs are coerced to **text** so types stay consistent across actions.
+- **Bubble communication (JS→Bubble)**: Always use `sendToBubble(fnName, action, data)` from `src/utils/bubble.js`. Never call `window.BubbleBridge.send` directly.
+  - Uses Toolbox **Multiple Outputs** with only 2 outputs: `output1` = action (text), `output2` = JSON payload (text).
   - **Usage**: `sendToBubble('bubble_fn_<feature>', 'action')` or `sendToBubble('bubble_fn_<feature>', 'action', { key: val })`.
   - **Function naming**: Bubble function names follow `bubble_fn_<feature>` (e.g. `bubble_fn_welcome`, `bubble_fn_home`, `bubble_fn_daily_question`).
-  - **Bubble setup**: Each JS2B element needs "Multiple Outputs" enabled. Set all outputs to type **text**. Route workflows with `"Only when output1 is 'action_name'"`. Unused outputs stay empty for actions that don't need them.
+  - **Bubble setup**: Each JS2B element needs "Multiple Outputs" enabled. Set output1 and output2 to type **text**. Route workflows with `"Only when output1 is 'action_name'"`. Parse `output2` with `JSON.parse()` in a "Run JavaScript" step.
+  - **Bubble script reference**: Copy-pasteable scripts live in `docs/bubble-scripts/<feature>.js`. Always update when changing what Bubble needs to call.
 - **Borders**: Bubble's CSS reset hides borders. Always add `border-solid` (e.g., `border border-solid border-white/10`).
 - **Glassmorphism pattern**: `bg-white/5 backdrop-blur-md border border-solid border-white/10`
 - **Custom animations**: Defined as `@keyframes` in `src/input.css`. Use corresponding Tailwind classes (`animate-fade-in`, `animate-slide-in-right`, etc.).

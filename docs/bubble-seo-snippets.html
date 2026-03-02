@@ -166,6 +166,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     document.head.appendChild(s);
   }
   function initEruda() {
+  if (typeof eruda === 'undefined') return;
   eruda.init();
 
   // --- Debug Snippets (Eruda > Snippets tab > tap to run) ---

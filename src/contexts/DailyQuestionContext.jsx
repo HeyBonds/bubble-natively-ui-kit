@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
 import { sendToBubble } from '../utils/bubble';
 
 const STORAGE_KEY = 'bonds_daily_question';
 
 const DEFAULT_DQ = {
+    questionId: null,
     category: '',
     question: '',
     options: [],
@@ -16,7 +17,10 @@ const DailyQuestionContext = createContext(DEFAULT_DQ);
 
 export const useDailyQuestion = () => useContext(DailyQuestionContext);
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export const DailyQuestionProvider = ({ children }) => {
     const [dq, setDq] = useState(() => {
@@ -50,15 +54,29 @@ export const DailyQuestionProvider = ({ children }) => {
         setItem(STORAGE_KEY, json);
     }, [setItem]);
 
-    // Full replace — Bubble sends the entire daily question object
+    // Partial merge — send only the fields that changed.
     // Date is auto-stamped to today (fresh data = today's question)
     const setDailyQuestion = useCallback((data) => {
-        const sa = data.selectedAnswer;
-        let opts = data.options || [];
-        if (typeof opts === 'string') { try { opts = JSON.parse(`[${opts}]`); } catch { opts = []; } }
-        const next = { ...DEFAULT_DQ, ...data, date: todayStr(), options: opts, selectedAnswer: sa != null && sa !== '' ? sa : null };
-        setDq(next);
-        persist(next);
+        const overrides = {};
+        if ('selectedAnswer' in data) {
+            const sa = data.selectedAnswer;
+            overrides.selectedAnswer = sa != null && sa !== '' ? sa : null;
+        }
+        if ('options' in data) {
+            let opts = data.options || [];
+            if (typeof opts === 'string') {
+                try { opts = JSON.parse(opts); } catch {
+                    try { opts = JSON.parse(`[${opts}]`); } catch { opts = []; }
+                }
+                if (!Array.isArray(opts)) opts = [];
+            }
+            overrides.options = opts;
+        }
+        setDq(prev => {
+            const next = { ...prev, ...data, ...overrides, date: todayStr() };
+            persist(next);
+            return next;
+        });
     }, [persist]);
 
     // Optimistic update for selectedAnswer (called locally after voting)
@@ -83,6 +101,8 @@ export const DailyQuestionProvider = ({ children }) => {
         if (fetchedRef.current) return;
         fetchedRef.current = true;
         sendToBubble('bubble_fn_daily_question', 'fetch');
+        // Allow retry if Bubble never responds
+        setTimeout(() => { fetchedRef.current = false; }, 10000);
     }, []);
 
     const isStale = dq.date !== todayStr();
@@ -94,8 +114,12 @@ export const DailyQuestionProvider = ({ children }) => {
         return () => { delete window.appUI.setDailyQuestion; };
     }, [setDailyQuestion]);
 
+    const value = useMemo(() => ({
+        ...dq, isStale, setDailyQuestion, markAnswered, clearDailyQuestion, fetchIfStale
+    }), [dq, isStale, setDailyQuestion, markAnswered, clearDailyQuestion, fetchIfStale]);
+
     return (
-        <DailyQuestionContext.Provider value={{ ...dq, isStale, setDailyQuestion, markAnswered, clearDailyQuestion, fetchIfStale }}>
+        <DailyQuestionContext.Provider value={value}>
             {children}
         </DailyQuestionContext.Provider>
     );
