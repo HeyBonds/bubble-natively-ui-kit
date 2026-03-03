@@ -39,10 +39,10 @@ const Dialog = ({ open, onClose, title, children, actions = [], theme, closeOnBa
   const sim = theme.simulator;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6">
+    <div className="fixed top-0 left-0 right-0 bottom-0 z-[9999] flex items-center justify-center p-6">
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 ${closing ? 'dialog-overlay-out' : 'dialog-overlay-in'}`}
+        className={`absolute top-0 left-0 right-0 bottom-0 ${closing ? 'dialog-overlay-out' : 'dialog-overlay-in'}`}
         style={{ background: sim.dialogDimBg }}
         onClick={handleBackdrop}
       />

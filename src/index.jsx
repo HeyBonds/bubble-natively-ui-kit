@@ -24,7 +24,7 @@ const initGlobals = () => {
     };
     // 3. Debug: reset all storage (localStorage + NativelyStorage) and reload
     window.appUI.resetAllStorage = () => {
-        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_user_data', 'bonds_daily_question', 'bonds_dark_mode', 'bonds_simulator_templates'];
+        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'coins_intro_seen', 'bonds_user_data', 'bonds_daily_question', 'bonds_dark_mode', 'bonds_simulator_templates'];
         keys.forEach(k => localStorage.removeItem(k));
         try {
             const ns = new NativelyStorage();
@@ -76,14 +76,14 @@ window.appUI.mountDailyQuestion = (container, props = {}) => {
 };
 
 window.appUI.mountOnboarding = (container, props = {}) => {
-    const defaults = { steps: mockOnboardingSteps, credits: 0, showCredits: true };
+    const defaults = { steps: mockOnboardingSteps, coins: 0, showCoins: true };
     const root = createRoot(container);
     root.render(<OnboardingFlow {...defaults} {...props} />);
     return root;
 };
 
 window.appUI.mountJourney = (container, props = {}) => {
-    const defaults = { credits: 5 };
+    const defaults = { coins: 5 };
     const root = createRoot(container);
     root.render(<JourneyPath {...defaults} {...props} />);
     return root;

@@ -60,9 +60,11 @@ for(h=0;h<i.length;h++)g(a.people,i[h]);for(h=0;h<i.length;h++)g(a,i[h]);b._i.pu
   (function() {
     var m = window.location.pathname.match(/\/version-[^\/]+/);
     var base = m ? m[0] + '/' : '/';
+    var bust = '';
+    try { var ff = sessionStorage.getItem('_force_fresh'); if (ff) { bust = '?_=' + ff; } } catch(e) {}
     var link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = base + 'bundle.css';
+    link.href = base + 'bundle.css' + bust;
     document.head.appendChild(link);
   })();
 </script>
@@ -132,8 +134,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
     var m = window.location.pathname.match(/\/version-[^\/]+/);
     var base = m ? m[0] + '/' : '/';
+    // Cache-bust: if _force_fresh flag is set (by Eruda snippet), append ?_=timestamp to bypass CDN
+    var bust = '';
+    try { var ff = sessionStorage.getItem('_force_fresh'); if (ff) { bust = '?_=' + ff; sessionStorage.removeItem('_force_fresh'); console.log('[Loader] Cache-busting bundles:', bust); } } catch(e) {}
     var s = document.createElement('script');
-    s.src = base + 'bundle.js';
+    s.src = base + 'bundle.js' + bust;
     document.head.appendChild(s);
     if ('serviceWorker' in navigator) {
       // Only reload on SW update, not on first-ever install
@@ -240,6 +245,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       location.reload();
     });
   }, 'Delete ALL caches + unregister SWs + reload (nuclear option)');
+
+  eruda.get('snippets').add('Force Fresh', function () {
+    sessionStorage.setItem('_force_fresh', String(Date.now()));
+    console.log('[Force] Flag set. Nuking caches + SWs...');
+    caches.keys().then(function (names) {
+      return Promise.all(names.map(function (n) { return caches.delete(n); }));
+    }).then(function () {
+      return navigator.serviceWorker.getRegistrations();
+    }).then(function (regs) {
+      return Promise.all(regs.map(function (r) { return r.unregister(); }));
+    }).then(function () {
+      console.log('[Force] Reloading with cache-bust...');
+      location.reload();
+    });
+  }, 'Nuke SW caches + reload with CDN cache-busting (forces fresh bundle.js + bundle.css)');
 
   eruda.get('snippets').add('Storage Dump', function () {
     var keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_dark_mode', 'bonds_user_data', 'bonds_daily_question'];

@@ -7,7 +7,7 @@ import Transcript from './Transcript';
 
 const TOTAL_TURNS = 4; // 2 partner + 2 user turns in Stage 2
 
-const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
+const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start, onStageChange, onActiveSpeakerChange }) => {
   const sim = theme.simulator;
   const transcriptRef = useRef(null);
 
@@ -16,6 +16,11 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
   const [rtState, setRtState] = useState('loading');
   const [micState, setMicState] = useState('hidden');
   const [turnProgress, setTurnProgress] = useState(0);
+
+  // Notify parent of stage changes
+  useEffect(() => {
+    if (onStageChange) onStageChange(stage);
+  }, [stage, onStageChange]);
 
   // Status text
   const statusText = micState === 'recording' ? 'Tap when done speaking'
@@ -50,12 +55,14 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
             break;
           case 'PARTNER_SPEAKING':
             setMicState('hidden');
+            if (onActiveSpeakerChange) onActiveSpeakerChange('partner');
             if (data.partnerTurnCount) {
               setTurnProgress((data.partnerTurnCount - 1) * 2 + 1);
             }
             break;
           case 'PUSH_TO_TALK_READY':
             setMicState('ready');
+            if (onActiveSpeakerChange) onActiveSpeakerChange('user');
             if (data.userTurnCount) {
               setTurnProgress(data.userTurnCount * 2);
             }
@@ -65,15 +72,18 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
             break;
           case 'PUSH_TO_TALK_STOPPED':
             setMicState('waiting');
+            if (onActiveSpeakerChange) onActiveSpeakerChange('partner');
             break;
           case 'LOADING_SIMULATION':
             setStage('transition');
             setMicState('hidden');
+            if (onActiveSpeakerChange) onActiveSpeakerChange(null);
             if (api) api.clearText();
             break;
           case 'SESSION_COMPLETED':
             setStage(3);
             setMicState('hidden');
+            if (onActiveSpeakerChange) onActiveSpeakerChange(null);
             break;
           case 'SESSION_ERROR':
           case 'SESSION_STOPPED':
@@ -116,6 +126,7 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
         });
         break;
       case 'evaluation_json_received':
+        console.log('[Simulator] evaluation data:', JSON.stringify(data));
         if (onComplete) onComplete(data.evaluationJson || data);
         break;
       case 'error':
@@ -124,7 +135,7 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
       default:
         break;
     }
-  }, [onComplete, onStage2Start, getTranscriptAPI]);
+  }, [onComplete, onStage2Start, onActiveSpeakerChange, getTranscriptAPI]);
 
   // Subscribe to RT events
   useEffect(() => {
@@ -173,22 +184,27 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
           </svg>
         </button>
 
-        {/* Stage indicator (only in Stage 2) */}
+        {/* Stage indicator (only in Stage 2) — alternating purple/gray to match face colors */}
         {stage === 2 && (
           <div className="flex items-center gap-1.5">
-            {Array.from({ length: TOTAL_TURNS }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-full border border-solid transition-[background-color] duration-300"
-                style={{
-                  width: i < turnProgress ? 20 : 16,
-                  height: 8,
-                  borderRadius: 4,
-                  background: i < turnProgress ? sim.dotActive : sim.dotInactive,
-                  borderColor: i < turnProgress ? sim.dotActive : sim.dotBorder,
-                }}
-              />
-            ))}
+            {Array.from({ length: TOTAL_TURNS }).map((_, i) => {
+              // Alternate: partner (purple/pink) at even indices, user (gray) at odd
+              const turnColor = i % 2 === 0 ? '#E1327F' : '#6D6987';
+              const active = i < turnProgress;
+              return (
+                <div
+                  key={i}
+                  className="rounded-full border border-solid transition-[background-color] duration-300"
+                  style={{
+                    width: 20,
+                    height: 8,
+                    borderRadius: 4,
+                    background: active ? turnColor : sim.dotInactive,
+                    borderColor: active ? turnColor : sim.dotBorder,
+                  }}
+                />
+              );
+            })}
           </div>
         )}
 
@@ -196,10 +212,13 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
         <div className="w-10" />
       </div>
 
-      {/* Center content -- status + waveform + mic overlaid */}
-      <div className="flex-1 flex flex-col items-center justify-end px-6 pb-4">
+      {/* Spacer — pushes everything below toward the bottom */}
+      <div className="flex-1" />
+
+      {/* Status + waveform + transcript cluster — anchored near bottom */}
+      <div className="shrink-0 flex flex-col items-center px-6">
         {/* Status text */}
-        <p className="font-jakarta font-bold text-[20px] mb-6" style={{ color: sim.statusText }}>
+        <p className="font-jakarta font-bold text-[20px] mb-4" style={{ color: sim.statusText }}>
           {statusText}
         </p>
 
@@ -219,7 +238,7 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
       </div>
 
       {/* Bottom -- Transcript (fixed height glass box, imperative API via ref) */}
-      <div className="shrink-0 px-3 pb-4 pt-3">
+      <div className="shrink-0 px-3 pt-3" style={{ paddingBottom: '1.875em' }}>
         <Transcript ref={transcriptRef} theme={theme} />
       </div>
     </div>

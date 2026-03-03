@@ -238,8 +238,8 @@ const AppInner = () => {
                 {displayedPhase === 'onboarding' && (
                     <OnboardingFlow
                         steps={mockOnboardingSteps}
-                        credits={0}
-                        showCredits={true}
+                        coins={0}
+                        showCoins={true}
                         theme={theme}
                         onComplete={handleOnboardingComplete}
                         onBack={() => transitionTo('welcome')}

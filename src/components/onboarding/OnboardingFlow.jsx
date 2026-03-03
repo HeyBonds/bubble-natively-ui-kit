@@ -17,26 +17,26 @@ const STORAGE_KEY = 'onboarding_state';
 
 const OnboardingFlow = ({
     steps = [],
-    credits: initialCredits = 0,
+    coins: initialCoins = 0,
     initialStep = 0,
     initialAnswers = {},
-    showCredits = true,
+    showCoins = true,
     theme,
     onComplete,
     onBack: onBackOut,
 }) => {
     const ob = theme?.onboarding || {};
     const [currentStep, setCurrentStep] = useState(initialStep);
-    const [credits, setCredits] = useState(initialCredits);
+    const [coins, setCoins] = useState(initialCoins);
     const [answers, setAnswers] = useState(initialAnswers);
     const [direction, setDirection] = useState('forward');
     const [animating, setAnimating] = useState(false);
     const [answeredThisVisit, setAnsweredThisVisit] = useState(false);
     const [rotationOffsets, setRotationOffsets] = useState({});
     const [ready, setReady] = useState(false);
-    const [creditIntroSeen, setCreditIntroSeen] = useState(false);
-    const creditsCircleRef = useRef(null);
-    const creditIntroRunningRef = useRef(false);
+    const [coinIntroSeen, setCoinIntroSeen] = useState(false);
+    const coinsCircleRef = useRef(null);
+    const coinIntroRunningRef = useRef(false);
     const timersRef = useRef([]);
     const overlaysRef = useRef([]);
     const rafRef = useRef(null);
@@ -67,16 +67,16 @@ const OnboardingFlow = ({
         let cancelled = false;
         Promise.all([
             storage.getItem(STORAGE_KEY),
-            storage.getItem('credits_intro_seen'),
+            storage.getItem('coins_intro_seen'),
         ]).then(([raw, introSeen]) => {
             if (cancelled) return;
-            if (introSeen === 'true') setCreditIntroSeen(true);
+            if (introSeen === 'true') setCoinIntroSeen(true);
             if (raw) {
                 try {
                     const saved = JSON.parse(raw);
                     if (saved.currentStep != null) setCurrentStep(saved.currentStep);
                     if (saved.answers) setAnswers(saved.answers);
-                    if (saved.credits != null) setCredits(saved.credits);
+                    if (saved.coins != null) setCoins(saved.coins);
                     if (saved.rotationOffsets) setRotationOffsets(saved.rotationOffsets);
                 } catch (e) {
                     console.warn('Failed to restore onboarding state:', e);
@@ -107,11 +107,11 @@ const OnboardingFlow = ({
     }, [rotationOffsets]);
 
     // Persist current state to device storage for resume
-    const persistState = useCallback((stepIndex, allAnswers, currentCredits, offsets) => {
+    const persistState = useCallback((stepIndex, allAnswers, currentCoins, offsets) => {
         const state = {
             currentStep: stepIndex,
             answers: allAnswers,
-            credits: currentCredits,
+            coins: currentCoins,
             rotationOffsets: offsets,
         };
         storage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -139,24 +139,24 @@ const OnboardingFlow = ({
         }, 300);
     }, [currentStep, animating]);
 
-    const triggerCreditPulse = useCallback(() => {
-        if (showCredits && creditsCircleRef.current) {
-            creditsCircleRef.current.style.transition = 'transform 0.3s ease';
-            creditsCircleRef.current.style.transform = 'scale(1.3)';
+    const triggerCoinPulse = useCallback(() => {
+        if (showCoins && coinsCircleRef.current) {
+            coinsCircleRef.current.style.transition = 'transform 0.3s ease';
+            coinsCircleRef.current.style.transform = 'scale(1.3)';
             addTimer(() => {
-                if (creditsCircleRef.current) {
-                    creditsCircleRef.current.style.transform = 'scale(1)';
+                if (coinsCircleRef.current) {
+                    coinsCircleRef.current.style.transform = 'scale(1)';
                 }
             }, 300);
         }
-    }, [showCredits]);
+    }, [showCoins]);
 
-    // First-time credit intro animation (0→1)
+    // First-time coin intro animation (0→1)
     // DailyQ-style coin entry (center pop, "+1") → message + button → tap dismisses → coin flies to target → pulse → increment
-    const triggerCreditIntro = useCallback(() => {
+    const triggerCoinIntro = useCallback(() => {
         return new Promise((resolve) => {
-            if (!creditsCircleRef.current || creditIntroRunningRef.current) { resolve(); return; }
-            creditIntroRunningRef.current = true;
+            if (!coinsCircleRef.current || coinIntroRunningRef.current) { resolve(); return; }
+            coinIntroRunningRef.current = true;
 
             const COIN_BG = 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)';
             const COIN_SHADOW = '0 2px 0 0 #555';
@@ -177,7 +177,7 @@ const OnboardingFlow = ({
 
                 // Snapshot current center position before removing animation class
                 const coinRect = coinOverlay.getBoundingClientRect();
-                coinOverlay.classList.remove('credit-center-animation');
+                coinOverlay.classList.remove('coin-center-animation');
 
                 // Pin to current computed position (preserve center alignment)
                 coinOverlay.style.top = coinRect.top + 'px';
@@ -185,14 +185,14 @@ const OnboardingFlow = ({
                 coinOverlay.style.transform = 'none';
 
                 // Now add fly transition and fade dim
-                coinOverlay.classList.add('credit-move-animation');
+                coinOverlay.classList.add('coin-move-animation');
                 dimOverlay.classList.remove('active');
 
                 // Force reflow before setting target
                 coinOverlay.offsetHeight;
 
-                if (creditsCircleRef.current) {
-                    const targetRect = creditsCircleRef.current.getBoundingClientRect();
+                if (coinsCircleRef.current) {
+                    const targetRect = coinsCircleRef.current.getBoundingClientRect();
                     const dx = targetRect.left - coinRect.left;
                     const dy = targetRect.top - coinRect.top;
                     coinOverlay.style.transform = `translate(${dx}px, ${dy}px)`;
@@ -213,21 +213,21 @@ const OnboardingFlow = ({
                     overlaysRef.current = overlaysRef.current.filter(el => el !== coinOverlay && el !== dimOverlay && el !== msgPanel);
 
                     // Pulse the target coin
-                    if (creditsCircleRef.current) {
-                        creditsCircleRef.current.style.transition = 'transform 0.3s ease';
-                        creditsCircleRef.current.style.transform = 'scale(1.3)';
+                    if (coinsCircleRef.current) {
+                        coinsCircleRef.current.style.transition = 'transform 0.3s ease';
+                        coinsCircleRef.current.style.transform = 'scale(1.3)';
                         addTimer(() => {
-                            if (creditsCircleRef.current) creditsCircleRef.current.style.transform = 'scale(1)';
+                            if (coinsCircleRef.current) coinsCircleRef.current.style.transform = 'scale(1)';
                         }, 300);
                     }
 
-                    // Increment credits 0→1
-                    setCredits(1);
+                    // Increment coins 0→1
+                    setCoins(1);
 
                     // Mark intro as seen and resolve
-                    setCreditIntroSeen(true);
-                    storage.setItem('credits_intro_seen', 'true');
-                    creditIntroRunningRef.current = false;
+                    setCoinIntroSeen(true);
+                    storage.setItem('coins_intro_seen', 'true');
+                    coinIntroRunningRef.current = false;
                     resolve();
                 }, 700);
             };
@@ -244,9 +244,9 @@ const OnboardingFlow = ({
             overlaysRef.current.push(dimOverlay);
             requestAnimationFrame(() => dimOverlay.classList.add('active'));
 
-            // 2. B coin + "+1" — center pop via credit-center-animation CSS class
+            // 2. B coin + "+1" — center pop via coin-center-animation CSS class
             coinOverlay = document.createElement('div');
-            coinOverlay.className = 'credit-center-animation';
+            coinOverlay.className = 'coin-center-animation';
             coinOverlay.style.cssText = `
                 position: fixed;
                 top: 50%;
@@ -331,7 +331,7 @@ const OnboardingFlow = ({
         setAnsweredThisVisit(true);
 
         const isNewAnswer = !answers[currentStep];
-        const newCredits = isNewAnswer ? credits + 1 : credits;
+        const newCoins = isNewAnswer ? coins + 1 : coins;
         const stepAnswer = {
             questionId: step?.questionId,
             type: step?.type,
@@ -339,16 +339,16 @@ const OnboardingFlow = ({
         };
         const newAnswers = { ...answers, [currentStep]: stepAnswer };
 
-        // Will the credit intro animation play? (first credit ever, intro not yet seen)
-        const willPlayIntro = isNewAnswer && credits === 0 && !creditIntroSeen && !creditIntroRunningRef.current;
+        // Will the coin intro animation play? (first coin ever, intro not yet seen)
+        const willPlayIntro = isNewAnswer && coins === 0 && !coinIntroSeen && !coinIntroRunningRef.current;
 
-        // Update state — defer credit increment if intro will animate it visually (0→1)
+        // Update state — defer coin increment if intro will animate it visually (0→1)
         setAnswers(newAnswers);
-        if (isNewAnswer && !willPlayIntro) setCredits(newCredits);
+        if (isNewAnswer && !willPlayIntro) setCoins(newCoins);
 
-        // Persist locally for resume (always persist the final credit count)
+        // Persist locally for resume (always persist the final coin count)
         const nextStep = currentStep + 1;
-        persistState(nextStep, newAnswers, newCredits, rotationOffsets);
+        persistState(nextStep, newAnswers, newCoins, rotationOffsets);
 
         // Notify Bubble of step completion
         sendToBubble('bubble_fn_onboarding', 'step_complete', {
@@ -363,22 +363,22 @@ const OnboardingFlow = ({
                 storage.removeItem(STORAGE_KEY);
                 sendToBubble('bubble_fn_onboarding', 'complete', {
                     answers: JSON.stringify(newAnswers),
-                    credits: newCredits,
+                    coins: newCoins,
                 });
-                if (onComplete) onComplete(newAnswers, newCredits);
+                if (onComplete) onComplete(newAnswers, newCoins);
             } else {
                 addTimer(() => goForward(), 600);
             }
         };
 
-        // First credit ever → pause, then play coin center-pop animation (mirrors DailyQuestion)
+        // First coin ever → pause, then play coin center-pop animation (mirrors DailyQuestion)
         if (willPlayIntro) {
-            addTimer(() => triggerCreditIntro().then(advanceOrComplete), 500);
+            addTimer(() => triggerCoinIntro().then(advanceOrComplete), 500);
         } else {
-            if (isNewAnswer) triggerCreditPulse();
+            if (isNewAnswer) triggerCoinPulse();
             advanceOrComplete();
         }
-    }, [currentStep, step, answers, credits, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete, creditIntroSeen, triggerCreditIntro, triggerCreditPulse]);
+    }, [currentStep, step, answers, coins, totalSteps, goForward, persistState, storage, answeredThisVisit, rotationOffsets, onComplete, coinIntroSeen, triggerCoinIntro, triggerCoinPulse]);
 
     const handleRefresh = useCallback(() => {
         const s = steps[currentStep];
@@ -445,11 +445,11 @@ const OnboardingFlow = ({
                     </div>
                 </div>
 
-                {/* Credits — coin + number, matches DailyQuestion / JourneyPath */}
-                {showCredits && (
+                {/* Coins — coin + number, matches DailyQuestion / JourneyPath */}
+                {showCoins && (
                     <div className="absolute top-[18px] right-[18px] z-10 flex items-center gap-2">
                         <div
-                            ref={creditsCircleRef}
+                            ref={coinsCircleRef}
                             className="coin-shimmer"
                             style={{
                                 width: 32,
@@ -464,7 +464,7 @@ const OnboardingFlow = ({
                         >
                             <span className="font-jakarta font-extrabold text-[12px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.25)' }}>B</span>
                         </div>
-                        <span className="font-extrabold text-[16px] min-w-[16px] text-center" style={{ color: theme?.creditsText }}>{credits}</span>
+                        <span className="font-extrabold text-[16px] min-w-[16px] text-center" style={{ color: theme?.coinsText }}>{coins}</span>
                     </div>
                 )}
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import JourneyPath from './JourneyPath';
 import DailyQuestion from './DailyQuestion';
 import FunZoneSection from './FunZoneSection';
@@ -272,6 +272,18 @@ const MainTabs = ({ onLogout }) => {
   });
   const [navAction, setNavAction] = useState(null); // 'push', 'pop', or null
   const [simulatorActive, setSimulatorActive] = useState(false);
+  const [simulatorFullScreen, setSimulatorFullScreen] = useState(false);
+  const prevFullScreenRef = useRef(false);
+  const [tabBarAnim, setTabBarAnim] = useState(''); // '' | 'tab-bar-slide-down' | 'tab-bar-slide-up'
+
+  useEffect(() => {
+    if (simulatorFullScreen && !prevFullScreenRef.current) {
+      setTabBarAnim('tab-bar-slide-down');
+    } else if (!simulatorFullScreen && prevFullScreenRef.current) {
+      setTabBarAnim('tab-bar-slide-up');
+    }
+    prevFullScreenRef.current = simulatorFullScreen;
+  }, [simulatorFullScreen]);
 
   // Navigation Logic
   const push = (viewId, props = {}) => {
@@ -333,7 +345,7 @@ const MainTabs = ({ onLogout }) => {
         content = <JourneyPath {...commonProps} />;
         break;
       case 'simulator':
-        content = <SimulatorSection theme={t} onSessionChange={setSimulatorActive} />;
+        content = <SimulatorSection theme={t} onSessionChange={setSimulatorActive} onFullScreenChange={setSimulatorFullScreen} />;
         break;
       case 'fun':
         if (currentViewId === 'daily-question') {
@@ -407,7 +419,7 @@ const MainTabs = ({ onLogout }) => {
       </div>
 
       {/* Bottom Navigation — flex child, never overflows */}
-      <div className="shrink-0 h-20 border-t border-solid" style={{ background: t.glassBg, borderColor: t.glassBorder, transition: 'background 0.3s ease, border-color 0.3s ease' }}>
+      <div className={`shrink-0 h-20 border-t border-solid ${tabBarAnim}`} style={{ background: t.glassBg, borderColor: t.glassBorder, transition: 'background 0.3s ease, border-color 0.3s ease' }}>
         <div className="flex items-center justify-around h-full max-w-[500px] mx-auto px-4">
             <NavButton id="journey" label="Journey" icon={Icons.journey} />
             <NavButton id="simulator" label="Simulator" icon={Icons.simulator} />

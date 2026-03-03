@@ -163,7 +163,7 @@ const ActivityCard = ({ activity, index, push, theme, animate }) => {
           {activity.subtitle}
         </p>
         <p className="font-poppins text-[11px] mt-2" style={{ color: theme.textMuted }}>
-          {activity.cost} credits
+          {activity.cost} coins
         </p>
       </div>
 

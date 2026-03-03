@@ -96,7 +96,7 @@ const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect, theme }) 
 );
 
 const JourneyPath = ({ theme }) => {
-    const { credits } = useUser();
+    const { coins } = useUser();
     const { chapters } = mockJourneyData;
     const scrollRef = useRef(null);
     const [activeChapterIdx, setActiveChapterIdx] = useState(() => {
@@ -252,7 +252,7 @@ const JourneyPath = ({ theme }) => {
                     <div className="coin-shimmer" style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)', boxShadow: '0 2px 0 0 #555' }}>
                         <span className="font-extrabold text-[14px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.25)' }}>B</span>
                     </div>
-                    <span className="font-extrabold text-[18px]" style={{ color: theme.creditsText }}>{credits}</span>
+                    <span className="font-extrabold text-[18px]" style={{ color: theme.coinsText }}>{coins}</span>
                 </div>
 
                 {/* Streak */}

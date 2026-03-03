@@ -7,7 +7,7 @@ const DEFAULT_USER = {
     name: '',
     email: '',
     avatar: null,
-    credits: 0,
+    coins: 0,
     partner: null,
     pillars: [],
 };

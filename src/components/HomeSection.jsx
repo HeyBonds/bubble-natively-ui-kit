@@ -3,7 +3,7 @@ import { sendToBubble } from '../utils/bubble';
 import { useUser } from '../contexts/UserContext';
 
 const HomeSection = ({ push }) => {
-    const { name, avatar, credits } = useUser();
+    const { name, avatar, coins } = useUser();
     // Default journey data
     const currentJourney = {
         title: 'Intimacy',
@@ -57,7 +57,7 @@ const HomeSection = ({ push }) => {
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                             </svg>
                             <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF2258] border-2 border-solid border-[#2E2740] rounded-full flex items-center justify-center">
-                                <span className="font-jakarta font-bold text-[10px] text-white">{credits}</span>
+                                <span className="font-jakarta font-bold text-[10px] text-white">{coins}</span>
                             </span>
                         </button>
                     </div>

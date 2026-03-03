@@ -11,9 +11,9 @@ const COIN_BG = 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6
 const COIN_SHADOW = '0 2px 0 0 #555';
 
 const DailyQuestion = ({ theme, pop: _pop }) => {
-    const { name: userName, credits: userCredits, updateUser } = useUser();
+    const { name: userName, coins: userCoins, updateUser } = useUser();
     const { questionId, category, question, options, selectedAnswer: initialSelectedAnswer, markAnswered } = useDailyQuestion();
-    const [credits, setCredits] = useState(userCredits || 0);
+    const [coins, setCoins] = useState(userCoins || 0);
     const [selectedAnswer, setSelectedAnswer] = useState(initialSelectedAnswer);
     const [isVoted, setIsVoted] = useState(initialSelectedAnswer !== undefined && initialSelectedAnswer !== null);
     const [showFooterAfter, setShowFooterAfter] = useState(isVoted);
@@ -31,8 +31,8 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
     }, [initialSelectedAnswer]);
 
     useEffect(() => {
-        setCredits(userCredits || 0);
-    }, [userCredits]);
+        setCoins(userCoins || 0);
+    }, [userCoins]);
 
     // Cleanup all pending timers, DOM overlays, and rAF on unmount
     useEffect(() => {
@@ -63,14 +63,14 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
 
         sendToBubble('bubble_fn_daily_question', 'vote', { questionId, index });
         markAnswered(index);
-        updateUser({ credits: (userCredits || 0) + 1 });
+        updateUser({ coins: (userCoins || 0) + 1 });
 
         addTimer(() => {
-            triggerCreditAnimation();
+            triggerCoinAnimation();
         }, 2000);
     };
 
-    const triggerCreditAnimation = () => {
+    const triggerCoinAnimation = () => {
         // Dim overlay
         const dimOverlay = document.createElement('div');
         dimOverlay.className = 'dim-overlay active';
@@ -79,7 +79,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
 
         // B coin + "+1" label — center pop
         const overlay = document.createElement('div');
-        overlay.className = 'credit-center-animation';
+        overlay.className = 'coin-center-animation';
         overlay.style.cssText = `
             position: fixed;
             top: 50%;
@@ -114,12 +114,12 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
         addTimer(() => {
             // Snapshot current center position
             const startRect = overlay.getBoundingClientRect();
-            overlay.classList.remove('credit-center-animation');
+            overlay.classList.remove('coin-center-animation');
             overlay.style.top = startRect.top + 'px';
             overlay.style.left = startRect.left + 'px';
             overlay.style.transform = 'none';
 
-            overlay.classList.add('credit-move-animation');
+            overlay.classList.add('coin-move-animation');
             dimOverlay.classList.remove('active');
             overlay.offsetHeight; // force reflow
 
@@ -154,12 +154,12 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
             }
 
             // Animate the number counting up
-            setCredits(prev => {
+            setCoins(prev => {
                 const start = prev;
                 const end = prev + 1;
                 const duration = 400;
                 let startTime = null;
-                const numEl = document.getElementById('creditsNumber');
+                const numEl = document.getElementById('coinsNumber');
 
                 function tick(timestamp) {
                     if (!startTime) startTime = timestamp;
@@ -184,7 +184,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
     return (
         <div className="relative w-full h-full overflow-x-hidden font-poppins flex flex-col" style={{ background: theme.bg }}>
 
-            {/* Credits coin — top right, clears back button on left */}
+            {/* Coins — top right, clears back button on left */}
             <div className="absolute top-5 right-5 z-20 flex items-center gap-2">
                 <div
                     ref={coinRef}
@@ -202,7 +202,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
                 >
                     <span className="font-extrabold text-[12px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.25)' }}>B</span>
                 </div>
-                <span id="creditsNumber" className="font-extrabold text-[16px]" style={{ color: theme.creditsText }}>{credits}</span>
+                <span id="coinsNumber" className="font-extrabold text-[16px]" style={{ color: theme.coinsText }}>{coins}</span>
             </div>
 
             <div className="flex flex-col flex-1 min-h-0 px-7 pt-16 pb-8 max-w-[375px] mx-auto relative overflow-y-auto">
@@ -261,7 +261,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
 
                   {!showFooterAfter ? (
                       <div className="font-poppins text-base text-center leading-6 tracking-[0.02em] max-w-[295px]" style={{ color: theme.textSecondary }}>
-                        Vote and see the live results and also gain 1 credits
+                        Vote and see the live results and also gain 1 coin
                       </div>
                   ) : (
                       <>

@@ -11,10 +11,10 @@ const isAndroid = () => /android/i.test(navigator.userAgent);
  *
  * Props:
  *  - onStart: () => void (called after audio check, begins session)
- *  - creditCost: number (default 4)
+ *  - coinCost: number (default 4)
  *  - theme: theme object
  */
-const SimulatorLanding = ({ onStart, creditCost = 4, theme, disabled }) => {
+const SimulatorLanding = ({ onStart, coinCost = 4, theme, disabled }) => {
   const [showAudioCheck, setShowAudioCheck] = useState(false);
   const sim = theme.simulator;
 
@@ -70,8 +70,8 @@ const SimulatorLanding = ({ onStart, creditCost = 4, theme, disabled }) => {
           Start
         </button>
 
-        <p className="font-poppins text-[12px]" style={{ color: sim.creditCost }}>
-          Uses {creditCost} credits
+        <p className="font-poppins text-[12px]" style={{ color: sim.coinCost }}>
+          Uses {coinCost} coins
         </p>
       </div>
 
