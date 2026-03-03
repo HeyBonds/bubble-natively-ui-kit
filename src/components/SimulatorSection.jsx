@@ -20,6 +20,35 @@ const SimulatorSection = ({ theme, onSessionChange }) => {
 
   // Pending tab switch callback (set by MainTabs when user tries to switch during session)
   const pendingLeaveRef = useRef(null);
+  const templatesFetchedRef = useRef(false);
+  const [instructionsReady, setInstructionsReady] = useState(() => {
+    try {
+      const raw = localStorage.getItem('bonds_simulator_templates');
+      if (raw) { const t = JSON.parse(raw); return !!(t.simulationJsonInstructions && t.scoreInstructions); }
+    } catch { /* ignore */ }
+    return false;
+  });
+
+  // Fetch + cache instruction templates (once per session)
+  useEffect(() => {
+    if (templatesFetchedRef.current) return;
+    templatesFetchedRef.current = true;
+    sendToBubble('bubble_fn_simulator', 'fetch_instructions');
+  }, []);
+
+  // Bubble callback to cache templates
+  useEffect(() => {
+    window.appUI.setSimulatorTemplates = (data) => {
+      if (!data) return;
+      const templates = {
+        simulationJsonInstructions: data.simulationJsonInstructions || null,
+        scoreInstructions: data.scoreInstructions || null,
+      };
+      localStorage.setItem('bonds_simulator_templates', JSON.stringify(templates));
+      setInstructionsReady(!!(templates.simulationJsonInstructions && templates.scoreInstructions));
+    };
+    return () => { delete window.appUI.setSimulatorTemplates; };
+  }, []);
 
   // Notify parent of session state changes
   useEffect(() => {
@@ -109,7 +138,7 @@ const SimulatorSection = ({ theme, onSessionChange }) => {
   return (
     <div className="w-full h-full">
       {phase === 'landing' && (
-        <SimulatorLanding onStart={handleStart} theme={theme} />
+        <SimulatorLanding onStart={handleStart} theme={theme} disabled={!instructionsReady} />
       )}
       {phase === 'session' && (
         <SimulatorSession

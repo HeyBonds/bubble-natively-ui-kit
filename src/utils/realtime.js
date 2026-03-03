@@ -51,6 +51,24 @@ const JSON_TYPES = {
 
 const VALID_STAGES = [1, 2];
 
+function getUserName() {
+  try {
+    const raw = localStorage.getItem('bonds_user_data');
+    if (raw) { const u = JSON.parse(raw); if (u.name) return u.name; }
+  } catch { /* ignore */ }
+  return 'User';
+}
+
+const TEMPLATES_KEY = 'bonds_simulator_templates';
+
+function getTemplate(name) {
+  try {
+    const raw = localStorage.getItem(TEMPLATES_KEY);
+    if (raw) { const t = JSON.parse(raw); if (t[name]) return t[name]; }
+  } catch { /* ignore */ }
+  return null;
+}
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
@@ -79,13 +97,6 @@ RT.config = {
   TIMEOUT_FIRST_RESPONSE: 1000,
   STAGE4_CLOSE_TIMEOUT: 2000,
 
-  // User name
-  USER_NAME: "User",
-
-  // Instruction templates (set before session starts)
-  // Placeholders: [USERNAME], [ISSUE], [CONVERSATION_HISTORY]
-  ISSUE_JSON_INSTRUCTIONS_TEMPLATE: null,
-  EVALUATION_JSON_INSTRUCTIONS_TEMPLATE: null,
 };
 
 // ============================================================================
@@ -311,9 +322,6 @@ RT.setClientSecretsUrl = function (url) {
   RT.config.CLIENT_SECRETS_URL = url;
 };
 
-RT.setUserName = function (name) {
-  RT.config.USER_NAME = name || "User";
-};
 
 RT.setTriggerPhrase = function (phrase) {
   RT.config.TRIGGER_PHRASE = phrase || "ok, beginning simulation";
@@ -361,36 +369,26 @@ RT.setVadConfig = function (config) {
 // ============================================================================
 
 function getInstructionsFromBubble(type, context) {
-  // Templates provided before session starts, replace placeholders at runtime
-  const config = getConfig();
-
   if (type === "issue_json") {
-    // Template, replace [USERNAME] with config.USER_NAME
-    if (config.ISSUE_JSON_INSTRUCTIONS_TEMPLATE) {
-      return config.ISSUE_JSON_INSTRUCTIONS_TEMPLATE.replace(
-        /\[USERNAME\]/g,
-        config.USER_NAME
-      );
+    const tpl = getTemplate('simulationJsonInstructions');
+    if (tpl) {
+      return tpl.replace(/\[USERNAME\]/g, getUserName());
     }
-    RT.emit("error", {
-      message: "ISSUE_JSON_INSTRUCTIONS_TEMPLATE not set",
-    });
+    RT.emit("error", { message: "simulationJsonInstructions not cached" });
     return null;
   }
 
   if (type === "evaluation_json") {
-    // Template, replace [ISSUE], append conversation history
-    if (config.EVALUATION_JSON_INSTRUCTIONS_TEMPLATE) {
-      let instructions = config.EVALUATION_JSON_INSTRUCTIONS_TEMPLATE.replace(
+    const tpl = getTemplate('scoreInstructions');
+    if (tpl) {
+      let instructions = tpl.replace(
         /\[ISSUE\]/g,
         context.issue || "the main conflict in the relationship"
       );
       instructions += "\n\n" + (context.conversationHistory || "");
       return instructions;
     }
-    RT.emit("error", {
-      message: "EVALUATION_JSON_INSTRUCTIONS_TEMPLATE not set",
-    });
+    RT.emit("error", { message: "scoreInstructions not cached" });
     return null;
   }
 
@@ -594,7 +592,7 @@ function requestSilentSimulationJson() {
     }
   }, 100);
 
-  // Get instructions: template, replace [USERNAME] with config.USER_NAME
+  // Get instructions: template, replace [USERNAME] with getUserName()
   const instructions = getInstructionsFromBubble("issue_json", {});
 
   if (!instructions) {
@@ -665,7 +663,6 @@ function requestEvaluationJson() {
 
 async function startPartnerSimulation(data) {
   const state = getState();
-  const config = getConfig();
 
   state.currentIssue = data.issue || state.currentIssue;
   state.stages.simulation.mode = true;
@@ -674,15 +671,11 @@ async function startPartnerSimulation(data) {
   state.stages.simulation.startIndex = state.conversation.messages.length;
   await stopSession("transition");
 
-  const userName = config.USER_NAME;
-  // Format JSON context as string
   const jsonContext = JSON.stringify(data, null, 2);
 
   RT.emit("stage2_token_needed", {
-    voice: config.VOICE_STAGE2,
-    userName: userName,
     issue: state.currentIssue,
-    jsonContext: jsonContext, // Formatted JSON string for [JSON_CONTEXT] replacement
+    jsonContext: jsonContext,
   });
 }
 
@@ -692,7 +685,6 @@ async function startPartnerSimulation(data) {
  */
 async function retrySimulation() {
   const state = getState();
-  const config = getConfig();
 
   // Check if we have issue data to retry with
   if (!state.currentIssueData && !state.currentIssue) {
@@ -733,14 +725,11 @@ async function retrySimulation() {
 
   // Reconstruct issue data - use stored full data if available, otherwise create minimal object
   const issueData = state.currentIssueData || { issue: state.currentIssue };
-  const userName = config.USER_NAME;
   const jsonContext = JSON.stringify(issueData, null, 2);
 
   RT.emit("stage2_token_needed", {
-    voice: config.VOICE_STAGE2,
-    userName: userName,
     issue: state.currentIssue,
-    jsonContext: jsonContext, // Formatted JSON string for [JSON_CONTEXT] replacement
+    jsonContext: jsonContext,
   });
 
   return true;

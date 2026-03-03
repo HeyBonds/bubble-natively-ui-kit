@@ -24,7 +24,7 @@ const initGlobals = () => {
     };
     // 3. Debug: reset all storage (localStorage + NativelyStorage) and reload
     window.appUI.resetAllStorage = () => {
-        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_user_data', 'bonds_daily_question', 'bonds_dark_mode'];
+        const keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_user_data', 'bonds_daily_question', 'bonds_dark_mode', 'bonds_simulator_templates'];
         keys.forEach(k => localStorage.removeItem(k));
         try {
             const ns = new NativelyStorage();

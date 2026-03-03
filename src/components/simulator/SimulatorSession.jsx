@@ -111,8 +111,6 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start }) => {
         // Tell Bubble to generate Stage 2 token
         if (onStage2Start) onStage2Start();
         sendToBubble('bubble_fn_simulator', 'stage2_token_needed', {
-          voice: data.voice,
-          userName: data.userName,
           issue: data.issue,
           jsonContext: data.jsonContext,
         });

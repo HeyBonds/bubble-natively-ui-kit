@@ -14,10 +14,10 @@
  * or use :extract with Regex for individual fields.
  */
 export const sendToBubble = (fnName, action, data = {}) => {
-    const payload = { output1: String(action) };
-    if (Object.keys(data).length > 0) {
-        payload.output2 = JSON.stringify(data);
-    }
+    const payload = {
+        output1: String(action),
+        output2: JSON.stringify(data),
+    };
 
     if (window.BubbleBridge) {
         console.log(`📡 [${fnName}]`, { action, ...data });

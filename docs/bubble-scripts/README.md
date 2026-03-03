@@ -16,3 +16,4 @@ Copy-pasteable scripts for Bubble's Toolbox "Run JavaScript" workflow actions.
 | File | JS2B Element | Actions |
 |------|-------------|---------|
 | `daily-question.js` | JS2B - Daily Question event | `fetch`, `vote` |
+| `simulator.js` | bubble_fn_simulator | `fetch_instructions` |

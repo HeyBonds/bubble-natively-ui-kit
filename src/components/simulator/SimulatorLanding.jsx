@@ -14,7 +14,7 @@ const isAndroid = () => /android/i.test(navigator.userAgent);
  *  - creditCost: number (default 4)
  *  - theme: theme object
  */
-const SimulatorLanding = ({ onStart, creditCost = 4, theme }) => {
+const SimulatorLanding = ({ onStart, creditCost = 4, theme, disabled }) => {
   const [showAudioCheck, setShowAudioCheck] = useState(false);
   const sim = theme.simulator;
 
@@ -63,7 +63,8 @@ const SimulatorLanding = ({ onStart, creditCost = 4, theme }) => {
         {/* CTA */}
         <button
           onClick={handleStart}
-          className="w-full max-w-[260px] py-3.5 rounded-xl font-jakarta font-extrabold text-[16px] text-white border-b-[4px] border-solid active:border-b-0 active:translate-y-[1px] transition-[transform] duration-100"
+          disabled={disabled}
+          className="w-full max-w-[260px] py-3.5 rounded-xl font-jakarta font-extrabold text-[16px] text-white border-b-[4px] border-solid active:border-b-0 active:translate-y-[1px] transition-[transform,opacity] duration-100 disabled:opacity-50 disabled:pointer-events-none"
           style={{ background: '#58CC02', borderColor: '#46A302' }}
         >
           Start
