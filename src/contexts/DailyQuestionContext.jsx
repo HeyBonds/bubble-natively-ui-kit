@@ -110,6 +110,20 @@ export const DailyQuestionProvider = ({ children }) => {
 
     const isStale = dq.date !== todayStr();
 
+    // Re-check staleness when app returns from background
+    useEffect(() => {
+        const onVisible = () => {
+            if (document.visibilityState !== 'visible') return;
+            if (dq.date !== todayStr()) {
+                fetchedRef.current = false;
+                // Force re-render so consumers see isStale = true
+                setDq(prev => ({ ...prev }));
+            }
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => document.removeEventListener('visibilitychange', onVisible);
+    }, [dq.date]);
+
     // Expose to Bubble
     useEffect(() => {
         window.appUI = window.appUI || {};
