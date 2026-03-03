@@ -17,6 +17,7 @@ const PACING_RATE = 18; // chars/sec — from original
 
 const Transcript = forwardRef(({ theme }, ref) => {
   const containerRef = useRef(null);
+  const textColorRef = useRef(theme.simulator.transcriptText);
   const stateRef = useRef({
     currentLines: { user: null, assistant: null, coach: null },
     pacingBuffer: '',
@@ -62,7 +63,7 @@ const Transcript = forwardRef(({ theme }, ref) => {
           inner.removeChild(inner.firstChild);
         }
         lineEl = document.createElement('div');
-        lineEl.style.cssText = 'margin:0;line-height:1.6;font-size:inherit;opacity:0.8;word-wrap:break-word;display:block;text-align:center;color:#ffffff;font-family:Poppins,sans-serif;transition:opacity 0.3s ease;';
+        lineEl.style.cssText = `margin:0;line-height:1.6;font-size:inherit;opacity:0.8;word-wrap:break-word;display:block;text-align:center;color:${textColorRef.current};font-family:Poppins,sans-serif;transition:opacity 0.3s ease;`;
         // Active = streaming
         lineEl.style.opacity = '1';
         lineEl.style.fontWeight = '500';

@@ -20,7 +20,13 @@ export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
         try {
             const cached = localStorage.getItem(STORAGE_KEY);
-            return cached ? { ...DEFAULT_USER, ...JSON.parse(cached) } : DEFAULT_USER;
+            if (cached) {
+                const parsed = { ...DEFAULT_USER, ...JSON.parse(cached) };
+                // Migrate legacy "credits" key to "coins"
+                if ('credits' in parsed) { parsed.coins = parsed.credits; delete parsed.credits; }
+                return parsed;
+            }
+            return DEFAULT_USER;
         } catch {
             return DEFAULT_USER;
         }
@@ -35,6 +41,8 @@ export const UserProvider = ({ children }) => {
             if (val) {
                 try {
                     const parsed = { ...DEFAULT_USER, ...JSON.parse(val) };
+                    // Migrate legacy "credits" key to "coins"
+                    if ('credits' in parsed) { parsed.coins = parsed.credits; delete parsed.credits; }
                     setUser(prev => JSON.stringify(prev) !== JSON.stringify(parsed) ? parsed : prev);
                 } catch { /* ignore parse errors */ }
             }
@@ -49,6 +57,11 @@ export const UserProvider = ({ children }) => {
 
     const updateUser = useCallback((partial) => {
         setUser(prev => {
+            // Bubble still sends "credits" — map to "coins" (cosmetic rename)
+            if ('credits' in partial) {
+                partial = { ...partial, coins: partial.credits };
+                delete partial.credits;
+            }
             const next = { ...prev, ...partial };
             persist(next);
             return next;

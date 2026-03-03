@@ -213,7 +213,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
           onActiveSpeakerChange={setActiveSpeaker}
         />
       )}
-      <FaceOverlay facePhase={facePhase} glowSide={glowSide} />
+      <FaceOverlay facePhase={facePhase} glowSide={glowSide} theme={theme} />
       {phase === 'results' && (
         <SimulatorResults
           evaluation={evaluation}
