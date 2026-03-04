@@ -1,5 +1,6 @@
 export const THEMES = {
   dark: {
+    isDark: true,
     bg: '#1B1B2F',
     surface: '#252538',
     textPrimary: '#FFFFFF',
@@ -125,6 +126,7 @@ export const THEMES = {
     },
   },
   light: {
+    isDark: false,
     bg: '#F0F0F5',
     surface: '#FFFFFF',
     textPrimary: '#1B1B2F',

@@ -19,7 +19,7 @@ function normalizeEvaluation(raw) {
 
   // Derive skill level from 5-point score
   const levels = ['Getting Started', 'Warming Up', 'Finding Your Groove', 'Nice work!', 'Nailed It'];
-  const skillLevel = raw.skill_level || levels[Math.min(score, 5) - 1] || levels[0];
+  const skillLevel = raw.skill_level || levels[Math.max(0, Math.min(score, 5) - 1)] || levels[0];
 
   // dimensions object → metrics array
   const metrics = raw.metrics ?? (raw.dimensions

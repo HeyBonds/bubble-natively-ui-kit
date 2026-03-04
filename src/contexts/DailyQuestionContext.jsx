@@ -60,7 +60,7 @@ export const DailyQuestionProvider = ({ children }) => {
         const overrides = {};
         if ('selectedAnswer' in data) {
             const sa = data.selectedAnswer;
-            overrides.selectedAnswer = sa != null && sa !== '' ? sa : null;
+            overrides.selectedAnswer = sa != null && sa !== '' ? Number(sa) : null;
         }
         if ('options' in data) {
             let opts = data.options || [];
@@ -98,24 +98,23 @@ export const DailyQuestionProvider = ({ children }) => {
         removeItem(STORAGE_KEY);
     }, [removeItem]);
 
-    // Request fresh data from Bubble (called by consumers when data is stale)
-    // Deduped per session via fetchedRef — only fires once
+    // Request fresh data from Bubble (called by consumers).
+    // Always fetches once per session to sync cross-device state (e.g. answer on device A
+    // shows as answered on device B). Deduped via fetchedRef — only fires once per session.
     const fetchIfStale = useCallback(() => {
         if (fetchedRef.current) return;
         fetchedRef.current = true;
         sendToBubble('bubble_fn_daily_question', 'fetch');
-        // Allow retry if Bubble never responds
-        setTimeout(() => { fetchedRef.current = false; }, 10000);
     }, []);
 
     const isStale = dq.date !== todayStr();
 
-    // Re-check staleness when app returns from background
+    // Re-fetch when app returns from background (cross-device sync + new-day check)
     useEffect(() => {
         const onVisible = () => {
             if (document.visibilityState !== 'visible') return;
+            fetchedRef.current = false;
             if (dq.date !== todayStr()) {
-                fetchedRef.current = false;
                 // Force re-render so consumers see isStale = true
                 setDq(prev => ({ ...prev }));
             }

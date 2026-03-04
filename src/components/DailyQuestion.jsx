@@ -18,6 +18,8 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
     const [isVoted, setIsVoted] = useState(initialSelectedAnswer !== undefined && initialSelectedAnswer !== null);
     const [showFooterAfter, setShowFooterAfter] = useState(isVoted);
     const coinRef = useRef(null);
+    const targetCoinsRef = useRef(null);
+    const animatingCoinsRef = useRef(false);
     const timersRef = useRef([]);
     const overlaysRef = useRef([]);
     const rafRef = useRef(null);
@@ -30,8 +32,9 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
         }
     }, [initialSelectedAnswer]);
 
+    // Suppress context→display sync while coin animation is in flight
     useEffect(() => {
-        setCoins(userCoins || 0);
+        if (!animatingCoinsRef.current) setCoins(userCoins || 0);
     }, [userCoins]);
 
     // Cleanup all pending timers, DOM overlays, and rAF on unmount
@@ -42,6 +45,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
             overlaysRef.current.forEach(el => { try { el.remove(); } catch { /* noop */ } });
             overlaysRef.current = [];
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            animatingCoinsRef.current = false;
         };
     }, []);
 
@@ -63,7 +67,10 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
 
         sendToBubble('bubble_fn_daily_question', 'vote', { questionId, index });
         markAnswered(index);
-        updateUser({ coins: (userCoins || 0) + 1 });
+        const newCoins = (userCoins || 0) + 1;
+        targetCoinsRef.current = newCoins;
+        animatingCoinsRef.current = true;
+        updateUser({ coins: newCoins });
 
         addTimer(() => {
             triggerCoinAnimation();
@@ -153,27 +160,29 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
                 }, 300);
             }
 
-            // Animate the number counting up
-            setCoins(prev => {
-                const start = prev;
-                const end = prev + 1;
+            // Animate the number counting up (display only — value already set by optimistic update)
+            const numEl = document.getElementById('coinsNumber');
+            if (numEl) {
+                const end = targetCoinsRef.current ?? coins;
+                const start = end - 1;
                 const duration = 400;
                 let startTime = null;
-                const numEl = document.getElementById('coinsNumber');
 
                 function tick(timestamp) {
                     if (!startTime) startTime = timestamp;
                     const progress = Math.min((timestamp - startTime) / duration, 1);
                     const easeOut = 1 - Math.pow(1 - progress, 3);
                     const current = Math.round(start + (end - start) * easeOut);
-                    if (numEl) numEl.textContent = current;
+                    numEl.textContent = current;
                     if (progress < 1) {
                         rafRef.current = requestAnimationFrame(tick);
+                    } else {
+                        animatingCoinsRef.current = false;
+                        setCoins(end);
                     }
                 }
                 rafRef.current = requestAnimationFrame(tick);
-                return end;
-            });
+            }
         }, 1900);
     };
 

@@ -46,15 +46,17 @@ const DailyQuestionBanner = ({ dailyQuestion, push, theme }) => {
     push('daily-question');
   };
 
+  const isDark = theme.isDark;
+
   if (isAnswered) {
     return (
       <button
         onClick={handleTap}
         className="w-full rounded-2xl text-left relative overflow-hidden border-2 border-solid"
         style={{
-          background: '#1A3A2A',
+          background: isDark ? '#1A3A2A' : '#EEFBF0',
           borderColor: '#2ECC71',
-          boxShadow: '0 4px 0 #145A2A',
+          boxShadow: isDark ? '0 4px 0 #145A2A' : '0 4px 0 #C1E8C9',
         }}
       >
         <div className="flex items-center p-4 pr-2">
@@ -69,10 +71,10 @@ const DailyQuestionBanner = ({ dailyQuestion, push, theme }) => {
                 Completed!
               </span>
             </div>
-            <p className="font-poppins text-[13px] text-white/50 leading-snug">
+            <p className="font-poppins text-[13px] leading-snug" style={{ color: theme.textSecondary }}>
               Daily Question
             </p>
-            <p className="font-poppins font-medium text-[13px] text-white/40 leading-snug mt-1 line-clamp-1">
+            <p className="font-poppins font-medium text-[13px] leading-snug mt-1 line-clamp-1" style={{ color: theme.textMuted }}>
               Come back tomorrow for a new one
             </p>
           </div>
@@ -180,12 +182,13 @@ const ActivityCard = ({ activity, index, push, theme, animate }) => {
 
 const FunZoneSection = ({ theme, push }) => {
   const dailyQuestion = useDailyQuestion();
-  const { isStale, fetchIfStale } = dailyQuestion;
+  const { fetchIfStale } = dailyQuestion;
 
-  // Lazy fetch: request fresh data from Bubble when cache is stale or missing
+  // Always fetch once per session to sync cross-device state (e.g. answered on another device)
+  // Cached data shows immediately; Bubble response overwrites with fresh state
   useEffect(() => {
-    if (isStale) fetchIfStale();
-  }, [isStale, fetchIfStale]);
+    fetchIfStale();
+  }, [fetchIfStale]);
 
   const animate = !cardsAnimated;
   if (!cardsAnimated) cardsAnimated = true;
