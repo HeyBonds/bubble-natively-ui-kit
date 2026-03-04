@@ -164,6 +164,7 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
   };
 
   const handleRetry = () => {
+    if (!onRetry) return;
     TTS.stop();
     onRetry();
   };
@@ -328,18 +329,22 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
           transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <button
-          onClick={handleRetry}
-          className="flex-1 py-4 text-center"
-        >
-          <span className="font-jakarta font-extrabold text-[14px] block" style={{ color: sim.resultsTitle }}>
-            TRY AGAIN
-          </span>
-          <span className="font-poppins text-[11px]" style={{ color: sim.scoreFraction }}>
-            Same topic
-          </span>
-        </button>
-        <div style={{ width: 1, height: 40, background: sim.resultsBorder }} />
+        {onRetry && (
+          <>
+            <button
+              onClick={handleRetry}
+              className="flex-1 py-4 text-center"
+            >
+              <span className="font-jakarta font-extrabold text-[14px] block" style={{ color: sim.resultsTitle }}>
+                TRY AGAIN
+              </span>
+              <span className="font-poppins text-[11px]" style={{ color: sim.scoreFraction }}>
+                Same topic
+              </span>
+            </button>
+            <div style={{ width: 1, height: 40, background: sim.resultsBorder }} />
+          </>
+        )}
         <button
           onClick={handleDone}
           className="flex-1 py-4 text-center"

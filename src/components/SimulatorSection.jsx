@@ -49,6 +49,7 @@ let templatesFetched = false;
  */
 const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
   const [phase, setPhase] = useState('landing'); // 'landing' | 'session' | 'results'
+  const [hasRetried, setHasRetried] = useState(false);
   const [evaluation, setEvaluation] = useState(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [simStage, setSimStage] = useState(null); // 1, 'transition', 2, 3
@@ -110,6 +111,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
 
   const handleStart = useCallback(() => {
     setPhase('session');
+    setHasRetried(false);
     // Tell Bubble to start generating the token
     sendToBubble('bubble_fn_simulator', 'start_session');
   }, []);
@@ -168,10 +170,17 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
     pendingLeaveRef.current = null;
   }, []);
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = useCallback(async () => {
     setPhase('session');
     setEvaluation(null);
-    RT.retrySimulation();
+    setHasRetried(true);
+    await RT.retrySimulation();
+    const state = RT.state;
+    const issueData = state.currentIssueData || { issue: state.currentIssue };
+    sendToBubble('bubble_fn_simulator', 'stage2_token_needed', {
+      issue: state.currentIssue,
+      jsonContext: JSON.stringify(issueData, null, 2),
+    });
   }, []);
 
   const handleDone = useCallback(() => {
@@ -229,7 +238,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
         <SimulatorResults
           evaluation={evaluation}
           theme={theme}
-          onRetry={handleRetry}
+          onRetry={hasRetried ? null : handleRetry}
           onDone={handleDone}
         />
       )}

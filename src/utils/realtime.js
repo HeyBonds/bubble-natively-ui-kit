@@ -723,15 +723,6 @@ async function retrySimulation() {
   // Stop current session if running
   await stopSession("transition");
 
-  // Reconstruct issue data - use stored full data if available, otherwise create minimal object
-  const issueData = state.currentIssueData || { issue: state.currentIssue };
-  const jsonContext = JSON.stringify(issueData, null, 2);
-
-  RT.emit("stage2_token_needed", {
-    issue: state.currentIssue,
-    jsonContext: jsonContext,
-  });
-
   return true;
 }
 
