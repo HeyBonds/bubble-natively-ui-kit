@@ -36,29 +36,35 @@ const Dialog = ({ open, onClose, title, children, actions = [], theme, closeOnBa
 
   if (!visible) return null;
 
-  const sim = theme.simulator;
+  const d = {
+    dialogBg: theme.dialogBg || theme.simulator?.dialogBg,
+    dialogBorder: theme.dialogBorder || theme.simulator?.dialogBorder,
+    dialogTitle: theme.dialogTitle || theme.simulator?.dialogTitle,
+    dialogText: theme.dialogText || theme.simulator?.dialogText,
+    dialogDimBg: theme.dialogDimBg || theme.simulator?.dialogDimBg,
+  };
 
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 z-[9999] flex items-center justify-center p-6">
       {/* Backdrop */}
       <div
         className={`absolute top-0 left-0 right-0 bottom-0 ${closing ? 'dialog-overlay-out' : 'dialog-overlay-in'}`}
-        style={{ background: sim.dialogDimBg }}
+        style={{ background: d.dialogDimBg }}
         onClick={handleBackdrop}
       />
 
       {/* Card */}
       <div
         className={`relative w-full max-w-sm rounded-2xl p-6 border border-solid ${closing ? 'dialog-card-out' : 'dialog-card-in'}`}
-        style={{ background: sim.dialogBg, borderColor: sim.dialogBorder }}
+        style={{ background: d.dialogBg, borderColor: d.dialogBorder }}
       >
         {title && (
-          <h3 className="font-jakarta font-extrabold text-[18px] mb-3 text-center" style={{ color: sim.dialogTitle }}>
+          <h3 className="font-jakarta font-extrabold text-[18px] mb-3 text-center" style={{ color: d.dialogTitle }}>
             {title}
           </h3>
         )}
 
-        <div className="font-poppins text-[14px] leading-relaxed text-center" style={{ color: sim.dialogText }}>
+        <div className="font-poppins text-[14px] leading-relaxed text-center" style={{ color: d.dialogText }}>
           {children}
         </div>
 
@@ -77,9 +83,9 @@ const Dialog = ({ open, onClose, title, children, actions = [], theme, closeOnBa
                   borderColor: '#46A302',
                   color: '#FFFFFF',
                 } : {
-                  background: sim.dialogBg,
-                  borderColor: sim.dialogBorder,
-                  color: sim.dialogTitle,
+                  background: d.dialogBg,
+                  borderColor: d.dialogBorder,
+                  color: d.dialogTitle,
                 }}
               >
                 {action.label}

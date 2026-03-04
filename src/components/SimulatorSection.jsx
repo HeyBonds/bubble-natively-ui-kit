@@ -52,8 +52,13 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
   const [hasRetried, setHasRetried] = useState(false);
   const [evaluation, setEvaluation] = useState(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [errorCode, setErrorCode] = useState('');
+  const [errorHasRefund, setErrorHasRefund] = useState(false);
   const [simStage, setSimStage] = useState(null); // 1, 'transition', 2, 3
   const [activeSpeaker, setActiveSpeaker] = useState(null); // 'partner' | 'user' | null
+  const coinsDeductedRef = useRef(false);
 
   // Pending tab switch callback (set by MainTabs when user tries to switch during session)
   const pendingLeaveRef = useRef(null);
@@ -112,6 +117,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
   const handleStart = useCallback(() => {
     setPhase('session');
     setHasRetried(false);
+    coinsDeductedRef.current = false;
     // Tell Bubble to start generating the token
     sendToBubble('bubble_fn_simulator', 'start_session');
   }, []);
@@ -143,6 +149,10 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
     sendToBubble('bubble_fn_simulator', 'session_complete', {
       score: normalized?.overall_score || 0,
       skillLevel: normalized?.skill_level || '',
+      nextTimeTip: normalized?.summary || '',
+      whatYouDidWell: normalized?.strengths || [],
+      whatCouldBeBetter: normalized?.improvements || [],
+      dimensions: JSON.stringify(normalized?.metrics || []),
     });
   }, []);
 
@@ -180,6 +190,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
     sendToBubble('bubble_fn_simulator', 'stage2_token_needed', {
       issue: state.currentIssue,
       jsonContext: JSON.stringify(issueData, null, 2),
+      isRetry: true,
     });
   }, []);
 
@@ -191,8 +202,29 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
 
   const handleStage2Start = useCallback(() => {
     // Coins deducted when Stage 2 starts
+    coinsDeductedRef.current = true;
     sendToBubble('bubble_fn_simulator', 'deduct_coins');
   }, []);
+
+  const handleSessionError = useCallback((message, code) => {
+    RT.stop('error');
+    setErrorMessage(message);
+    setErrorCode(code || 'UNKNOWN');
+    setErrorHasRefund(coinsDeductedRef.current);
+    setShowErrorDialog(true);
+  }, []);
+
+  const dismissError = useCallback(() => {
+    setShowErrorDialog(false);
+    setPhase('landing');
+    setEvaluation(null);
+    setSimStage(null);
+    sendToBubble('bubble_fn_simulator', 'session_error', { errorCode, errorMessage });
+    if (coinsDeductedRef.current) {
+      sendToBubble('bubble_fn_simulator', 'refund_coins');
+      coinsDeductedRef.current = false;
+    }
+  }, [errorCode, errorMessage]);
 
   // Public method for MainTabs to request leave (returns false if blocked)
   useEffect(() => {
@@ -231,6 +263,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
           onStage2Start={handleStage2Start}
           onStageChange={handleStageChange}
           onActiveSpeakerChange={setActiveSpeaker}
+          onError={handleSessionError}
         />
       )}
       <FaceOverlay facePhase={facePhase} glowSide={glowSide} theme={theme} />
@@ -254,6 +287,21 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
         ]}
       >
         <p>This will close your current simulation. Your progress will be lost.</p>
+      </Dialog>
+      <Dialog
+        open={showErrorDialog}
+        onClose={dismissError}
+        title="Session Error"
+        theme={theme}
+        closeOnBackdrop={false}
+        actions={[
+          { label: 'OK', onClick: dismissError, primary: true },
+        ]}
+      >
+        <p>{errorMessage}</p>
+        {errorHasRefund && (
+          <p className="mt-3 font-bold" style={{ color: '#58CC02' }}>Your coins have been refunded.</p>
+        )}
       </Dialog>
     </div>,
     document.body

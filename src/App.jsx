@@ -9,6 +9,7 @@ import { useNativelyStorage } from './hooks/useNativelyStorage';
 import { THEMES, getSystemTheme } from './theme';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { DailyQuestionProvider, useDailyQuestion } from './contexts/DailyQuestionContext';
+import NetworkBanner from './components/NetworkBanner';
 
 // Transition map: [fromPhase][toPhase] → { exit, enter, exitDuration }
 const TRANSITIONS = {
@@ -225,6 +226,7 @@ const AppInner = () => {
 
     return (
         <div className="absolute inset-0">
+            <NetworkBanner theme={theme} />
             <div className={`w-full h-full ${animClass}`}>
                 {displayedPhase === 'welcome' && (
                     <WelcomeScreen deviceId={deviceId} onAction={handleWelcomeAction} />

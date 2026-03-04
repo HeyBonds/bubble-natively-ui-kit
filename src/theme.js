@@ -25,6 +25,11 @@ export const THEMES = {
     cardShadow: '#0A0A16',
     separatorLine: 'rgba(255,255,255,0.2)',
     separatorText: 'rgba(255,255,255,0.4)',
+    dialogBg: '#252538',
+    dialogBorder: 'rgba(255,255,255,0.1)',
+    dialogTitle: '#FFFFFF',
+    dialogText: 'rgba(255,255,255,0.7)',
+    dialogDimBg: 'rgba(0,0,0,0.6)',
     onboarding: {
       bg: '#1B1B2F',
       text: '#FFFFFF',
@@ -151,6 +156,11 @@ export const THEMES = {
     cardShadow: '#D0D0D8',
     separatorLine: 'rgba(0,0,0,0.15)',
     separatorText: 'rgba(0,0,0,0.35)',
+    dialogBg: '#FFFFFF',
+    dialogBorder: 'rgba(0,0,0,0.06)',
+    dialogTitle: '#1B1B2F',
+    dialogText: 'rgba(0,0,0,0.6)',
+    dialogDimBg: 'rgba(0,0,0,0.4)',
     onboarding: {
       bg: '#F0F0F5',
       text: '#1B1B2F',

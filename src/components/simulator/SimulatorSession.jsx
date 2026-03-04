@@ -9,7 +9,7 @@ import CoinDeduction from './CoinDeduction';
 
 const TOTAL_TURNS = 4; // 2 partner + 2 user turns in Stage 2
 
-const SimulatorSession = ({ theme, coinCount, onComplete, onClose, onStage2Start, onStageChange, onActiveSpeakerChange }) => {
+const SimulatorSession = ({ theme, coinCount, onComplete, onClose, onStage2Start, onStageChange, onActiveSpeakerChange, onError }) => {
   const sim = theme.simulator;
   const transcriptRef = useRef(null);
 
@@ -115,10 +115,12 @@ const SimulatorSession = ({ theme, coinCount, onComplete, onClose, onStage2Start
       case 'coach_text':
         // Matches original: WaveformComponent.updateText("coach", finalText, true)
         if (api) api.updateText('coach', data.text || '', true);
+        sendToBubble('bubble_fn_simulator', 'session_event', { role: 'coach', payload: data.text || '' });
         break;
       case 'partner_text':
         // Matches original: WaveformComponent.updateText("assistant", finalText, true)
         if (api) api.updateText('assistant', data.text || '', true);
+        sendToBubble('bubble_fn_simulator', 'session_event', { role: 'partner', payload: data.text || '' });
         break;
       case 'user_speaking':
         // Matches original: WaveformComponent.updateText("user", "...", false)
@@ -127,10 +129,16 @@ const SimulatorSession = ({ theme, coinCount, onComplete, onClose, onStage2Start
       case 'user_transcript':
         // Matches original: WaveformComponent.updateText("user", text, true)
         if (api) api.updateText('user', data.text || '', true);
+        sendToBubble('bubble_fn_simulator', 'session_event', { role: 'user', payload: data.text || '' });
         break;
       case 'stage2_token_needed':
         // Tell Bubble to generate Stage 2 token
         if (onStage2Start) onStage2Start();
+        // Prompt event fires first, stage2_token_needed queues behind it (Queue enabled on JS2B)
+        sendToBubble('bubble_fn_simulator', 'session_event', {
+          role: 'prompt',
+          payload: JSON.stringify({ issue: data.issue, jsonContext: data.jsonContext }),
+        });
         sendToBubble('bubble_fn_simulator', 'stage2_token_needed', {
           issue: data.issue,
           jsonContext: data.jsonContext,
@@ -140,13 +148,28 @@ const SimulatorSession = ({ theme, coinCount, onComplete, onClose, onStage2Start
         console.log('[Simulator] evaluation data:', JSON.stringify(data));
         if (onComplete) onComplete(data.evaluationJson || data);
         break;
-      case 'error':
+      case 'error': {
         console.error('[Simulator] RT error:', data.message, data.code);
+        const code = data.code || '';
+        let msg;
+        if (code === 'PERMISSION_DENIED') {
+          msg = 'Microphone access is required. Please enable it in your device settings and try again.';
+        } else if (code === 'NO_MICROPHONE') {
+          msg = 'No microphone detected. Please connect a microphone and try again.';
+        } else if (code === 'CONNECTION_FAILED' || code === 'ICE_CONNECTION_FAILED') {
+          msg = 'Connection lost. Please check your internet connection and try again.';
+        } else if (code === 'TRACK_ENDED') {
+          msg = 'Microphone was disconnected during the session. Please reconnect and try again.';
+        } else {
+          msg = 'Something went wrong. Please try again.';
+        }
+        if (onError) onError(msg, code);
         break;
+      }
       default:
         break;
     }
-  }, [onComplete, onStage2Start, onActiveSpeakerChange, getTranscriptAPI]);
+  }, [onComplete, onStage2Start, onActiveSpeakerChange, onError, getTranscriptAPI]);
 
   // Subscribe to RT events
   useEffect(() => {

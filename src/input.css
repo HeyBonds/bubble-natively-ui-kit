@@ -501,6 +501,24 @@
     will-change: transform;
   }
 
+  /* Network offline banner */
+  @keyframes networkBannerIn {
+    0%   { opacity: 0; transform: translateY(-100%) translateZ(0); }
+    100% { opacity: 1; transform: translateY(0) translateZ(0); }
+  }
+  @keyframes networkBannerOut {
+    0%   { opacity: 1; transform: translateY(0) translateZ(0); }
+    100% { opacity: 0; transform: translateY(-100%) translateZ(0); }
+  }
+  .network-banner-in {
+    animation: networkBannerIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+  .network-banner-out {
+    animation: networkBannerOut 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform, opacity;
+  }
+
   .dialog-overlay-in  { animation: dialogFadeIn 0.2s ease-out forwards; }
   .dialog-overlay-out { animation: dialogFadeOut 0.15s ease-in forwards; }
   .dialog-card-in     { animation: dialogCardIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity; }
