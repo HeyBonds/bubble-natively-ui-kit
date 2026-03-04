@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import RT, { onRTEvent, offRTEvent } from '../../utils/realtime';
+import TTS from '../../utils/tts';
 import { sendToBubble } from '../../utils/bubble';
 import Waveform from './Waveform';
 import MicButton from './MicButton';
@@ -16,6 +17,10 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start, onStageCh
   const [rtState, setRtState] = useState('loading');
   const [micState, setMicState] = useState('hidden');
   const [turnProgress, setTurnProgress] = useState(0);
+  const turnProgressRef = useRef(0);
+
+  // Keep ref in sync for access inside callbacks
+  useEffect(() => { turnProgressRef.current = turnProgress; }, [turnProgress]);
 
   // Notify parent of stage changes
   useEffect(() => {
@@ -72,7 +77,10 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start, onStageCh
             break;
           case 'PUSH_TO_TALK_STOPPED':
             setMicState('waiting');
-            if (onActiveSpeakerChange) onActiveSpeakerChange('partner');
+            // After final user turn, just turn glow off (don't move to partner)
+            if (onActiveSpeakerChange) {
+              onActiveSpeakerChange(turnProgressRef.current >= TOTAL_TURNS ? null : 'partner');
+            }
             break;
           case 'LOADING_SIMULATION':
             setStage('transition');
@@ -152,6 +160,7 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start, onStageCh
 
   const handleMicPress = () => {
     if (micState === 'ready') {
+      TTS.unlockAudio(); // Pre-unlock for results TTS autoplay
       RT.startPushToTalk();
     } else if (micState === 'recording') {
       RT.stopPushToTalk();

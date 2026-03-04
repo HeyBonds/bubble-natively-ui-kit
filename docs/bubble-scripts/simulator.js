@@ -7,9 +7,11 @@
 // --- Bubble fields ---
 var simulationJsonInstructions = `Do a search for SimulatorConfig's simulation_json_instructions`;
 var scoreInstructions = `Do a search for SimulatorConfig's score_instructions`;
+var ttsApiKey = `Do a search for SimulatorConfig's tts_api_key`;
 
 // --- JS ---
 window.appUI.setSimulatorTemplates({
     simulationJsonInstructions: simulationJsonInstructions,
-    scoreInstructions: scoreInstructions
+    scoreInstructions: scoreInstructions,
+    ttsApiKey: ttsApiKey
 });

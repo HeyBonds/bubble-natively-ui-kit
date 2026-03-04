@@ -10,10 +10,12 @@
  * Public API:
  *   TTS.start({ apiKey, text })  — stream MP3 via MediaSource
  *   TTS.stop()                   — abort + cleanup
+ *   TTS.pause()                  — pause audio + animation loop
+ *   TTS.resume()                 — resume audio + animation loop
  *   TTS.unlockAudio()            — play silent WAV (call from user gesture)
  *
  * Events emitted (shape: { type, ts, data }):
- *   status    → { status: 'idle' | 'streaming' | 'done' | 'error' }
+ *   status    → { status: 'idle' | 'streaming' | 'paused' | 'done' | 'error' }
  *   progress  → { elapsed, total, percent }
  *   transcript→ { sentences: [{ text, state }] }
  *   stats     → { firstByte, totalFetch, duration, size, sentenceCount }
@@ -58,6 +60,7 @@ const state = {
   timings: [],
   totalDuration: 0,
   durationChangeHandler: null,
+  endedHandler: null,
   status: 'idle',
   cleaningUp: false,
 };
@@ -111,11 +114,9 @@ function startAnimationLoop() {
       });
     }
 
-    if (elapsed >= total - 0.1 && state.streamDone) {
-      state.status = 'done';
-      TTS.emit('status', { status: 'done' });
-      return;
-    }
+    // done detection is handled by the 'ended' event on the audio element;
+    // the loop just keeps emitting progress/transcript until then
+    if (state.status === 'done') return;
     state.animFrameId = requestAnimationFrame(tick);
   };
   tick();
@@ -148,10 +149,16 @@ function cleanup() {
     try { state.sourceBuffer.removeEventListener('updateend', flushPendingChunks); } catch { /* ignore */ }
   }
 
-  // Remove durationchange listener
-  if (state.audio && state.durationChangeHandler) {
-    try { state.audio.removeEventListener('durationchange', state.durationChangeHandler); } catch { /* ignore */ }
-    state.durationChangeHandler = null;
+  // Remove durationchange + ended listeners
+  if (state.audio) {
+    if (state.durationChangeHandler) {
+      try { state.audio.removeEventListener('durationchange', state.durationChangeHandler); } catch { /* ignore */ }
+      state.durationChangeHandler = null;
+    }
+    if (state.endedHandler) {
+      try { state.audio.removeEventListener('ended', state.endedHandler); } catch { /* ignore */ }
+      state.endedHandler = null;
+    }
   }
 
   // Pause audio
@@ -220,6 +227,25 @@ TTS.stop = function () {
   cleanup();
 };
 
+TTS.pause = function () {
+  if (state.status !== 'streaming') return;
+  if (state.audio) state.audio.pause();
+  if (state.animFrameId) {
+    cancelAnimationFrame(state.animFrameId);
+    state.animFrameId = null;
+  }
+  state.status = 'paused';
+  TTS.emit('status', { status: 'paused' });
+};
+
+TTS.resume = function () {
+  if (state.status !== 'paused' || !state.audio) return;
+  state.audio.play().catch(() => {});
+  startAnimationLoop();
+  state.status = 'streaming';
+  TTS.emit('status', { status: 'streaming' });
+};
+
 TTS.start = async function ({ apiKey, text }) {
   if (!text || !text.trim()) {
     state.status = 'error';
@@ -229,7 +255,7 @@ TTS.start = async function ({ apiKey, text }) {
   }
 
   // Stop any existing stream
-  if (state.status === 'streaming') {
+  if (state.status === 'streaming' || state.status === 'paused') {
     cleanup();
   }
 
@@ -319,7 +345,22 @@ TTS.start = async function ({ apiKey, text }) {
 
       if (!firstByteTime) {
         firstByteTime = performance.now();
-        audio.play().catch(() => {});
+        // Register ended handler as authoritative done signal
+        const onEnded = () => {
+          if (state.status === 'streaming' || state.status === 'paused') {
+            if (state.animFrameId) { cancelAnimationFrame(state.animFrameId); state.animFrameId = null; }
+            state.status = 'done';
+            TTS.emit('progress', { elapsed: state.totalDuration, total: state.totalDuration, percent: 1 });
+            TTS.emit('status', { status: 'done' });
+          }
+        };
+        state.endedHandler = onEnded;
+        audio.addEventListener('ended', onEnded, { once: true });
+        audio.play().catch((err) => {
+          if (err.name === 'NotAllowedError') {
+            TTS.emit('autoplay_blocked', {});
+          }
+        });
         startAnimationLoop();
       }
 
@@ -352,15 +393,15 @@ TTS.start = async function ({ apiKey, text }) {
     state.timings = calculateTimings(sentences, realDuration);
     state.streamDone = true;
 
-    // Update timings when browser resolves final MP3 duration
+    // Update timings as browser resolves MP3 duration (fires multiple times with MediaSource)
     const onDurationChange = () => {
-      if (isFinite(audio.duration) && audio.duration > 0) {
+      if (isFinite(audio.duration) && audio.duration > 0 && audio.duration !== state.totalDuration) {
         state.totalDuration = audio.duration;
         state.timings = calculateTimings(sentences, audio.duration);
       }
     };
     state.durationChangeHandler = onDurationChange;
-    audio.addEventListener('durationchange', onDurationChange, { once: true });
+    audio.addEventListener('durationchange', onDurationChange);
 
     TTS.emit('stats', {
       firstByte: firstByteTime ? Math.round(firstByteTime - startTime) : null,

@@ -78,6 +78,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
       const templates = {
         simulationJsonInstructions: data.simulationJsonInstructions || null,
         scoreInstructions: data.scoreInstructions || null,
+        ttsApiKey: data.ttsApiKey || null,
       };
       localStorage.setItem('bonds_simulator_templates', JSON.stringify(templates));
       setInstructionsReady(!!(templates.simulationJsonInstructions && templates.scoreInstructions));

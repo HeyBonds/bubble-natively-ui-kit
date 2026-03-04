@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import TTS from '../../utils/tts';
+import { useTTS } from '../../hooks/useTTS';
 
 const SCORE_COLORS = ['#FF4B4B', '#FF8C00', '#FFD700', '#9ACD32', '#58CC02'];
 
@@ -22,9 +24,24 @@ function playScoreBeep(index) {
   } catch { /* audio not available */ }
 }
 
+// Compile evaluation data into natural speech text
+function buildTTSText({ skill_level, strengths, improvements, summary }) {
+  const strip = (s) => s.replace(/[.!?]+\s*$/, '');
+  const parts = [skill_level + '.'];
+  if (strengths.length) {
+    parts.push('What you did well: ' + strengths.map(strip).join('. ') + '.');
+  }
+  if (improvements.length) {
+    parts.push('Areas to improve: ' + improvements.map(strip).join('. ') + '.');
+  }
+  if (summary) parts.push(summary);
+  return parts.join(' ');
+}
+
 const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
   const sim = theme.simulator;
   const [expanded, setExpanded] = useState(false);
+  const { status: ttsStatus } = useTTS();
 
   // Animation state
   const [litDots, setLitDots] = useState(0); // how many dots are lit (0→score)
@@ -48,13 +65,16 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
 
   const { overall_score = 1, skill_level = 'Getting Started', metrics = [], strengths = [], improvements = [], summary = '' } = evaluation || {};
 
-  // Clean up timers on unmount
+  // Clean up timers + TTS on unmount
   useEffect(() => {
     const timers = timersRef.current;
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      timers.forEach(clearTimeout);
+      TTS.stop();
+    };
   }, []);
 
-  // Run entrance animation sequence on mount
+  // Run entrance animation sequence on mount, then trigger TTS
   useEffect(() => {
     if (!evaluation) return;
     let t = 200;
@@ -114,7 +134,20 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
 
     // 8. Footer
     addTimer(() => setShowFooter(true), t);
-  }, [evaluation, overall_score, metrics.length, strengths.length, improvements.length, summary, addTimer]);
+
+    // 9. After animation completes, start TTS directly
+    t += 500;
+    addTimer(() => {
+      try {
+        const raw = localStorage.getItem('bonds_simulator_templates');
+        const apiKey = raw ? JSON.parse(raw).ttsApiKey : null;
+        if (apiKey) {
+          const text = buildTTSText({ skill_level, strengths, improvements, summary });
+          TTS.start({ apiKey, text });
+        }
+      } catch { /* ignore */ }
+    }, t);
+  }, [evaluation, overall_score, metrics.length, strengths, improvements, summary, skill_level, addTimer]);
 
   if (!evaluation) return null;
 
@@ -124,6 +157,23 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
     transform: visible ? 'translateY(0) translateZ(0)' : 'translateY(0.5em) translateZ(0)',
     transition: 'opacity 0.4s ease, transform 0.4s ease',
   });
+
+  const handlePlayPause = () => {
+    if (ttsStatus === 'streaming') TTS.pause();
+    else if (ttsStatus === 'paused') TTS.resume();
+  };
+
+  const handleRetry = () => {
+    TTS.stop();
+    onRetry();
+  };
+
+  const handleDone = () => {
+    TTS.stop();
+    onDone();
+  };
+
+  const showPlayPause = ttsStatus === 'streaming' || ttsStatus === 'paused';
 
   return (
     <div className="flex flex-col h-full" style={{ background: sim.sessionBg }}>
@@ -234,18 +284,39 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
         {/* Summary -- expandable */}
         {summary && (
           <div className="mb-4" style={fadeIn(showSummary)}>
-            {!expanded ? (
-              <button onClick={() => setExpanded(true)} className="font-jakarta font-bold text-[13px] underline" style={{ color: sim.readMoreText }}>
-                Read more
-              </button>
-            ) : (
-              <p className="font-poppins text-[13px] leading-relaxed" style={{ color: sim.bulletText }}>
+            {expanded && (
+              <p className="font-poppins text-[13px] leading-relaxed mb-2" style={{ color: sim.bulletText }}>
                 {summary}
               </p>
             )}
+            <button onClick={() => setExpanded(!expanded)} className="font-jakarta font-bold text-[13px] underline" style={{ color: sim.readMoreText }}>
+              {expanded ? 'Read less' : 'Read more'}
+            </button>
           </div>
         )}
       </div>
+
+      {/* TTS play/pause button */}
+      {showPlayPause && (
+        <div className="shrink-0 flex justify-center pb-3">
+          <button
+            onClick={handlePlayPause}
+            className="w-11 h-11 rounded-full flex items-center justify-center"
+            style={{ background: sim.dotInactive, border: `1px solid ${sim.resultsBorder}` }}
+          >
+            {ttsStatus === 'streaming' ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={sim.resultsTitle}>
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={sim.resultsTitle}>
+                <polygon points="6,4 20,12 6,20" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Footer -- TRY AGAIN / DONE */}
       <div
@@ -258,7 +329,7 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
         }}
       >
         <button
-          onClick={onRetry}
+          onClick={handleRetry}
           className="flex-1 py-4 text-center"
         >
           <span className="font-jakarta font-extrabold text-[14px] block" style={{ color: sim.resultsTitle }}>
@@ -270,7 +341,7 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
         </button>
         <div style={{ width: 1, height: 40, background: sim.resultsBorder }} />
         <button
-          onClick={onDone}
+          onClick={handleDone}
           className="flex-1 py-4 text-center"
         >
           <span className="font-jakarta font-extrabold text-[14px]" style={{ color: sim.resultsTitle }}>
