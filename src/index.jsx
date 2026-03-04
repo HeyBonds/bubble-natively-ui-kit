@@ -2,6 +2,8 @@
 window.appUI = window.appUI || {};
 
 // --- GLOBAL SETUP (Runs immediately) ---
+if (window.natively) window.natively.showProgress(false);
+
 const initGlobals = () => {
     // 1. Inject Fonts
     const fonts = [
@@ -47,6 +49,7 @@ import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import mockOnboardingSteps from './data/mockOnboardingSteps';
 import JourneyPath from './components/JourneyPath';
 import RT from './utils/realtime';
+import TTS from './utils/tts';
 import { UserProvider } from './contexts/UserContext';
 import { DailyQuestionProvider } from './contexts/DailyQuestionContext';
 
@@ -101,6 +104,8 @@ if (appContainer) {
 
 // Expose RT config for Bubble to set instruction templates
 window.RT = RT;
+window.TTS = TTS;
+window.appUI.startTTSStream = ({ apiKey, text }) => TTS.start({ apiKey, text });
 
 // Queue drain moved to UserProvider useEffect — ensures all bridge
 // functions (setUserData, setLoginState, etc.) are registered before

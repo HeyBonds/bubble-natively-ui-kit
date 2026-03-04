@@ -5,6 +5,7 @@ import FunZoneSection from './FunZoneSection';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
 import { THEMES, DARK_MODE_OPTIONS, DARK_MODE_LABELS, getSystemTheme } from '../theme';
 import SimulatorSection from './SimulatorSection';
+import TestTTSScreen from './TestTTSScreen';
 import { APP_VERSION } from '../config';
 import { sendToBubble } from '../utils/bubble';
 import { useUser } from '../contexts/UserContext';
@@ -43,7 +44,7 @@ const Chevron = ({ theme }) => (
 
 // ── Profile Section ─────────────────────────────────────────────────
 
-const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout }) => {
+const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }) => {
   const glass = glassStyle(theme);
   const { name, email, pillars } = useUser();
 
@@ -204,6 +205,28 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout }) => {
         </div>
       </div>
 
+      {/* ── Dev / Test ── */}
+      <div className="mt-6">
+        <SectionLabel theme={theme}>Dev</SectionLabel>
+        <div className="rounded-2xl px-4 border border-solid" style={glass}>
+          <SettingsRow
+            theme={theme}
+            last
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            }
+            label="Test TTS Streaming"
+            right={
+              <button onClick={() => push('test-tts')} className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#E44B8E', color: '#E44B8E' }}>
+                Open
+              </button>
+            }
+          />
+        </div>
+      </div>
+
       {/* ── Bottom actions ── */}
       <div className="mt-8 flex flex-col items-center gap-3">
         <button onClick={handleLogout} className="font-bold text-[14px] py-2 px-8 rounded-full border border-solid" style={{ borderColor: theme.border, color: theme.textSecondary }}>
@@ -290,7 +313,7 @@ const MainTabs = ({ onLogout }) => {
     setNavAction('push');
     setStacks(prev => ({
       ...prev,
-      [activeTab]: [...prev[activeTab], { id: viewId, ...props }]
+      [activeTab]: [...prev[activeTab], { id: viewId, ...props }],
     }));
   };
 
@@ -299,10 +322,7 @@ const MainTabs = ({ onLogout }) => {
     setStacks(prev => {
       const currentStack = prev[activeTab];
       if (currentStack.length <= 1) return prev;
-      return {
-        ...prev,
-        [activeTab]: currentStack.slice(0, -1)
-      };
+      return { ...prev, [activeTab]: currentStack.slice(0, -1) };
     });
   };
 
@@ -357,7 +377,11 @@ const MainTabs = ({ onLogout }) => {
         }
         break;
       case 'profile':
-        content = <ProfileSection theme={t} darkModePref={darkModePref} setDarkModePref={setDarkModePref} onLogout={onLogout} />;
+        if (currentViewId === 'test-tts') {
+          content = <TestTTSScreen {...commonProps} />;
+        } else {
+          content = <ProfileSection theme={t} darkModePref={darkModePref} setDarkModePref={setDarkModePref} onLogout={onLogout} push={push} />;
+        }
         break;
       default:
         content = <PlaceholderSection title="Not Found" theme={t} />;
