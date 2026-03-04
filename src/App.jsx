@@ -151,13 +151,8 @@ const AppInner = () => {
                     setItem(SESSION_KEY, 'true');
                     transitionTo('onboarding');
                 } else if (localStorage.getItem(AUTH_PENDING_KEY) === 'true') {
-                    // OAuth redirect just happened — stay on loading until setLoginState fires
-                    setTimeout(() => {
-                        if (displayedPhaseRef.current === 'loading') {
-                            localStorage.removeItem(AUTH_PENDING_KEY);
-                            transitionTo('welcome');
-                        }
-                    }, 10000);
+                    // OAuth redirect just happened — stay on loading until setLoginState fires.
+                    // No timeout fallback: Bubble will call setLoginState when auth completes.
                 } else {
                     transitionTo('welcome');
                 }

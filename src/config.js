@@ -1,2 +1,2 @@
 export const BUBBLE_CDN = 'https://0fc323560b9c4d8afc3a7d487716abb6.cdn.bubble.io';
-export const APP_VERSION = 'v1.0.0-alpha-b61f960b2544';
+export const APP_VERSION = 'v1.0.0-alpha-806eab99c06e';
