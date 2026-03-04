@@ -1,9 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// Shared AudioContext for beam sounds — created + resumed once on first
+// FaceOverlay mount so it's ready by the time faces animate in.
+let beamAudioCtx = null;
+function getBeamAudioCtx() {
+  if (beamAudioCtx && beamAudioCtx.state === 'closed') beamAudioCtx = null;
+  if (!beamAudioCtx) {
+    try {
+      beamAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (beamAudioCtx.state === 'suspended') beamAudioCtx.resume();
+    } catch { /* audio not available */ }
+  }
+  return beamAudioCtx;
+}
+
 // Beam-in sound: ethereal chord shimmer with noise burst
 function playBeamIn() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getBeamAudioCtx();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const dur = 0.7;
 
@@ -70,14 +85,14 @@ function playBeamIn() {
     osc4.connect(g4).connect(ctx.destination);
 
     [osc1, osc2, osc3, osc4].forEach((o) => { o.start(now); o.stop(now + dur); });
-    osc4.onended = () => ctx.close();
   } catch { /* audio not available */ }
 }
 
 // Beam-out sound: descending dissolve with reverb tail
 function playBeamOut() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getBeamAudioCtx();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const dur = 0.5;
 
@@ -119,7 +134,6 @@ function playBeamOut() {
     noise.start(now + 0.02);
 
     [osc1, osc2].forEach((o) => { o.start(now); o.stop(now + dur); });
-    osc2.onended = () => ctx.close();
   } catch { /* audio not available */ }
 }
 

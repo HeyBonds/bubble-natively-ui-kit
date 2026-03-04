@@ -74,6 +74,15 @@
     transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* Coin pop-in — in-flow version (no translate offset) */
+  @keyframes coinPopIn {
+    0% { opacity: 0; transform: scale(0.5) translateZ(0); }
+    100% { opacity: 1; transform: scale(1) translateZ(0); }
+  }
+  .coin-pop-in {
+    animation: coinPopIn 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
   /* Dim Overlay */
   .dim-overlay {
     position: fixed;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import JourneyPath from './JourneyPath';
 import DailyQuestion from './DailyQuestion';
 import FunZoneSection from './FunZoneSection';
@@ -7,6 +8,7 @@ import { THEMES, DARK_MODE_OPTIONS, DARK_MODE_LABELS, getSystemTheme } from '../
 import SimulatorSection from './SimulatorSection';
 import TestTTSScreen from './TestTTSScreen';
 import { APP_VERSION } from '../config';
+import CoinDeduction from './simulator/CoinDeduction';
 import { sendToBubble } from '../utils/bubble';
 import { useUser } from '../contexts/UserContext';
 
@@ -45,8 +47,9 @@ const Chevron = ({ theme }) => (
 // ── Profile Section ─────────────────────────────────────────────────
 
 const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }) => {
+  const [showCoinAnim, setShowCoinAnim] = useState(false);
   const glass = glassStyle(theme);
-  const { name, email, pillars } = useUser();
+  const { name, email, pillars, coins } = useUser();
 
   const handleLogout = () => {
     sendToBubble('bubble_fn_profile', 'logout');
@@ -211,7 +214,6 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }
         <div className="rounded-2xl px-4 border border-solid" style={glass}>
           <SettingsRow
             theme={theme}
-            last
             icon={
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
@@ -224,8 +226,48 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }
               </button>
             }
           />
+          <SettingsRow
+            theme={theme}
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+              </svg>
+            }
+            label="Test Coin Animation"
+            right={
+              <button onClick={() => setShowCoinAnim(true)} className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#E44B8E', color: '#E44B8E' }}>
+                Play
+              </button>
+            }
+          />
+          <SettingsRow
+            theme={theme}
+            last
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+            }
+            label="Add 30 Coins"
+            right={
+              <button onClick={() => sendToBubble('bubble_fn_test', 'add_coins', { amount: 30 })} className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#E44B8E', color: '#E44B8E' }}>
+                Add
+              </button>
+            }
+          />
         </div>
       </div>
+
+      {showCoinAnim && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+          <CoinDeduction
+            coinCount={coins}
+            coinCost={4}
+            onComplete={() => setShowCoinAnim(false)}
+          />
+        </div>,
+        document.body
+      )}
 
       {/* ── Bottom actions ── */}
       <div className="mt-8 flex flex-col items-center gap-3">

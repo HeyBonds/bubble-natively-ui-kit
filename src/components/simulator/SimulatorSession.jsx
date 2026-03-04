@@ -5,10 +5,11 @@ import { sendToBubble } from '../../utils/bubble';
 import Waveform from './Waveform';
 import MicButton from './MicButton';
 import Transcript from './Transcript';
+import CoinDeduction from './CoinDeduction';
 
 const TOTAL_TURNS = 4; // 2 partner + 2 user turns in Stage 2
 
-const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start, onStageChange, onActiveSpeakerChange }) => {
+const SimulatorSession = ({ theme, coinCount, onComplete, onClose, onStage2Start, onStageChange, onActiveSpeakerChange }) => {
   const sim = theme.simulator;
   const transcriptRef = useRef(null);
 
@@ -18,6 +19,8 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start, onStageCh
   const [micState, setMicState] = useState('hidden');
   const [turnProgress, setTurnProgress] = useState(0);
   const turnProgressRef = useRef(0);
+  const [coinAnimDone, setCoinAnimDone] = useState(false);
+  const handleCoinAnimComplete = useCallback(() => setCoinAnimDone(true), []);
 
   // Keep ref in sync for access inside callbacks
   useEffect(() => { turnProgressRef.current = turnProgress; }, [turnProgress]);
@@ -154,6 +157,7 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start, onStageCh
   // Detect Stage 2 start (LOADING_SIMULATION -> next PARTNER_SPEAKING = stage 2)
   useEffect(() => {
     if (rtState === 'PARTNER_SPEAKING' && stage === 'transition') {
+      setCoinAnimDone(true); // mark done even if interrupted mid-animation
       setStage(2);
     }
   }, [rtState, stage]);
@@ -167,11 +171,23 @@ const SimulatorSession = ({ theme, onComplete, onClose, onStage2Start, onStageCh
     }
   };
 
-  // Transition screen
+  // Transition screen — coin deduction animation, then spinner fallback.
+  // coinAnimDone is set true either by onComplete (normal) or by the
+  // PARTNER_SPEAKING effect above (interruption), preventing double-play.
   if (stage === 'transition') {
+    if (!coinAnimDone) {
+      return (
+        <CoinDeduction
+          coinCount={coinCount}
+          coinCost={4}
+          onComplete={handleCoinAnimComplete}
+        />
+      );
+    }
+    // Fallback: waiting for Stage 2 token
     return (
       <div className="flex flex-col items-center justify-center h-full px-6" style={{ background: sim.sessionBg }}>
-        <p className="font-jakarta font-bold text-[20px] text-center" style={{ color: sim.transitionText }}>
+        <p className="font-jakarta font-bold text-[1.25rem] text-center" style={{ color: sim.transitionText }}>
           Your simulation will begin shortly
         </p>
         <div className="mt-6">

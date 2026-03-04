@@ -198,6 +198,15 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
 
   const sim = theme.simulator;
 
+  // Capture coin count once — stable value prevents CoinDeduction animation effect re-fire
+  const [coinCount] = useState(() => {
+    try {
+      const raw = localStorage.getItem('bonds_user_data');
+      if (raw) return JSON.parse(raw).coins || 0;
+    } catch { /* ignore */ }
+    return 0;
+  });
+
   // Full-screen content — portalled to document.body to escape ancestor transforms
   // (animate-tab-switch applies transform which breaks position:fixed for descendants)
   const fullScreenContent = isFullScreen ? createPortal(
@@ -207,6 +216,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
       {phase === 'session' && (
         <SimulatorSession
           theme={theme}
+          coinCount={coinCount}
           onComplete={handleComplete}
           onClose={handleClose}
           onStage2Start={handleStage2Start}
