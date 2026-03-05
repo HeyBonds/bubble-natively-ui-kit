@@ -143,6 +143,13 @@ const AppInner = () => {
                     getItem('onboarding_state'),
                 ]);
 
+                // If setLoginState already fired while we were waiting for storage,
+                // don't override — it already transitioned us to the correct phase.
+                if (displayedPhaseRef.current !== 'loading') {
+                    console.log(`📋 [App] Session check skipped — already transitioned to ${displayedPhaseRef.current}`);
+                    return;
+                }
+
                 console.log(`📋 [App] Session check — session=${sessionResult}, onboarding=${obResult}, state=${onboardingState ? 'saved' : 'none'}`);
 
                 if (sessionResult === 'true') {
@@ -158,7 +165,7 @@ const AppInner = () => {
                 }
             } catch (err) {
                 console.error('❌ App: Failed to check session:', err);
-                transitionTo('welcome');
+                if (displayedPhaseRef.current === 'loading') transitionTo('welcome');
             }
         };
 
@@ -166,6 +173,7 @@ const AppInner = () => {
 
         window.appUI = window.appUI || {};
         window.appUI.setLoginState = (isLogged) => {
+            console.log(`🔑 [Auth] setLoginState called: isLogged=${isLogged}, currentPhase=${displayedPhaseRef.current}`);
             localStorage.removeItem(AUTH_PENDING_KEY);
             if (isLogged) {
                 setItem(SESSION_KEY, 'true');
