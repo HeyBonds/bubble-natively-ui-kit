@@ -83,8 +83,8 @@ const Dialog = ({ open, onClose, title, children, actions = [], theme, closeOnBa
                   borderColor: '#46A302',
                   color: '#FFFFFF',
                 } : {
-                  background: d.dialogBg,
-                  borderColor: d.dialogBorder,
+                  background: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  borderColor: theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
                   color: d.dialogTitle,
                 }}
               >

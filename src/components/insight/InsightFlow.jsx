@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { sendToBubble } from '../../utils/bubble';
 import TTS from '../../utils/tts';
@@ -123,10 +123,25 @@ const InsightFlow = ({ type, activityId, theme, pop, onFullScreenChange }) => {
 
   const ins = theme.insight;
 
+  // Portal target: prefer #app-content-area (preview) → #app-root (production) → body
+  const portalTarget = useMemo(() =>
+    document.getElementById('app-content-area')
+    || document.getElementById('app-root')
+    || document.body,
+  []);
+
+  // Ensure portal target is a positioned containing block with dimensions
+  useEffect(() => {
+    if (portalTarget === document.body) return;
+    const prev = portalTarget.style.position;
+    portalTarget.style.position = 'relative';
+    return () => { portalTarget.style.position = prev; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const content = (
     <div
       style={{
-        position: 'fixed',
+        position: portalTarget === document.body ? 'fixed' : 'absolute',
         top: 0,
         left: 0,
         right: 0,
@@ -179,7 +194,7 @@ const InsightFlow = ({ type, activityId, theme, pop, onFullScreenChange }) => {
     </div>
   );
 
-  return createPortal(content, document.body);
+  return createPortal(content, portalTarget);
 };
 
 export default InsightFlow;

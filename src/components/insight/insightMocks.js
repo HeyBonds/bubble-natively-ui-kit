@@ -31,11 +31,13 @@ const MOCK_QUESTIONS = [
   },
 ];
 
+const INSIGHT_VIDEO = 'https://4240869bec55ba9919a61b94d2a6974f.cdn.bubble.io/f1735211080655x840492595516242600/Generic%201St%20Insight%20Vid%20%281%29%20-%20smaller.mp4';
+
 const MOCK_INSIGHT = {
   insightId: 'mock-insight-1',
   title: 'Communication & Connection',
   text: 'Your answers suggest a strong foundation of emotional openness in your relationship. Sharing daily experiences builds a habit of connection that many couples overlook. The willingness to try new things together indicates a growth mindset as a couple. However, vulnerability can always be deepened. Consider setting aside ten minutes each evening for uninterrupted conversation without screens. Small rituals of connection compound over time into something extraordinary.',
-  videoUrl: V1,
+  videoUrl: INSIGHT_VIDEO,
   audioUrl: null,
 };
 

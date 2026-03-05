@@ -97,7 +97,6 @@ const InsightPlayback = ({ insightData, ttsApiKey, theme, onDone }) => {
           ref={videoRef}
           className="absolute top-0 left-0 w-full h-full object-cover"
           src={videoUrl}
-          muted
           autoPlay
           loop
           playsInline

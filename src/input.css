@@ -551,4 +551,84 @@
   .dialog-overlay-out { animation: dialogFadeOut 0.15s ease-in forwards; }
   .dialog-card-in     { animation: dialogCardIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity; }
   .dialog-card-out    { animation: dialogCardOut 0.15s ease-in forwards; will-change: transform, opacity; }
+
+  /* ── Insight Voice-First Animations ── */
+
+  /* Mic entrance: spring scale */
+  @keyframes insightMicIn {
+    0%   { opacity: 0; transform: scale(0.5) translateZ(0); }
+    70%  { opacity: 1; transform: scale(1.08) translateZ(0); }
+    100% { opacity: 1; transform: scale(1) translateZ(0); }
+  }
+  .insight-mic-in {
+    opacity: 0;
+    animation: insightMicIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  /* Mic breathing pulse */
+  @keyframes insightMicBreathe {
+    0%, 100% { transform: scale(1) translateZ(0); }
+    50%      { transform: scale(1.06) translateZ(0); }
+  }
+  .insight-mic-breathe {
+    animation: insightMicBreathe 2.5s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  /* Sonar ripple ring */
+  @keyframes insightRipple {
+    0%   { opacity: 0.35; transform: scale(1) translateZ(0); }
+    100% { opacity: 0;    transform: scale(2.2) translateZ(0); }
+  }
+  .insight-ripple {
+    animation: insightRipple 2.5s ease-out infinite;
+    will-change: transform, opacity;
+  }
+  .insight-ripple-2 {
+    animation: insightRipple 2.5s ease-out 1.25s infinite;
+    will-change: transform, opacity;
+  }
+
+  /* YES/NO pills entrance */
+  @keyframes insightPillsIn {
+    0%   { opacity: 0; transform: translateY(0.75em) translateZ(0); }
+    100% { opacity: 0.6; transform: translateY(0) translateZ(0); }
+  }
+  .insight-pills-in {
+    opacity: 0;
+    animation: insightPillsIn 0.5s ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  /* Bottom sheet slide in */
+  @keyframes insightSheetIn {
+    0%   { transform: translateY(100%) translateZ(0); }
+    100% { transform: translateY(0) translateZ(0); }
+  }
+  .insight-sheet-in {
+    animation: insightSheetIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform;
+  }
+
+  /* Bottom sheet slide out */
+  @keyframes insightSheetOut {
+    0%   { transform: translateY(0) translateZ(0); }
+    100% { transform: translateY(100%) translateZ(0); }
+  }
+  .insight-sheet-out {
+    animation: insightSheetOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform;
+  }
+
+  /* Mic expand — scales up + fades when transitioning to sheet */
+  @keyframes insightMicExpand {
+    0%   { transform: scale(1) translateZ(0); opacity: 1; }
+    60%  { transform: scale(1.6) translateZ(0); opacity: 0.6; }
+    100% { transform: scale(2.2) translateZ(0); opacity: 0; }
+  }
+  .insight-mic-expand {
+    animation: insightMicExpand 0.35s ease-out forwards;
+    will-change: transform, opacity;
+  }
 }
