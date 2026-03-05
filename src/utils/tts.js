@@ -12,6 +12,7 @@
  *   TTS.stop()                   — abort + cleanup
  *   TTS.pause()                  — pause audio + animation loop
  *   TTS.resume()                 — resume audio + animation loop
+ *   TTS.setSpeed(rate)            — set playback speed (persists across start/stop)
  *   TTS.unlockAudio()            — play silent WAV (call from user gesture)
  *
  * Events emitted (shape: { type, ts, data }):
@@ -63,6 +64,7 @@ const state = {
   endedHandler: null,
   status: 'idle',
   cleaningUp: false,
+  speed: 1,
 };
 
 // ── Sentence utilities ──────────────────────────────────────────────
@@ -223,6 +225,11 @@ TTS.unlockAudio = function () {
   if (p) p.then(() => { audio.pause(); audio.src = ''; }).catch(() => {});
 };
 
+TTS.setSpeed = function (rate) {
+  state.speed = rate;
+  if (state.audio) state.audio.playbackRate = rate;
+};
+
 TTS.stop = function () {
   cleanup();
 };
@@ -356,6 +363,7 @@ TTS.start = async function ({ apiKey, text }) {
         };
         state.endedHandler = onEnded;
         audio.addEventListener('ended', onEnded, { once: true });
+        audio.playbackRate = state.speed;
         audio.play().catch((err) => {
           if (err.name === 'NotAllowedError') {
             TTS.emit('autoplay_blocked', {});

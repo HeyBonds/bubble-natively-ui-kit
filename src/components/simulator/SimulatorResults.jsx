@@ -3,6 +3,7 @@ import TTS from '../../utils/tts';
 import { useTTS } from '../../hooks/useTTS';
 
 const SCORE_COLORS = ['#FF4B4B', '#FF8C00', '#FFD700', '#9ACD32', '#58CC02'];
+const SPEED_OPTIONS = [1, 1.25, 1.5, 1.75, 2];
 
 // Play a short ascending-pitch beep via Web Audio API
 function playScoreBeep(index) {
@@ -54,6 +55,7 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
   const [visibleImprovements, setVisibleImprovements] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [showFooter, setShowFooter] = useState(false);
+  const [speedIndex, setSpeedIndex] = useState(0);
 
   const timersRef = useRef([]);
 
@@ -163,6 +165,23 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
     else if (ttsStatus === 'paused') TTS.resume();
   };
 
+  const handleSpeedCycle = () => {
+    const next = (speedIndex + 1) % SPEED_OPTIONS.length;
+    setSpeedIndex(next);
+    TTS.setSpeed(SPEED_OPTIONS[next]);
+  };
+
+  const handleReplay = () => {
+    try {
+      const raw = localStorage.getItem('bonds_simulator_templates');
+      const apiKey = raw ? JSON.parse(raw).ttsApiKey : null;
+      if (apiKey) {
+        const text = buildTTSText({ skill_level, strengths, improvements, summary });
+        TTS.start({ apiKey, text });
+      }
+    } catch { /* ignore */ }
+  };
+
   const handleRetry = () => {
     if (!onRetry) return;
     TTS.stop();
@@ -175,6 +194,7 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
   };
 
   const showPlayPause = ttsStatus === 'streaming' || ttsStatus === 'paused';
+  const showReplay = ttsStatus === 'done' || ttsStatus === 'idle';
 
   return (
     <div className="flex flex-col h-full" style={{ background: sim.sessionBg }}>
@@ -297,9 +317,9 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
         )}
       </div>
 
-      {/* TTS play/pause button */}
+      {/* TTS controls — play/pause + speed while playing, replay when done */}
       {showPlayPause && (
-        <div className="shrink-0 flex justify-center pb-3">
+        <div className="shrink-0 flex items-center justify-center gap-3 pb-3">
           <button
             onClick={handlePlayPause}
             className="w-11 h-11 rounded-full flex items-center justify-center"
@@ -315,6 +335,28 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
                 <polygon points="6,4 20,12 6,20" />
               </svg>
             )}
+          </button>
+          <button
+            onClick={handleSpeedCycle}
+            className="h-11 px-3 rounded-full flex items-center justify-center font-jakarta font-bold text-[13px]"
+            style={{ background: sim.dotInactive, border: `1px solid ${sim.resultsBorder}`, color: sim.resultsTitle }}
+          >
+            {SPEED_OPTIONS[speedIndex]}x
+          </button>
+        </div>
+      )}
+      {showReplay && showFooter && (
+        <div className="shrink-0 flex items-center justify-center pb-3">
+          <button
+            onClick={handleReplay}
+            className="w-11 h-11 rounded-full flex items-center justify-center"
+            style={{ background: sim.dotInactive, border: `1px solid ${sim.resultsBorder}` }}
+          >
+            {/* Replay icon */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={sim.resultsTitle} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
           </button>
         </div>
       )}
