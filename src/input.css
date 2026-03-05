@@ -519,6 +519,34 @@
     will-change: transform, opacity;
   }
 
+  /* ── Insight Animations ── */
+  @keyframes insightSpin {
+    0%   { transform: rotate(0deg) translateZ(0); }
+    100% { transform: rotate(360deg) translateZ(0); }
+  }
+  .animate-insight-spin {
+    animation: insightSpin 0.8s linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes insightPulse {
+    0%, 100% { opacity: 0.5; transform: scale(0.95) translateZ(0); }
+    50%      { opacity: 1;   transform: scale(1.05) translateZ(0); }
+  }
+  .animate-insight-pulse {
+    animation: insightPulse 2s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  @keyframes subtitleSlideUp {
+    0%   { opacity: 0; transform: translateY(0.5em) translateZ(0); }
+    100% { opacity: 1; transform: translateY(0) translateZ(0); }
+  }
+  .animate-subtitle-slide-up {
+    animation: subtitleSlideUp 0.3s ease-out forwards;
+    will-change: transform, opacity;
+  }
+
   .dialog-overlay-in  { animation: dialogFadeIn 0.2s ease-out forwards; }
   .dialog-overlay-out { animation: dialogFadeOut 0.15s ease-in forwards; }
   .dialog-card-in     { animation: dialogCardIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity; }

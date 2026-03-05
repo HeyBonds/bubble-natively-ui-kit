@@ -6,6 +6,7 @@ import FunZoneSection from './FunZoneSection';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
 import { THEMES, DARK_MODE_OPTIONS, DARK_MODE_LABELS, getSystemTheme } from '../theme';
 import SimulatorSection from './SimulatorSection';
+import InsightFlow from './insight/InsightFlow';
 import TestTTSScreen from './TestTTSScreen';
 import { APP_VERSION } from '../config';
 import CoinDeduction from './simulator/CoinDeduction';
@@ -338,17 +339,20 @@ const MainTabs = ({ onLogout }) => {
   const [navAction, setNavAction] = useState(null); // 'push', 'pop', or null
   const [simulatorActive, setSimulatorActive] = useState(false);
   const [simulatorFullScreen, setSimulatorFullScreen] = useState(false);
+  const [insightFullScreen, setInsightFullScreen] = useState(false);
   const prevFullScreenRef = useRef(false);
   const [tabBarAnim, setTabBarAnim] = useState(''); // '' | 'tab-bar-slide-down' | 'tab-bar-slide-up'
 
+  const anyFullScreen = simulatorFullScreen || insightFullScreen;
+
   useEffect(() => {
-    if (simulatorFullScreen && !prevFullScreenRef.current) {
+    if (anyFullScreen && !prevFullScreenRef.current) {
       setTabBarAnim('tab-bar-slide-down');
-    } else if (!simulatorFullScreen && prevFullScreenRef.current) {
+    } else if (!anyFullScreen && prevFullScreenRef.current) {
       setTabBarAnim('tab-bar-slide-up');
     }
-    prevFullScreenRef.current = simulatorFullScreen;
-  }, [simulatorFullScreen]);
+    prevFullScreenRef.current = anyFullScreen;
+  }, [anyFullScreen]);
 
   // Navigation Logic
   const push = (viewId, props = {}) => {
@@ -412,6 +416,8 @@ const MainTabs = ({ onLogout }) => {
       case 'fun':
         if (currentViewId === 'daily-question') {
           content = <DailyQuestion {...commonProps} />;
+        } else if (currentViewId === 'insight-flow') {
+          content = <InsightFlow type={currentViewProps.type} activityId={currentViewProps.activityId} theme={t} pop={pop} onFullScreenChange={setInsightFullScreen} />;
         } else if (currentViewId === 'activity-detail') {
           content = <PlaceholderSection title={currentViewProps.name || 'Activity'} theme={t} />;
         } else {

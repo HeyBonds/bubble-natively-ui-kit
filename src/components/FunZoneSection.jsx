@@ -142,7 +142,7 @@ const DailyQuestionBanner = ({ dailyQuestion, push, theme }) => {
 const ActivityCard = ({ activity, index, push, theme, animate }) => {
   const handleTap = () => {
     sendToBubble('bubble_fn_fun', 'open_activity', { activityId: activity.id });
-    push('activity-detail', { activityId: activity.id, name: activity.name });
+    push('insight-flow', { type: 'activity', activityId: activity.id });
   };
 
   return (
@@ -214,6 +214,42 @@ const FunZoneSection = ({ theme, push }) => {
             />
           ))}
         </div>
+      </div>
+
+      {/* Learn Section */}
+      <div className="mt-8">
+        <h2 className="font-jakarta font-bold text-[18px] mb-4" style={{ color: theme.textPrimary }}>
+          Learn
+        </h2>
+        <button
+          onClick={() => {
+            sendToBubble('bubble_fn_fun', 'open_learn');
+            push('insight-flow', { type: 'learn' });
+          }}
+          className={`w-full rounded-2xl text-left relative overflow-hidden border-2 border-solid ${animate ? 'animate-fade-in' : ''}`}
+          style={{
+            opacity: animate ? 0 : 1,
+            animationDelay: animate ? '300ms' : undefined,
+            background: theme.surface,
+            borderColor: '#E44B8E',
+            boxShadow: `0 4px 0 ${theme.cardShadow}`,
+          }}
+        >
+          <div className="py-5 pl-5 pr-24 min-h-[100px]">
+            <p className="font-jakarta font-extrabold text-[18px] mb-1.5" style={{ color: theme.textPrimary }}>
+              Get an Insight
+            </p>
+            <p className="font-poppins text-[13px] leading-snug" style={{ color: theme.textSecondary }}>
+              Answer 3 quick questions and receive a personalized insight
+            </p>
+          </div>
+          <div
+            className="absolute -bottom-2 -right-2 w-[80px] h-[80px] rounded-full flex items-center justify-center"
+            style={{ background: '#E44B8E' }}
+          >
+            <span className="text-[36px] leading-none">{'\uD83D\uDCA1'}</span>
+          </div>
+        </button>
       </div>
     </div>
   );
