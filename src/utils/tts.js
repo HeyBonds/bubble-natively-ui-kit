@@ -1,18 +1,16 @@
 /**
  * TTS Streaming Module — singleton, event-driven, reusable.
  *
- * Pattern mirrors src/utils/realtime.js:
- * - Plain object module (`const TTS = {}`)
- * - Module-level `_listeners` Set for event subscription
- * - All audio / MediaSource / animation state managed internally
- * - React components consume via useTTS hook or direct event subscription
+ * Playback backends (auto-detected):
+ *   1. MediaSource / ManagedMediaSource — progressive MP3 streaming (desktop, Android, iOS 17.1+)
+ *   2. Web Audio API + raw PCM — chunk-by-chunk playback (iOS 16 and older without MSE)
  *
  * Public API:
- *   TTS.start({ apiKey, text })  — stream MP3 via MediaSource
+ *   TTS.start({ apiKey, text })  — stream audio
  *   TTS.stop()                   — abort + cleanup
- *   TTS.pause()                  — pause audio + animation loop
- *   TTS.resume()                 — resume audio + animation loop
- *   TTS.setSpeed(rate)            — set playback speed (persists across start/stop)
+ *   TTS.pause()                  — pause playback
+ *   TTS.resume()                 — resume playback
+ *   TTS.setSpeed(rate)           — set playback speed
  *   TTS.unlockAudio()            — play silent WAV (call from user gesture)
  *
  * Events emitted (shape: { type, ts, data }):
@@ -27,6 +25,16 @@ const TTS = {};
 
 const TTS_URL = 'https://daphn-m8o8ki4f-eastus2.openai.azure.com/openai/deployments/gpt-4o-mini-tts/audio/speech?api-version=2025-03-01-preview';
 const TTS_VOICE = 'echo';
+const PCM_SAMPLE_RATE = 24000; // Azure raw PCM: 24kHz 16-bit mono
+
+// Feature-detect: ManagedMediaSource (iOS 17.1+) → MediaSource (desktop/Android) → null (PCM fallback)
+/* global ManagedMediaSource */
+const MSConstructor = typeof ManagedMediaSource !== 'undefined' ? ManagedMediaSource
+  : typeof MediaSource !== 'undefined' ? MediaSource
+  : null;
+const _isManagedMS = typeof ManagedMediaSource !== 'undefined';
+const TTS_BACKEND = _isManagedMS ? 'mms' : MSConstructor ? 'mse' : 'pcm';
+console.log('[TTS] Audio backend:', TTS_BACKEND);
 
 // ── Event emitter ───────────────────────────────────────────────────
 
@@ -50,21 +58,34 @@ export function offTTSEvent(callback) {
 // ── Module-level state ──────────────────────────────────────────────
 
 const state = {
+  // Shared
+  abortController: null,
+  animFrameId: null,
+  timings: [],
+  totalDuration: 0,
+  status: 'idle',
+  cleaningUp: false,
+  speed: 1,
+
+  // MediaSource path
   audio: null,
   mediaSource: null,
   sourceBuffer: null,
   objectUrl: null,
-  abortController: null,
-  animFrameId: null,
   pendingChunks: [],
   streamDone: false,
-  timings: [],
-  totalDuration: 0,
   durationChangeHandler: null,
   endedHandler: null,
-  status: 'idle',
-  cleaningUp: false,
-  speed: 1,
+
+  // PCM / Web Audio path
+  audioCtx: null,
+  pcmNextPlayTime: 0,       // AudioContext time for next chunk
+  pcmStartCtxTime: 0,       // AudioContext time when first chunk started
+  pcmAudioOffset: 0,        // accumulated audio seconds at last speed change
+  pcmScheduledDuration: 0,  // total audio seconds scheduled
+  pcmStreamDone: false,
+  pcmLeftover: null,         // leftover byte from odd-length chunk
+  pcmSources: [],            // active AudioBufferSourceNodes (for speed changes)
 };
 
 // ── Sentence utilities ──────────────────────────────────────────────
@@ -85,7 +106,7 @@ function calculateTimings(sentences, totalDuration) {
   });
 }
 
-// ── SourceBuffer chunk flushing ─────────────────────────────────────
+// ── SourceBuffer chunk flushing (MediaSource path) ──────────────────
 
 function flushPendingChunks() {
   const sb = state.sourceBuffer;
@@ -96,17 +117,23 @@ function flushPendingChunks() {
 
 // ── Animation / progress loop ───────────────────────────────────────
 
+function getElapsed() {
+  if (state.audioCtx) {
+    // PCM path: compute from AudioContext clock
+    return state.pcmAudioOffset
+      + (state.audioCtx.currentTime - state.pcmStartCtxTime) * state.speed;
+  }
+  return state.audio ? state.audio.currentTime : 0;
+}
+
 function startAnimationLoop() {
   const tick = () => {
-    const audio = state.audio;
-    if (!audio) return;
-    const elapsed = audio.currentTime;
+    const elapsed = getElapsed();
     const total = state.totalDuration || 1;
     const percent = Math.min(elapsed / total, 1);
 
     TTS.emit('progress', { elapsed, total, percent });
 
-    // Emit transcript with sentence states
     if (state.timings.length) {
       TTS.emit('transcript', {
         sentences: state.timings.map(t => ({
@@ -116,8 +143,18 @@ function startAnimationLoop() {
       });
     }
 
-    // done detection is handled by the 'ended' event on the audio element;
-    // the loop just keeps emitting progress/transcript until then
+    // PCM done detection: all chunks scheduled + playback past last scheduled time
+    if (state.audioCtx && state.pcmStreamDone) {
+      if (state.audioCtx.currentTime >= state.pcmNextPlayTime) {
+        if (state.status === 'streaming' || state.status === 'paused') {
+          state.status = 'done';
+          TTS.emit('progress', { elapsed: state.totalDuration, total: state.totalDuration, percent: 1 });
+          TTS.emit('status', { status: 'done' });
+        }
+        return;
+      }
+    }
+
     if (state.status === 'done') return;
     state.animFrameId = requestAnimationFrame(tick);
   };
@@ -142,16 +179,14 @@ function cleanup() {
     state.animFrameId = null;
   }
 
-  // Drain pending chunks
+  // ── MediaSource path cleanup ──
   state.pendingChunks = [];
   state.streamDone = false;
 
-  // Remove updateend listener
   if (state.sourceBuffer) {
     try { state.sourceBuffer.removeEventListener('updateend', flushPendingChunks); } catch { /* ignore */ }
   }
 
-  // Remove durationchange + ended listeners
   if (state.audio) {
     if (state.durationChangeHandler) {
       try { state.audio.removeEventListener('durationchange', state.durationChangeHandler); } catch { /* ignore */ }
@@ -161,47 +196,49 @@ function cleanup() {
       try { state.audio.removeEventListener('ended', state.endedHandler); } catch { /* ignore */ }
       state.endedHandler = null;
     }
+    try { state.audio.pause(); state.audio.src = ''; } catch { /* ignore */ }
   }
 
-  // Pause audio
-  if (state.audio) {
-    try {
-      state.audio.pause();
-      state.audio.src = '';
-    } catch { /* ignore */ }
-  }
-
-  // End MediaSource stream
   if (state.mediaSource && state.mediaSource.readyState === 'open') {
     try { state.mediaSource.endOfStream(); } catch { /* ignore */ }
   }
   state.mediaSource = null;
   state.sourceBuffer = null;
 
-  // Revoke object URL
   if (state.objectUrl) {
     URL.revokeObjectURL(state.objectUrl);
     state.objectUrl = null;
   }
 
-  // Remove audio element from DOM
   if (state.audio && state.audio.parentNode) {
     state.audio.remove();
   }
   state.audio = null;
 
+  // ── PCM / Web Audio path cleanup ──
+  if (state.audioCtx) {
+    try { state.audioCtx.close(); } catch { /* ignore */ }
+    state.audioCtx = null;
+  }
+  state.pcmSources = [];
+  state.pcmNextPlayTime = 0;
+  state.pcmStartCtxTime = 0;
+  state.pcmAudioOffset = 0;
+  state.pcmScheduledDuration = 0;
+  state.pcmStreamDone = false;
+  state.pcmLeftover = null;
+
+  // ── Shared ──
   state.timings = [];
   state.totalDuration = 0;
-
   state.status = 'idle';
   state.cleaningUp = false;
   TTS.emit('status', { status: 'idle' });
 }
 
-// ── Audio element management ────────────────────────────────────────
+// ── Audio element management (MediaSource path) ─────────────────────
 
 function getOrCreateAudio() {
-  // Reuse existing element (e.g. from unlockAudio)
   let el = document.getElementById('ttsAudio');
   if (el) {
     state.audio = el;
@@ -226,8 +263,19 @@ TTS.unlockAudio = function () {
 };
 
 TTS.setSpeed = function (rate) {
+  const prev = state.speed;
   state.speed = rate;
-  if (state.audio) state.audio.playbackRate = rate;
+
+  if (state.audio) {
+    // MediaSource path
+    state.audio.playbackRate = rate;
+  } else if (state.audioCtx) {
+    // PCM path: update elapsed tracking
+    state.pcmAudioOffset += (state.audioCtx.currentTime - state.pcmStartCtxTime) * prev;
+    state.pcmStartCtxTime = state.audioCtx.currentTime;
+    // Update all active source nodes
+    state.pcmSources.forEach(s => { s.playbackRate.value = rate; });
+  }
 };
 
 TTS.stop = function () {
@@ -236,7 +284,11 @@ TTS.stop = function () {
 
 TTS.pause = function () {
   if (state.status !== 'streaming') return;
-  if (state.audio) state.audio.pause();
+  if (state.audioCtx) {
+    state.audioCtx.suspend();
+  } else if (state.audio) {
+    state.audio.pause();
+  }
   if (state.animFrameId) {
     cancelAnimationFrame(state.animFrameId);
     state.animFrameId = null;
@@ -246,8 +298,12 @@ TTS.pause = function () {
 };
 
 TTS.resume = function () {
-  if (state.status !== 'paused' || !state.audio) return;
-  state.audio.play().catch(() => {});
+  if (state.status !== 'paused') return;
+  if (state.audioCtx) {
+    state.audioCtx.resume();
+  } else if (state.audio) {
+    state.audio.play().catch(() => {});
+  }
   startAnimationLoop();
   state.status = 'streaming';
   TTS.emit('status', { status: 'streaming' });
@@ -281,7 +337,7 @@ TTS.start = async function ({ apiKey, text }) {
     sentences: sentences.map(s => ({ text: s, state: 'upcoming' })),
   });
 
-  // Clean up previous MediaSource + object URL (in case cleanup didn't run)
+  // Clean up previous MediaSource + object URL
   if (state.mediaSource && state.mediaSource.readyState === 'open') {
     try { state.mediaSource.endOfStream(); } catch { /* ignore */ }
   }
@@ -290,146 +346,283 @@ TTS.start = async function ({ apiKey, text }) {
     state.objectUrl = null;
   }
 
-  // Set up audio + MediaSource
-  const audio = getOrCreateAudio();
-  const mediaSource = new MediaSource();
-  state.mediaSource = mediaSource;
-  const url = URL.createObjectURL(mediaSource);
-  state.objectUrl = url;
-  audio.src = url;
-
   const abort = new AbortController();
   state.abortController = abort;
   if (state.animFrameId) cancelAnimationFrame(state.animFrameId);
 
   const startTime = performance.now();
-  let firstByteTime = null;
-  let totalBytes = 0;
 
   try {
-    // Wait for MediaSource to open (with abort + timeout safety)
-    await new Promise((resolve, reject) => {
-      if (mediaSource.readyState === 'open') { resolve(); return; }
-      const onOpen = () => { clearTimeout(timer); resolve(); };
-      const timer = setTimeout(() => {
-        mediaSource.removeEventListener('sourceopen', onOpen);
-        reject(new Error('MediaSource sourceopen timed out'));
-      }, 10000);
-      abort.signal.addEventListener('abort', () => {
-        clearTimeout(timer);
-        mediaSource.removeEventListener('sourceopen', onOpen);
-        reject(new DOMException('Aborted', 'AbortError'));
-      }, { once: true });
-      mediaSource.addEventListener('sourceopen', onOpen, { once: true });
-    });
-
-    const sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
-    state.sourceBuffer = sourceBuffer;
-    sourceBuffer.addEventListener('updateend', flushPendingChunks);
-
-    const res = await fetch(TTS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini-tts',
-        input: text,
-        voice: TTS_VOICE,
-        response_format: 'mp3',
-      }),
-      signal: abort.signal,
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`${res.status}: ${errText.slice(0, 300)}`);
+    if (MSConstructor) {
+      const audio = getOrCreateAudio();
+      await _startStreaming(audio, sentences, apiKey, text, abort, startTime);
+    } else {
+      await _startPCM(sentences, apiKey, text, abort, startTime);
     }
-
-    const reader = res.body.getReader();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      if (!firstByteTime) {
-        firstByteTime = performance.now();
-        // Register ended handler as authoritative done signal
-        const onEnded = () => {
-          if (state.status === 'streaming' || state.status === 'paused') {
-            if (state.animFrameId) { cancelAnimationFrame(state.animFrameId); state.animFrameId = null; }
-            state.status = 'done';
-            TTS.emit('progress', { elapsed: state.totalDuration, total: state.totalDuration, percent: 1 });
-            TTS.emit('status', { status: 'done' });
-          }
-        };
-        state.endedHandler = onEnded;
-        audio.addEventListener('ended', onEnded, { once: true });
-        audio.playbackRate = state.speed;
-        audio.play().catch((err) => {
-          if (err.name === 'NotAllowedError') {
-            TTS.emit('autoplay_blocked', {});
-          }
-        });
-        startAnimationLoop();
-      }
-
-      totalBytes += value.length;
-      state.pendingChunks.push(value);
-      flushPendingChunks();
-    }
-
-    // Wait for all pending chunks to be appended
-    await new Promise(resolve => {
-      const check = () => {
-        if (state.pendingChunks.length === 0 && state.sourceBuffer && !state.sourceBuffer.updating) {
-          resolve();
-        } else {
-          setTimeout(check, 50);
-        }
-      };
-      check();
-    });
-
-    if (mediaSource.readyState === 'open' && state.sourceBuffer && !state.sourceBuffer.updating) {
-      try { mediaSource.endOfStream(); } catch { /* ignore */ }
-    }
-
-    sourceBuffer.removeEventListener('updateend', flushPendingChunks);
-
-    const fetchDone = performance.now();
-    const realDuration = audio.duration && isFinite(audio.duration) ? audio.duration : state.totalDuration;
-    state.totalDuration = realDuration;
-    state.timings = calculateTimings(sentences, realDuration);
-    state.streamDone = true;
-
-    // Update timings as browser resolves MP3 duration (fires multiple times with MediaSource)
-    const onDurationChange = () => {
-      if (isFinite(audio.duration) && audio.duration > 0 && audio.duration !== state.totalDuration) {
-        state.totalDuration = audio.duration;
-        state.timings = calculateTimings(sentences, audio.duration);
-      }
-    };
-    state.durationChangeHandler = onDurationChange;
-    audio.addEventListener('durationchange', onDurationChange);
-
-    TTS.emit('stats', {
-      firstByte: firstByteTime ? Math.round(firstByteTime - startTime) : null,
-      totalFetch: Math.round(fetchDone - startTime),
-      duration: realDuration.toFixed(1),
-      size: `${(totalBytes / 1024).toFixed(0)}KB`,
-      sentenceCount: sentences.length,
-    });
   } catch (e) {
     if (e.name === 'AbortError') {
-      // Abort path — cleanup handles everything
       if (state.animFrameId) cancelAnimationFrame(state.animFrameId);
       state.animFrameId = null;
       return;
     }
-    console.error('TTS stream error:', e);
+    console.error('TTS error:', e);
     state.status = 'error';
     TTS.emit('status', { status: 'error' });
     TTS.emit('error', { message: e.message });
   }
 };
 
+// ── Streaming path (MediaSource / ManagedMediaSource) ────────────────
+
+async function _startStreaming(audio, sentences, apiKey, text, abort, startTime) {
+  const mediaSource = new MSConstructor();
+  state.mediaSource = mediaSource;
+
+  if (_isManagedMS) audio.disableRemotePlayback = true;
+
+  const url = URL.createObjectURL(mediaSource);
+  state.objectUrl = url;
+  audio.src = url;
+
+  let firstByteTime = null;
+  let totalBytes = 0;
+
+  await new Promise((resolve, reject) => {
+    if (mediaSource.readyState === 'open') { resolve(); return; }
+    const onOpen = () => { clearTimeout(timer); resolve(); };
+    const timer = setTimeout(() => {
+      mediaSource.removeEventListener('sourceopen', onOpen);
+      reject(new Error('MediaSource sourceopen timed out'));
+    }, 10000);
+    abort.signal.addEventListener('abort', () => {
+      clearTimeout(timer);
+      mediaSource.removeEventListener('sourceopen', onOpen);
+      reject(new DOMException('Aborted', 'AbortError'));
+    }, { once: true });
+    mediaSource.addEventListener('sourceopen', onOpen, { once: true });
+  });
+
+  const sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
+  state.sourceBuffer = sourceBuffer;
+  sourceBuffer.addEventListener('updateend', flushPendingChunks);
+
+  const res = await _fetchTTS(apiKey, text, abort, 'mp3');
+  const reader = res.body.getReader();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    if (!firstByteTime) {
+      firstByteTime = performance.now();
+      _attachEndedHandler(audio);
+      audio.playbackRate = state.speed;
+      audio.play().catch((err) => {
+        if (err.name === 'NotAllowedError') TTS.emit('autoplay_blocked', {});
+      });
+      startAnimationLoop();
+    }
+
+    totalBytes += value.length;
+    state.pendingChunks.push(value);
+    flushPendingChunks();
+  }
+
+  await new Promise(resolve => {
+    const check = () => {
+      if (state.pendingChunks.length === 0 && state.sourceBuffer && !state.sourceBuffer.updating) {
+        resolve();
+      } else {
+        setTimeout(check, 50);
+      }
+    };
+    check();
+  });
+
+  if (mediaSource.readyState === 'open' && state.sourceBuffer && !state.sourceBuffer.updating) {
+    try { mediaSource.endOfStream(); } catch { /* ignore */ }
+  }
+
+  sourceBuffer.removeEventListener('updateend', flushPendingChunks);
+  _finalizeStreamingDuration(audio, sentences, startTime, firstByteTime, totalBytes);
+}
+
+// ── PCM + Web Audio path (iOS without MSE) ───────────────────────────
+
+async function _startPCM(sentences, apiKey, text, abort, startTime) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioCtx({ sampleRate: PCM_SAMPLE_RATE });
+  state.audioCtx = audioCtx;
+  state.pcmSources = [];
+  state.pcmNextPlayTime = 0;
+  state.pcmStartCtxTime = 0;
+  state.pcmAudioOffset = 0;
+  state.pcmScheduledDuration = 0;
+  state.pcmStreamDone = false;
+  state.pcmLeftover = null;
+
+  // Resume context (autoplay policy — should be fine since called from user gesture flow)
+  if (audioCtx.state === 'suspended') {
+    await audioCtx.resume();
+  }
+
+  const res = await _fetchTTS(apiKey, text, abort, 'pcm');
+  const reader = res.body.getReader();
+
+  let firstByteTime = null;
+  let totalBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    if (!firstByteTime) {
+      firstByteTime = performance.now();
+      state.pcmStartCtxTime = audioCtx.currentTime;
+      state.pcmNextPlayTime = audioCtx.currentTime;
+      startAnimationLoop();
+    }
+
+    totalBytes += value.length;
+    _schedulePCMChunk(audioCtx, value);
+  }
+
+  // Flush any leftover byte (shouldn't happen with Azure PCM, but just in case)
+  state.pcmLeftover = null;
+  state.pcmStreamDone = true;
+
+  // Finalize duration from total scheduled audio
+  const realDuration = state.pcmScheduledDuration;
+  state.totalDuration = realDuration;
+  state.timings = calculateTimings(sentences, realDuration);
+  state.streamDone = true;
+
+  const fetchDone = performance.now();
+  TTS.emit('stats', {
+    firstByte: firstByteTime ? Math.round(firstByteTime - startTime) : null,
+    totalFetch: Math.round(fetchDone - startTime),
+    duration: realDuration.toFixed(1),
+    size: `${(totalBytes / 1024).toFixed(0)}KB`,
+    sentenceCount: sentences.length,
+  });
+}
+
+function _schedulePCMChunk(audioCtx, rawChunk) {
+  // Handle leftover byte from previous chunk (16-bit samples = 2 bytes each)
+  let data;
+  if (state.pcmLeftover) {
+    data = new Uint8Array(state.pcmLeftover.length + rawChunk.length);
+    data.set(state.pcmLeftover, 0);
+    data.set(rawChunk, state.pcmLeftover.length);
+    state.pcmLeftover = null;
+  } else {
+    data = rawChunk;
+  }
+
+  // If odd number of bytes, save the last byte for next chunk
+  if (data.length % 2 !== 0) {
+    state.pcmLeftover = data.slice(-1);
+    data = data.slice(0, -1);
+  }
+
+  if (data.length === 0) return;
+
+  // Copy into aligned buffer — fetch chunks may have non-zero byteOffset
+  // which breaks Int16Array (requires 2-byte alignment)
+  const aligned = new Uint8Array(data.length);
+  aligned.set(data);
+  const int16 = new Int16Array(aligned.buffer, 0, aligned.length / 2);
+
+  // Convert 16-bit signed integers to 32-bit floats
+  const float32 = new Float32Array(int16.length);
+  for (let i = 0; i < int16.length; i++) {
+    float32[i] = int16[i] / 32768.0;
+  }
+
+  // Create AudioBuffer and schedule
+  const audioBuffer = audioCtx.createBuffer(1, float32.length, PCM_SAMPLE_RATE);
+  audioBuffer.getChannelData(0).set(float32);
+
+  const source = audioCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.playbackRate.value = state.speed;
+  source.connect(audioCtx.destination);
+
+  // Track active source for speed changes; remove when done
+  state.pcmSources.push(source);
+  source.onended = () => {
+    const idx = state.pcmSources.indexOf(source);
+    if (idx !== -1) state.pcmSources.splice(idx, 1);
+  };
+
+  const currentTime = audioCtx.currentTime;
+  if (state.pcmNextPlayTime < currentTime) {
+    state.pcmNextPlayTime = currentTime;
+  }
+
+  source.start(state.pcmNextPlayTime);
+  state.pcmNextPlayTime += audioBuffer.duration / state.speed;
+  state.pcmScheduledDuration += audioBuffer.duration;
+}
+
+// ── Shared helpers ───────────────────────────────────────────────────
+
+async function _fetchTTS(apiKey, text, abort, format) {
+  const res = await fetch(TTS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini-tts',
+      input: text,
+      voice: TTS_VOICE,
+      response_format: format,
+    }),
+    signal: abort.signal,
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`${res.status}: ${errText.slice(0, 300)}`);
+  }
+  return res;
+}
+
+function _attachEndedHandler(audio) {
+  const onEnded = () => {
+    if (state.status === 'streaming' || state.status === 'paused') {
+      if (state.animFrameId) { cancelAnimationFrame(state.animFrameId); state.animFrameId = null; }
+      state.status = 'done';
+      TTS.emit('progress', { elapsed: state.totalDuration, total: state.totalDuration, percent: 1 });
+      TTS.emit('status', { status: 'done' });
+    }
+  };
+  state.endedHandler = onEnded;
+  audio.addEventListener('ended', onEnded, { once: true });
+}
+
+function _finalizeStreamingDuration(audio, sentences, startTime, firstByteTime, totalBytes) {
+  const fetchDone = performance.now();
+  const realDuration = audio.duration && isFinite(audio.duration) ? audio.duration : state.totalDuration;
+  state.totalDuration = realDuration;
+  state.timings = calculateTimings(sentences, realDuration);
+  state.streamDone = true;
+
+  const onDurationChange = () => {
+    if (isFinite(audio.duration) && audio.duration > 0 && audio.duration !== state.totalDuration) {
+      state.totalDuration = audio.duration;
+      state.timings = calculateTimings(sentences, audio.duration);
+    }
+  };
+  state.durationChangeHandler = onDurationChange;
+  audio.addEventListener('durationchange', onDurationChange);
+
+  TTS.emit('stats', {
+    firstByte: firstByteTime ? Math.round(firstByteTime - startTime) : null,
+    totalFetch: Math.round(fetchDone - startTime),
+    duration: realDuration.toFixed(1),
+    size: `${(totalBytes / 1024).toFixed(0)}KB`,
+    sentenceCount: sentences.length,
+  });
+}
+
+export { TTS_BACKEND };
 export default TTS;

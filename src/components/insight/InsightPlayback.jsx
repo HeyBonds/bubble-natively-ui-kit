@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import TTS from '../../utils/tts';
+import TTS, { TTS_BACKEND } from '../../utils/tts';
 import { useTTS } from '../../hooks/useTTS';
 import InsightLoader from './InsightLoader';
 
@@ -82,6 +82,7 @@ const InsightPlayback = ({ insightData, ttsApiKey, theme, onDone }) => {
   const showSubtitle = activeSentence && (ttsStatus === 'streaming' || ttsStatus === 'paused');
 
   const showPlayPause = ttsStatus === 'streaming' || ttsStatus === 'paused';
+  const showSpeed = TTS_BACKEND !== 'pcm';
   const showReplay = ttsStatus === 'done';
 
   // Show loader overlay until audio is actually playing
@@ -167,13 +168,15 @@ const InsightPlayback = ({ insightData, ttsApiKey, theme, onDone }) => {
                   </svg>
                 )}
               </button>
-              <button
-                onClick={handleSpeedCycle}
-                className="h-12 px-4 rounded-full flex items-center justify-center font-jakarta font-bold text-[13px]"
-                style={{ background: ins.controlBg, color: ins.controlIcon }}
-              >
-                {SPEED_OPTIONS[speedIndex]}x
-              </button>
+              {showSpeed && (
+                <button
+                  onClick={handleSpeedCycle}
+                  className="h-12 px-4 rounded-full flex items-center justify-center font-jakarta font-bold text-[13px]"
+                  style={{ background: ins.controlBg, color: ins.controlIcon }}
+                >
+                  {SPEED_OPTIONS[speedIndex]}x
+                </button>
+              )}
             </>
           )}
           {showReplay && (

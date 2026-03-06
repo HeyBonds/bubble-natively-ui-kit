@@ -1,5 +1,9 @@
+/* global NativelyAppleSignInService */
 import React from 'react';
 import { sendToBubble } from '../utils/bubble';
+
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 const GoogleIcon = () => (
     <svg width="20" height="20" viewBox="0 0 48 48">
@@ -10,10 +14,32 @@ const GoogleIcon = () => (
     </svg>
 );
 
+const AppleIcon = ({ color }) => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill={color}>
+        <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.52-3.23 0-1.44.64-2.2.52-3.06-.4C3.79 16.17 4.36 9.63 8.7 9.38c1.28.06 2.15.72 2.9.76.98-.2 1.92-.77 2.98-.7 1.27.1 2.23.6 2.84 1.53-2.6 1.54-1.98 4.93.37 5.87-.46 1.17-.67 1.7-1.27 2.72-.84 1.4-2.02 2.8-3.47 2.72zm-.1-14.2c-1.7.13-3.16 1.86-2.96 3.67 1.58.13 3.24-1.63 2.96-3.67z"/>
+    </svg>
+);
+
 const SignInScreen = ({ theme, onBack }) => {
     const handleGoogleSignIn = () => {
         localStorage.setItem('bonds_auth_pending', 'true');
         sendToBubble('bubble_fn_signin', 'google_signin');
+    };
+
+    const handleAppleSignIn = () => {
+        if (typeof NativelyAppleSignInService === 'undefined') return;
+        const appleService = new NativelyAppleSignInService();
+        appleService.signin((response) => {
+            if (!response.status) return;
+            localStorage.setItem('bonds_auth_pending', 'true');
+            sendToBubble('bubble_fn_signin', 'apple_signin', {
+                email: response.email,
+                subject: response.subject,
+                givenname: response.givenname,
+                familyname: response.familyname,
+                initial: response.initial,
+            });
+        });
     };
 
     return (
@@ -64,17 +90,32 @@ const SignInScreen = ({ theme, onBack }) => {
                     </p>
                 </div>
 
-                {/* Continue with Google button */}
-                <button
-                    onClick={handleGoogleSignIn}
-                    className="w-full h-[3.625rem] rounded-[2.5rem] bg-white flex items-center justify-center gap-3 shadow-md transform transition active:scale-95"
-                    style={{ border: '1px solid rgba(0,0,0,0.1)' }}
-                >
-                    <GoogleIcon />
-                    <span className="font-jakarta font-semibold text-[1rem] text-[#3c4043] tracking-[0.25px]">
-                        Continue with Google
-                    </span>
-                </button>
+                {/* SSO buttons */}
+                <div className="space-y-3">
+                    <button
+                        onClick={handleGoogleSignIn}
+                        className="w-full h-[3.625rem] rounded-[2.5rem] bg-white flex items-center justify-center gap-3 shadow-md transform transition active:scale-95"
+                        style={{ border: '1px solid rgba(0,0,0,0.1)' }}
+                    >
+                        <GoogleIcon />
+                        <span className="font-jakarta font-semibold text-[1rem] text-[#3c4043] tracking-[0.25px]">
+                            Continue with Google
+                        </span>
+                    </button>
+
+                    {isIOS && (
+                        <button
+                            onClick={handleAppleSignIn}
+                            className="w-full h-[3.625rem] rounded-[2.5rem] bg-black flex items-center justify-center gap-3 shadow-md transform transition active:scale-95"
+                            style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+                        >
+                            <AppleIcon color="#FFFFFF" />
+                            <span className="font-jakarta font-semibold text-[1rem] text-white tracking-[0.25px]">
+                                Continue with Apple
+                            </span>
+                        </button>
+                    )}
+                </div>
 
                 {/* Spacer before terms */}
                 <div className="flex-1 min-h-[1.25rem]"></div>

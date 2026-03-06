@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import TTS from '../../utils/tts';
+import TTS, { TTS_BACKEND } from '../../utils/tts';
 import { useTTS } from '../../hooks/useTTS';
 
 const SCORE_COLORS = ['#FF4B4B', '#FF8C00', '#FFD700', '#9ACD32', '#58CC02'];
@@ -336,13 +336,15 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
               </svg>
             )}
           </button>
-          <button
-            onClick={handleSpeedCycle}
-            className="h-11 px-3 rounded-full flex items-center justify-center font-jakarta font-bold text-[13px]"
-            style={{ background: sim.dotInactive, border: `1px solid ${sim.resultsBorder}`, color: sim.resultsTitle }}
-          >
-            {SPEED_OPTIONS[speedIndex]}x
-          </button>
+          {TTS_BACKEND !== 'pcm' && (
+            <button
+              onClick={handleSpeedCycle}
+              className="h-11 px-3 rounded-full flex items-center justify-center font-jakarta font-bold text-[13px]"
+              style={{ background: sim.dotInactive, border: `1px solid ${sim.resultsBorder}`, color: sim.resultsTitle }}
+            >
+              {SPEED_OPTIONS[speedIndex]}x
+            </button>
+          )}
         </div>
       )}
       {showReplay && showFooter && (
