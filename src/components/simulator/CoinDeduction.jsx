@@ -53,6 +53,7 @@ const CoinDeduction = ({ coinCount, coinCost = 4, onComplete }) => {
     try {
       const ctx = getCoinAudioCtx();
       if (!ctx || !coinBuffer) return;
+      if (ctx.state === 'suspended') ctx.resume();
       const now = ctx.currentTime;
       for (let i = 0; i < coinCost; i++) {
         const when = now + i * 0.22;

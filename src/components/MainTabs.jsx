@@ -372,6 +372,16 @@ const MainTabs = ({ onLogout }) => {
     });
   };
 
+  // Preserve scroll position per tab
+  const scrollRef = useRef(null);
+  const scrollPositions = useRef({});
+
+  const saveScrollPosition = () => {
+    if (scrollRef.current) {
+      scrollPositions.current[activeTab] = scrollRef.current.scrollTop;
+    }
+  };
+
   const switchTab = (tabId) => {
     if (tabId === activeTab) return;
 
@@ -380,6 +390,7 @@ const MainTabs = ({ onLogout }) => {
       if (window.appUI._simulatorRequestLeave) {
         const allowed = window.appUI._simulatorRequestLeave(() => {
           // Callback: user confirmed leave
+          saveScrollPosition();
           setNavAction('tab');
           setActiveTab(tabId);
         });
@@ -387,9 +398,20 @@ const MainTabs = ({ onLogout }) => {
       }
     }
 
+    // Save current scroll position before content swaps
+    saveScrollPosition();
     setNavAction('tab');
     setActiveTab(tabId);
   };
+
+  // Restore scroll position after new tab renders
+  const prevTab = useRef(activeTab);
+  useEffect(() => {
+    if (prevTab.current !== activeTab && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollPositions.current[activeTab] || 0;
+      prevTab.current = activeTab;
+    }
+  }, [activeTab]);
 
   // Render Current View
   const currentStack = stacks[activeTab];
@@ -477,7 +499,7 @@ const MainTabs = ({ onLogout }) => {
     <div className="w-full h-full font-poppins flex flex-col overflow-hidden" style={{ background: t.bg, transition: 'background 0.3s ease' }}>
 
       {/* Content Area (Scrollable) */}
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide relative overflow-x-hidden flex flex-col">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-hide relative overflow-x-hidden flex flex-col">
          {/* Simple header if deep in stack */}
          {currentStack.length > 1 && (
              <div className="absolute top-4 left-4 z-50">

@@ -1,6 +1,11 @@
 // Initialize Global Namespace
 window.appUI = window.appUI || {};
 
+// Natively iOS bridge shim — the native side calls window.set_storage_value_response
+// after every storage write, but the natively npm package doesn't always register it.
+// Prevents TypeError on iOS WKWebView.
+if (!window.set_storage_value_response) window.set_storage_value_response = () => {};
+
 // --- GLOBAL SETUP (Runs immediately) ---
 if (window.natively) window.natively.showProgress(false);
 

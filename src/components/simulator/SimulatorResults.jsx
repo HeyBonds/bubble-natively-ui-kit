@@ -5,10 +5,27 @@ import { useTTS } from '../../hooks/useTTS';
 const SCORE_COLORS = ['#FF4B4B', '#FF8C00', '#FFD700', '#9ACD32', '#58CC02'];
 const SPEED_OPTIONS = [1, 1.25, 1.5, 1.75, 2];
 
+// Shared AudioContext singleton for score beeps — created once, never closed.
+// On iOS WKWebView, new AudioContext() from a setTimeout starts suspended;
+// a singleton created + resumed earlier avoids this.
+let beepAudioCtx = null;
+function getBeepAudioCtx() {
+  if (beepAudioCtx && beepAudioCtx.state === 'closed') beepAudioCtx = null;
+  if (!beepAudioCtx) {
+    try {
+      beepAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (beepAudioCtx.state === 'suspended') beepAudioCtx.resume();
+    } catch { /* audio not available */ }
+  }
+  return beepAudioCtx;
+}
+
 // Play a short ascending-pitch beep via Web Audio API
 function playScoreBeep(index) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getBeepAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -20,8 +37,6 @@ function playScoreBeep(index) {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.15);
-    // Clean up after sound plays
-    osc.onended = () => ctx.close();
   } catch { /* audio not available */ }
 }
 
