@@ -44,6 +44,18 @@ const initGlobals = () => {
 };
 initGlobals();
 
+// --- FIREBASE CRASH TRACKING (Runs before React) ---
+initFirebase();
+
+window.addEventListener('error', (event) => {
+  logCrash('uncaught', event.error || event.message, event.filename, String(event.lineno));
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+  logCrash('unhandled_rejection', error);
+});
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { NativelyStorage } from 'natively';
@@ -57,6 +69,7 @@ import RT from './utils/realtime';
 import TTS from './utils/tts';
 import { UserProvider } from './contexts/UserContext';
 import { DailyQuestionProvider } from './contexts/DailyQuestionContext';
+import { initFirebase, logCrash } from './utils/firebase';
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
