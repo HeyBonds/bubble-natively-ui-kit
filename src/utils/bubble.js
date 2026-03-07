@@ -13,6 +13,8 @@
  * Bubble side: parse output2 with JSON.parse() in a "Run JavaScript" step,
  * or use :extract with Regex for individual fields.
  */
+import { logError } from './firebase';
+
 export const sendToBubble = (fnName, action, data = {}) => {
     const payload = {
         output1: String(action),
@@ -24,5 +26,6 @@ export const sendToBubble = (fnName, action, data = {}) => {
         window.BubbleBridge.send(fnName, payload);
     } else {
         console.warn(`⚠️ BubbleBridge not found [${fnName}]`, { action, ...data });
+        logError('bubble_bridge', new Error(`BubbleBridge not found: ${fnName}`), action);
     }
 };

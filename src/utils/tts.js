@@ -21,6 +21,8 @@
  *   error     → { message }
  */
 
+import { logError } from './firebase';
+
 const TTS = {};
 
 const TTS_URL = 'https://daphn-m8o8ki4f-eastus2.openai.azure.com/openai/deployments/gpt-4o-mini-tts/audio/speech?api-version=2025-03-01-preview';
@@ -43,7 +45,7 @@ const _listeners = new Set();
 TTS.emit = function (type, data) {
   const evt = { type, ts: Date.now(), data: data || {} };
   _listeners.forEach(fn => {
-    try { fn(evt); } catch (e) { console.error('[TTS] Listener error:', e); }
+    try { fn(evt); } catch (e) { console.error('[TTS] Listener error:', e); logError('tts', e, 'event listener'); }
   });
 };
 
@@ -366,6 +368,7 @@ TTS.start = async function ({ apiKey, text }) {
       return;
     }
     console.error('TTS error:', e);
+    logError('tts', e, `TTS.start (${TTS_BACKEND})`);
     state.status = 'error';
     TTS.emit('status', { status: 'error' });
     TTS.emit('error', { message: e.message });
