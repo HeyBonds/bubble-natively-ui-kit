@@ -22,6 +22,8 @@
  * - Stage 3: Evaluation (Silent JSON) -> ends session after evaluation JSON
  */
 
+import { logError } from './firebase';
+
 const RT = {};
 
 // ============================================================================
@@ -167,7 +169,7 @@ const _listeners = new Set();
 RT.emit = function (type, data) {
   const evt = { type, ts: Date.now(), data: data || {} };
   _listeners.forEach(fn => {
-    try { fn(evt); } catch (e) { console.error('[RT] Listener error:', e); }
+    try { fn(evt); } catch (e) { console.error('[RT] Listener error:', e); logError('realtime', e, 'event listener'); }
   });
 };
 
@@ -218,6 +220,7 @@ function safeSend(message) {
     state.connection.dc.send(messageStr);
     return true;
   } catch (e) {
+    logError('realtime', e, 'data channel send');
     RT.emit("error", {
       message: e.message,
       code: "DATA_CHANNEL_SEND_ERROR",
@@ -1058,6 +1061,7 @@ function handleDataChannelMessage(e) {
       handler(evt);
     }
   } catch (err) {
+    logError('realtime', err, 'WebRTC data channel message');
     if (err instanceof SyntaxError) {
       RT.emit("error", {
         message: `JSON parse error: ${err.message}`,
@@ -1212,6 +1216,7 @@ async function setupMicrophone() {
 
     return state.connection.micStream;
   } catch (err) {
+    logError('realtime', err, 'session setup');
     // Clean up on error
     if (state.connection.micStream) {
       state.connection.micStream.getTracks().forEach(t => t.stop());
@@ -1679,6 +1684,7 @@ async function stopSession(reason) {
       // SESSION_COMPLETED is emitted by the caller (e.g., after evaluation JSON)
     }
   } catch (e) {
+    logError('realtime', e, 'cleanup');
     // Only emit error if we're not already in cleanup (prevents recursion)
     if (!state.cleaningUp) {
       RT.emit("error", {
@@ -1735,6 +1741,7 @@ RT.start = async function (ephemeralToken) {
 
     await setupWebRTCConnection(ephemeralToken);
   } catch (err) {
+    logError('realtime', err, 'RT operation');
     // Handle specific microphone permission errors
     let errorCode = "UNKNOWN_ERROR";
     let userMessage = err.message || String(err);
