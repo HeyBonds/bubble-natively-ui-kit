@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useUser } from '../contexts/UserContext';
 import { useDailyQuestion } from '../contexts/DailyQuestionContext';
 import { sendToBubble } from '../utils/bubble';
@@ -20,6 +21,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
     const coinRef = useRef(null);
     const targetCoinsRef = useRef(null);
     const animatingCoinsRef = useRef(false);
+    const [blockInteraction, setBlockInteraction] = useState(false);
     const timersRef = useRef([]);
     const overlaysRef = useRef([]);
     const rafRef = useRef(null);
@@ -46,6 +48,8 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
             overlaysRef.current = [];
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
             animatingCoinsRef.current = false;
+            // Restore native swipe navigation in case unmount happens mid-animation
+            if (window.natively) window.natively.setAppSwipeNavigation(true);
         };
     }, []);
 
@@ -60,6 +64,8 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
 
         setIsVoted(true);
         setSelectedAnswer(index);
+        setBlockInteraction(true);
+        if (window.natively) window.natively.setAppSwipeNavigation(false);
 
         addTimer(() => {
             setShowFooterAfter(true);
@@ -150,6 +156,8 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
             overlay.remove();
             dimOverlay.remove();
             overlaysRef.current = overlaysRef.current.filter(el => el !== overlay && el !== dimOverlay);
+            setBlockInteraction(false);
+            if (window.natively) window.natively.setAppSwipeNavigation(true);
 
             // Pulse the target coin
             if (coinRef.current) {
@@ -192,6 +200,12 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
 
     return (
         <div className="relative w-full h-full overflow-x-hidden font-poppins flex flex-col" style={{ background: theme.bg }}>
+
+            {/* Block all interactions during animation sequence (portal escapes will-change stacking context) */}
+            {blockInteraction && createPortal(
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9997 }} />,
+                document.body
+            )}
 
             {/* Coins — top right, clears back button on left */}
             <div className="absolute top-5 right-5 z-20 flex items-center gap-2">

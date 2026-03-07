@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import COIN_SOUND_URL from '../../assets/coin-sound';
 
 // Shared AudioContext singleton — reuses the same pattern as FaceOverlay's
@@ -45,6 +46,12 @@ const CoinDeduction = ({ coinCount, coinCost = 4, onComplete }) => {
 
   // Warm up AudioContext + decode MP3 buffer on mount (~1.6s before sounds needed)
   useEffect(() => { loadCoinBuffer(); }, []);
+
+  // Disable native swipe/back navigation for animation duration
+  useEffect(() => {
+    if (window.natively) window.natively.setAppSwipeNavigation(false);
+    return () => { if (window.natively) window.natively.setAppSwipeNavigation(true); };
+  }, []);
 
   const sourcesRef = useRef([]);
 
@@ -121,6 +128,12 @@ const CoinDeduction = ({ coinCount, coinCost = 4, onComplete }) => {
   const isExit = phase === 'exit';
 
   return (
+    <>
+    {/* Block all interactions (tab bar, back button) while animation plays */}
+    {createPortal(
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9997 }} />,
+      document.body
+    )}
     <div
       className="flex flex-col items-center justify-center h-full"
       style={{
@@ -212,6 +225,7 @@ const CoinDeduction = ({ coinCount, coinCost = 4, onComplete }) => {
         coins
       </p>
     </div>
+    </>
   );
 };
 
