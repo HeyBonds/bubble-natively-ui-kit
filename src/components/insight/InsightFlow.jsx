@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { sendToBubble } from '../../utils/bubble';
+import { track } from '../../utils/analytics';
 import TTS from '../../utils/tts';
 import Dialog from '../Dialog';
 import InsightQuestions from './InsightQuestions';
@@ -68,6 +69,7 @@ const InsightFlow = ({ type, activityId, theme, pop, onFullScreenChange }) => {
   // Fetch questions on mount for learn type
   useEffect(() => {
     if (type === 'learn') {
+      track('Insight Flow Started', { type: 'learn' });
       sendToBubble('bubble_fn_insight', 'fetch_questions');
     }
   }, [type]);
@@ -75,19 +77,20 @@ const InsightFlow = ({ type, activityId, theme, pop, onFullScreenChange }) => {
   // Trigger generation for activity type on mount
   useEffect(() => {
     if (type === 'activity') {
+      track('Insight Flow Started', { type: 'activity', activityId });
       sendToBubble('bubble_fn_insight', 'generate', { type: 'activity', activityId });
     }
   }, [type, activityId]);
 
   const handleAnswer = useCallback((answer) => {
+    track('Insight Question Answered', { answer });
     const newAnswers = [...answers, answer];
     setAnswers(newAnswers);
 
-    // Send each answer to Bubble
     sendToBubble('bubble_fn_insight', 'answer', answer);
 
-    // After last question, start generating
     if (newAnswers.length >= questions.length) {
+      track('Insight Generated', { type: 'learn' });
       setPhase('loading');
       sendToBubble('bubble_fn_insight', 'generate', {
         type: 'learn',
@@ -105,6 +108,7 @@ const InsightFlow = ({ type, activityId, theme, pop, onFullScreenChange }) => {
   }, []);
 
   const confirmClose = useCallback(() => {
+    track('Insight Flow Closed');
     TTS.stop();
     if (ambientRef.current) { ambientRef.current.pause(); ambientRef.current.src = ''; }
     setShowCloseDialog(false);
@@ -117,6 +121,7 @@ const InsightFlow = ({ type, activityId, theme, pop, onFullScreenChange }) => {
   }, []);
 
   const handlePlaybackDone = useCallback(() => {
+    track('Insight Playback Completed');
     sendToBubble('bubble_fn_insight', 'playback_complete');
     pop();
   }, [pop]);

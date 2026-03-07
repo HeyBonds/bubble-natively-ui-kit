@@ -12,6 +12,7 @@ import { APP_VERSION } from '../config';
 import CoinDeduction from './simulator/CoinDeduction';
 import { sendToBubble } from '../utils/bubble';
 import { useUser } from '../contexts/UserContext';
+import { track, screen as trackScreen } from '../utils/analytics';
 
 // ── Reusable profile building blocks ──────────────────────────────────
 
@@ -54,8 +55,8 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }
 
   const handleLogout = () => {
     sendToBubble('bubble_fn_profile', 'logout');
-    localStorage.clear();
     if (onLogout) onLogout();
+    localStorage.clear();
   };
 
   return (
@@ -86,7 +87,7 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }
             </div>
             <span className="font-semibold text-[14px]" style={{ color: theme.textSecondary }}>No partner connected</span>
           </div>
-          <button className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#E44B8E', color: '#E44B8E' }}>
+          <button onClick={() => track('Element Clicked', { screen: 'profile', element_type: 'button', element: 'invite_partner' })} className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#E44B8E', color: '#E44B8E' }}>
             Invite
           </button>
         </div>
@@ -275,7 +276,7 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }
         <button onClick={handleLogout} className="font-bold text-[14px] py-2 px-8 rounded-full border border-solid" style={{ borderColor: theme.border, color: theme.textSecondary }}>
           Log Out
         </button>
-        <button className="text-[12px] font-semibold" style={{ color: theme.textMuted }}>
+        <button onClick={() => track('Element Clicked', { screen: 'profile', element_type: 'button', element: 'delete_account' })} className="text-[12px] font-semibold" style={{ color: theme.textMuted }}>
           Delete Account
         </button>
         <p className="text-[10px] mt-2" style={{ color: theme.textMuted }}>{APP_VERSION}</p>
@@ -304,6 +305,7 @@ const MainTabs = ({ onLogout }) => {
   });
 
   const setDarkModePref = (val) => {
+    track('Element Clicked', { screen: 'profile', element_type: 'toggle', element: 'dark_mode', preference: val });
     setDarkModePrefRaw(val);
     storage.setItem(STORAGE_KEY, val);
   };
@@ -382,6 +384,11 @@ const MainTabs = ({ onLogout }) => {
     }
   };
 
+  // Track initial tab on mount
+  useEffect(() => {
+    trackScreen(activeTab);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const switchTab = (tabId) => {
     if (tabId === activeTab) return;
 
@@ -389,19 +396,21 @@ const MainTabs = ({ onLogout }) => {
     if (simulatorActive && activeTab === 'simulator') {
       if (window.appUI._simulatorRequestLeave) {
         const allowed = window.appUI._simulatorRequestLeave(() => {
-          // Callback: user confirmed leave
+          track('Element Clicked', { screen: 'main', element_type: 'tab', element: tabId });
           saveScrollPosition();
           setNavAction('tab');
           setActiveTab(tabId);
+          trackScreen(tabId);
         });
         if (!allowed) return; // blocked, dialog shown
       }
     }
 
-    // Save current scroll position before content swaps
+    track('Element Clicked', { screen: 'main', element_type: 'tab', element: tabId });
     saveScrollPosition();
     setNavAction('tab');
     setActiveTab(tabId);
+    trackScreen(tabId);
   };
 
   // Restore scroll position after new tab renders
@@ -503,7 +512,7 @@ const MainTabs = ({ onLogout }) => {
          {/* Simple header if deep in stack */}
          {currentStack.length > 1 && (
              <div className="absolute top-4 left-4 z-50">
-                 <button onClick={pop} className="p-2 rounded-full border border-solid transition-colors" style={{ background: t.glassBg, borderColor: t.glassBorder, color: t.textPrimary }}>
+                 <button onClick={() => { track('Element Clicked', { screen: activeTab, element_type: 'button', element: 'back' }); pop(); }} className="p-2 rounded-full border border-solid transition-colors" style={{ background: t.glassBg, borderColor: t.glassBorder, color: t.textPrimary }}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
                  </button>
              </div>

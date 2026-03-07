@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useUser } from '../contexts/UserContext';
 import { useDailyQuestion } from '../contexts/DailyQuestionContext';
 import { sendToBubble } from '../utils/bubble';
+import { track } from '../utils/analytics';
 
 const DUOLINGO_GREEN = '#58CC02';
 const GREEN_SHADOW = '#46A302';
@@ -39,6 +40,10 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
         if (!animatingCoinsRef.current) setCoins(userCoins || 0);
     }, [userCoins]);
 
+    useEffect(() => {
+        if (questionId) track('Daily Question Viewed', { questionId, category });
+    }, [questionId, category]);
+
     // Cleanup all pending timers, DOM overlays, and rAF on unmount
     useEffect(() => {
         return () => {
@@ -61,6 +66,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
 
     const handleVote = (_answerText, index) => {
         if (isVoted) return;
+        track('Daily Question Voted', { questionId, index });
 
         setIsVoted(true);
         setSelectedAnswer(index);
@@ -195,6 +201,7 @@ const DailyQuestion = ({ theme, pop: _pop }) => {
     };
 
     const handleStart = () => {
+        track('Element Clicked', { screen: 'daily_question', element_type: 'button', element: 'start_planning', questionId });
         sendToBubble('bubble_fn_daily_question', 'start_planning');
     };
 

@@ -1,11 +1,13 @@
 import React from 'react';
 import { sendToBubble } from '../utils/bubble';
+import { track } from '../utils/analytics';
 import { BUBBLE_CDN, APP_VERSION } from '../config';
 
-const WelcomeScreen = ({ deviceId: _deviceId, onAction }) => {
+const WelcomeScreen = ({ onAction }) => {
     const bgImage = `${BUBBLE_CDN}/f1744960311608x780031988693140400/BG%20%281%29.png`;
 
     const handleAction = (action) => {
+        track('Element Clicked', { screen: 'welcome', element_type: 'button', element: action === 'go' ? 'lets_go' : 'sign_in' });
         if (action !== 'signin') {
             sendToBubble('bubble_fn_welcome', action);
         }

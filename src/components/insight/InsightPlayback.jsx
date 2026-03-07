@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { track } from '../../utils/analytics';
 import TTS, { TTS_BACKEND } from '../../utils/tts';
 import { useTTS } from '../../hooks/useTTS';
 import InsightLoader from './InsightLoader';
@@ -39,6 +40,7 @@ const InsightPlayback = ({ insightData, ttsApiKey, theme, onDone }) => {
   }, [ttsStatus]);
 
   const handlePlayPause = useCallback(() => {
+    track('Element Clicked', { screen: 'insight_playback', element_type: 'button', element: isPlaying ? 'pause' : 'play' });
     if (isPlaying) {
       if (ttsStatus === 'streaming') TTS.pause();
       if (videoRef.current) videoRef.current.pause();
@@ -58,11 +60,13 @@ const InsightPlayback = ({ insightData, ttsApiKey, theme, onDone }) => {
 
   const handleSpeedCycle = useCallback(() => {
     const next = (speedIndex + 1) % SPEED_OPTIONS.length;
+    track('Element Clicked', { screen: 'insight_playback', element_type: 'button', element: 'speed', speed: SPEED_OPTIONS[next] });
     setSpeedIndex(next);
     TTS.setSpeed(SPEED_OPTIONS[next]);
   }, [speedIndex]);
 
   const handleReplay = useCallback(() => {
+    track('Element Clicked', { screen: 'insight_playback', element_type: 'button', element: 'replay' });
     if (ttsApiKey && text) {
       TTS.start({ apiKey: ttsApiKey, text });
       if (videoRef.current) videoRef.current.play().catch(() => {});
@@ -72,6 +76,7 @@ const InsightPlayback = ({ insightData, ttsApiKey, theme, onDone }) => {
   }, [ttsApiKey, text]);
 
   const handleDone = useCallback(() => {
+    track('Element Clicked', { screen: 'insight_playback', element_type: 'button', element: 'continue' });
     TTS.stop();
     if (ambientRef.current) { ambientRef.current.pause(); ambientRef.current.src = ''; }
     onDone();
@@ -196,6 +201,7 @@ const InsightPlayback = ({ insightData, ttsApiKey, theme, onDone }) => {
         {/* Footer: Feedback + Continue */}
         <div className="flex items-center gap-3 px-6 pb-10">
           <button
+            onClick={() => track('Element Clicked', { screen: 'insight_playback', element_type: 'button', element: 'feedback' })}
             className="flex-1 py-4 rounded-2xl font-jakarta font-extrabold text-[14px] border border-solid active:translate-y-[1px] transition-[transform] duration-100"
             style={{ background: ins.feedbackBg, borderColor: 'transparent', color: ins.feedbackText }}
           >

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import RT from '../utils/realtime';
 import { sendToBubble } from '../utils/bubble';
+import { track } from '../utils/analytics';
 import Dialog from './Dialog';
 import SimulatorLanding from './simulator/SimulatorLanding';
 import SimulatorSession from './simulator/SimulatorSession';
@@ -115,10 +116,10 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
     : null;
 
   const handleStart = useCallback(() => {
+    track('Simulator Session Started');
     setPhase('session');
     setHasRetried(false);
     coinsDeductedRef.current = false;
-    // Tell Bubble to start generating the token
     sendToBubble('bubble_fn_simulator', 'start_session');
   }, []);
 
@@ -143,6 +144,10 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
 
   const handleComplete = useCallback((evalData) => {
     const normalized = normalizeEvaluation(evalData);
+    track('Simulator Session Completed', {
+      score: normalized?.overall_score || 0,
+      skillLevel: normalized?.skill_level || '',
+    });
     setEvaluation(normalized);
     setSimStage(null);
     setPhase('results');
@@ -161,6 +166,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
   }, []);
 
   const confirmClose = useCallback(() => {
+    track('Simulator Session Closed');
     RT.stop('stopped');
     setShowCloseDialog(false);
     setSimStage(null);
@@ -181,6 +187,7 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
   }, []);
 
   const handleRetry = useCallback(async () => {
+    track('Simulator Session Retried');
     setPhase('session');
     setEvaluation(null);
     setHasRetried(true);
@@ -201,12 +208,13 @@ const SimulatorSection = ({ theme, onSessionChange, onFullScreenChange }) => {
   }, []);
 
   const handleStage2Start = useCallback(() => {
-    // Coins deducted when Stage 2 starts
+    track('Coins Deducted');
     coinsDeductedRef.current = true;
     sendToBubble('bubble_fn_simulator', 'deduct_coins');
   }, []);
 
   const handleSessionError = useCallback((message, code) => {
+    track('Simulator Session Error', { code: code || 'UNKNOWN', message });
     RT.stop('error');
     setErrorMessage(message);
     setErrorCode(code || 'UNKNOWN');

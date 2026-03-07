@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { track } from '../../utils/analytics';
 import InsightOtherDialog from './InsightOtherDialog';
 import MicIcon from './MicIcon';
 
@@ -89,6 +90,7 @@ const InsightQuestions = ({ questions, theme, onAnswer, onBack, onClose }) => {
   }, [currentIndex, question, total, onAnswer]);
 
   const handleBack = useCallback(() => {
+    track('Element Clicked', { screen: 'insight_questions', element_type: 'button', element: 'back' });
     if (currentIndex === 0) {
       onBack();
     } else {
@@ -107,6 +109,7 @@ const InsightQuestions = ({ questions, theme, onAnswer, onBack, onClose }) => {
   }, []);
 
   const handleMicTap = useCallback(() => {
+    track('Element Clicked', { screen: 'insight_questions', element_type: 'button', element: 'mic' });
     setMicExpanding(true);
     micTapTimerRef.current = setTimeout(() => {
       setShowOtherDialog(true);
@@ -115,6 +118,7 @@ const InsightQuestions = ({ questions, theme, onAnswer, onBack, onClose }) => {
   }, []);
 
   const handleYesNo = useCallback((answer) => {
+    track('Element Clicked', { screen: 'insight_questions', element_type: 'button', element: answer === 'yes' ? 'yes' : 'no' });
     if (!nudgeShownRef.current) {
       setNudgeAnswer(answer);
       return;
@@ -123,6 +127,7 @@ const InsightQuestions = ({ questions, theme, onAnswer, onBack, onClose }) => {
   }, [handleAnswer]);
 
   const handleNudgeConfirm = useCallback(() => {
+    track('Element Clicked', { screen: 'insight_questions', element_type: 'button', element: 'nudge_continue' });
     nudgeShownRef.current = true;
     const answer = nudgeAnswer;
     setNudgeAnswer(null);
@@ -130,6 +135,9 @@ const InsightQuestions = ({ questions, theme, onAnswer, onBack, onClose }) => {
   }, [nudgeAnswer, handleAnswer]);
 
   const handleNudgeCustom = useCallback(() => {
+    // Track nudge_custom only — handleMicTap also fires 'mic', intentional double-fire
+    // (nudge decision + resulting mic open are distinct user actions)
+    track('Element Clicked', { screen: 'insight_questions', element_type: 'button', element: 'nudge_custom' });
     nudgeShownRef.current = true;
     setNudgeAnswer(null);
     handleMicTap();
@@ -196,7 +204,7 @@ const InsightQuestions = ({ questions, theme, onAnswer, onBack, onClose }) => {
           </div>
 
           <button
-            onClick={onClose}
+            onClick={() => { track('Element Clicked', { screen: 'insight_questions', element_type: 'button', element: 'close' }); onClose(); }}
             className="w-10 h-10 rounded-full flex items-center justify-center"
             style={{ background: ins.navBg }}
           >

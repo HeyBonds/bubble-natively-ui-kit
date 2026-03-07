@@ -1,5 +1,6 @@
 import React from 'react';
 import { sendToBubble } from '../utils/bubble';
+import { track } from '../utils/analytics';
 import { useUser } from '../contexts/UserContext';
 
 const HomeSection = ({ push }) => {
@@ -12,6 +13,7 @@ const HomeSection = ({ push }) => {
 
     // Helper functions for Bubble interactions
     const handleBubbleAction = (action) => {
+        track('Element Clicked', { screen: 'journey', element_type: 'button', element: action });
         sendToBubble('bubble_fn_home', action);
     };
 
@@ -102,7 +104,7 @@ const HomeSection = ({ push }) => {
                         
                         {/* Action Buttons */}
                         <div className="flex items-center justify-center gap-3">
-                            <button onClick={() => push('details', { title: currentJourney.title })}
+                            <button onClick={() => { track('Element Clicked', { screen: 'journey', element_type: 'button', element: 'select_journey' }); push('details', { title: currentJourney.title }); }}
                                     className="px-6 py-3 bg-[#FF2258] rounded-full font-jakarta font-semibold text-sm text-white whitespace-nowrap hover:bg-[#FF2258]/90 transition-colors btn-pressed">
                                 Select
                             </button>

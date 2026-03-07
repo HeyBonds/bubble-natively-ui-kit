@@ -1,6 +1,7 @@
 /* global NativelyAppleSignInService */
 import React from 'react';
 import { sendToBubble } from '../utils/bubble';
+import { track } from '../utils/analytics';
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -22,6 +23,7 @@ const AppleIcon = ({ color }) => (
 
 const SignInScreen = ({ theme, onBack }) => {
     const handleGoogleSignIn = () => {
+        track('Sign In Started', { method: 'google' });
         localStorage.setItem('bonds_auth_pending', 'true');
         sendToBubble('bubble_fn_signin', 'google_signin');
     };
@@ -31,6 +33,7 @@ const SignInScreen = ({ theme, onBack }) => {
         const appleService = new NativelyAppleSignInService();
         appleService.signin((response) => {
             if (!response.status) return;
+            track('Sign In Started', { method: 'apple' });
             localStorage.setItem('bonds_auth_pending', 'true');
             sendToBubble('bubble_fn_signin', 'apple_signin', {
                 email: response.email,
@@ -48,7 +51,7 @@ const SignInScreen = ({ theme, onBack }) => {
 
                 {/* Back button */}
                 <button
-                    onClick={onBack}
+                    onClick={() => { track('Element Clicked', { screen: 'signin', element_type: 'button', element: 'back' }); onBack(); }}
                     className="w-10 h-10 rounded-full flex items-center justify-center transition-opacity active:opacity-60"
                     style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
                 >

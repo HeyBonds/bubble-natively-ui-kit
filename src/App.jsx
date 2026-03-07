@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import mixpanel from 'mixpanel-browser';
 import WelcomeScreen from './components/WelcomeScreen';
 import SignInScreen from './components/SignInScreen';
 import MainTabs from './components/MainTabs';
@@ -11,7 +10,8 @@ import { UserProvider, useUser } from './contexts/UserContext';
 import { DailyQuestionProvider, useDailyQuestion } from './contexts/DailyQuestionContext';
 import NetworkBanner from './components/NetworkBanner';
 import ErrorBoundary from './components/ErrorBoundary';
-import { setFirebaseUser, logError } from './utils/firebase';
+import { logError } from './utils/firebase';
+import { initAnalytics, track, screen, resetIdentity } from './utils/analytics';
 
 // Transition map: [fromPhase][toPhase] → { exit, enter, exitDuration }
 const TRANSITIONS = {
@@ -42,13 +42,11 @@ const AppInner = () => {
     const { clearDailyQuestion } = useDailyQuestion();
     const [displayedPhase, setDisplayedPhase] = useState('loading');
     const [animClass, setAnimClass] = useState('');
-    const [deviceId, setDeviceId] = useState(null);
     const transitionRef = useRef(false);
     const displayedPhaseRef = useRef('loading');
 
     const { getItem, setItem, removeItem } = useNativelyStorage();
     const SESSION_KEY = 'bonds_session_active';
-    const DEVICE_ID_KEY = 'bonds_device_id';
     const ONBOARDING_KEY = 'onboarding_complete';
     const AUTH_PENDING_KEY = 'bonds_auth_pending';
 
@@ -102,48 +100,21 @@ const AppInner = () => {
     }, []);
 
     useEffect(() => {
-        const initializeAnalytics = async () => {
-            try {
-                const token = window.APP_CONFIG?.MIXPANEL_TOKEN;
-                if (!token) {
-                    console.warn('⚠️ Mixpanel Token NOT found in window.APP_CONFIG. Analytics disabled.');
-                    return;
-                }
-
-                mixpanel.init(token, { debug: true, track_pageview: false, persistence: 'localStorage' });
-                console.log('📊 Mixpanel Initialized');
-
-                let storedId = await getItem(DEVICE_ID_KEY);
-
-                if (storedId) {
-                    if (storedId.startsWith('$device:')) {
-                        storedId = storedId.replace(/^\$device:/, '');
-                        await setItem(DEVICE_ID_KEY, storedId);
-                    }
-                    mixpanel.identify(storedId);
-                } else {
-                    const rawId = mixpanel.get_distinct_id();
-                    storedId = rawId.replace(/^\$device:/, '');
-                    await setItem(DEVICE_ID_KEY, storedId);
-                    mixpanel.identify(storedId);
-                }
-
-                setDeviceId(storedId);
-                setFirebaseUser(storedId);
-            } catch (err) {
-                console.error('❌ Analytics Init Failed:', err);
-                logError('init', err, 'initializeAnalytics');
-            }
-        };
+        try {
+            initAnalytics();
+            track('App Opened');
+        } catch (err) {
+            console.error('[App] Analytics init failed:', err);
+            logError('init', err, 'initAnalytics');
+        }
 
         const checkSession = async () => {
             try {
                 // getItem returns localStorage instantly if available, or waits for
                 // NativelyStorage recovery (up to 2s) when localStorage is empty.
-                const [sessionResult, obResult, , onboardingState] = await Promise.all([
+                const [sessionResult, obResult, onboardingState] = await Promise.all([
                     getItem(SESSION_KEY),
                     getItem(ONBOARDING_KEY),
-                    getItem(DEVICE_ID_KEY),
                     getItem('onboarding_state'),
                 ]);
 
@@ -157,14 +128,34 @@ const AppInner = () => {
                 console.log(`📋 [App] Session check — session=${sessionResult}, onboarding=${obResult}, state=${onboardingState ? 'saved' : 'none'}`);
 
                 if (sessionResult === 'true') {
-                    transitionTo(obResult === 'true' ? 'main' : 'onboarding');
+                    const dest = obResult === 'true' ? 'main' : 'onboarding';
+                    if (dest === 'onboarding') screen('onboarding');
+                    transitionTo(dest);
                 } else if (onboardingState) {
+                    // Staleness check: if the Bubble session UID changed, the
+                    // anonymous user may have expired — clear onboarding state.
+                    try {
+                        const saved = JSON.parse(onboardingState);
+                        const currentUid = window.bubble_session_uid;
+                        if (saved.bubble_session_uid && currentUid && saved.bubble_session_uid !== currentUid) {
+                            console.log('[App] Stale onboarding session detected — clearing');
+                            removeItem('onboarding_state');
+                            transitionTo('welcome');
+                            screen('welcome');
+                            return;
+                        }
+                    } catch { /* ignore parse errors, proceed with resume */ }
+                    try {
+                        const saved = JSON.parse(onboardingState);
+                        track('Onboarding Resumed', { step: saved.currentStep || 0 });
+                    } catch { /* ignore */ }
                     setItem(SESSION_KEY, 'true');
+                    screen('onboarding');
                     transitionTo('onboarding');
                 } else if (localStorage.getItem(AUTH_PENDING_KEY) === 'true') {
                     // OAuth redirect just happened — stay on loading until setLoginState fires.
-                    // No timeout fallback: Bubble will call setLoginState when auth completes.
                 } else {
+                    screen('welcome');
                     transitionTo('welcome');
                 }
             } catch (err) {
@@ -173,8 +164,6 @@ const AppInner = () => {
                 if (displayedPhaseRef.current === 'loading') transitionTo('welcome');
             }
         };
-
-        initializeAnalytics();
 
         window.appUI = window.appUI || {};
         window.appUI.setLoginState = (isLogged) => {
@@ -196,8 +185,10 @@ const AppInner = () => {
     const handleWelcomeAction = (action) => {
         if (action === 'go') {
             setItem(SESSION_KEY, 'true');
+            screen('onboarding');
             transitionTo('onboarding');
         } else if (action === 'signin') {
+            screen('signin');
             transitionTo('signin');
         }
     };
@@ -208,13 +199,15 @@ const AppInner = () => {
     };
 
     const handleLogout = () => {
+        track('Logged Out');
+        resetIdentity();
         clearUser();
         clearDailyQuestion();
         removeItem(SESSION_KEY);
         removeItem(ONBOARDING_KEY);
         removeItem('onboarding_state');
-        removeItem(DEVICE_ID_KEY);
         removeItem('bonds_dark_mode');
+        screen('welcome');
         transitionTo('welcome');
     };
 
@@ -237,7 +230,7 @@ const AppInner = () => {
             <NetworkBanner theme={theme} />
             <div className={`w-full h-full ${animClass}`}>
                 {displayedPhase === 'welcome' && (
-                    <WelcomeScreen deviceId={deviceId} onAction={handleWelcomeAction} />
+                    <WelcomeScreen onAction={handleWelcomeAction} />
                 )}
                 {displayedPhase === 'signin' && (
                     <SignInScreen
@@ -252,7 +245,7 @@ const AppInner = () => {
                         showCoins={true}
                         theme={theme}
                         onComplete={handleOnboardingComplete}
-                        onBack={() => transitionTo('welcome')}
+                        onBack={() => { track('Onboarding Abandoned'); screen('welcome'); transitionTo('welcome'); }}
                     />
                 )}
                 {displayedPhase === 'main' && (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { sendToBubble } from '../../utils/bubble';
 import { useNativelyStorage } from '../../hooks/useNativelyStorage';
+import { track } from '../../utils/analytics';
 import SingleSelect from './SingleSelect';
 import SliderSelect from './SliderSelect';
 import MultiSelect from './MultiSelect';
@@ -113,6 +114,7 @@ const OnboardingFlow = ({
             answers: allAnswers,
             coins: currentCoins,
             rotationOffsets: offsets,
+            bubble_session_uid: window.bubble_session_uid || null,
         };
         storage.setItem(STORAGE_KEY, JSON.stringify(state));
     }, [storage]);
@@ -350,6 +352,12 @@ const OnboardingFlow = ({
         const nextStep = currentStep + 1;
         persistState(nextStep, newAnswers, newCoins, rotationOffsets);
 
+        track('Onboarding Step Completed', {
+            step: currentStep,
+            questionId: step?.questionId,
+            type: step?.type,
+        });
+
         // Notify Bubble of step completion
         sendToBubble('bubble_fn_onboarding', 'step_complete', {
             step: currentStep,
@@ -360,6 +368,7 @@ const OnboardingFlow = ({
         // Determine what happens after the answer
         const advanceOrComplete = () => {
             if (currentStep >= totalSteps - 1) {
+                track('Onboarding Completed', { totalSteps, coins: newCoins });
                 storage.removeItem(STORAGE_KEY);
                 sendToBubble('bubble_fn_onboarding', 'complete', {
                     answers: JSON.stringify(newAnswers),
@@ -421,7 +430,7 @@ const OnboardingFlow = ({
             <div className="relative z-20 shrink-0 pt-[18px] pb-4 px-[18px]">
                 {/* Back Button — matches DailyQuestion X button positioning */}
                 <button
-                    onClick={currentStep === 0 && onBackOut ? onBackOut : goBack}
+                    onClick={() => { track('Element Clicked', { screen: 'onboarding', element_type: 'button', element: 'back', step: currentStep }); (currentStep === 0 && onBackOut ? onBackOut : goBack)(); }}
                     className={`w-8 h-8 rounded-full border border-solid flex items-center justify-center transition-opacity duration-200 ${
                         currentStep === 0 && !onBackOut ? 'opacity-0 pointer-events-none' : ''
                     }`}

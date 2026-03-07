@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { track } from '../utils/analytics';
 import { useUser } from '../contexts/UserContext';
 import JourneyNode from './JourneyNode';
 import mockJourneyData from '../data/mockJourneyData';
@@ -204,6 +205,7 @@ const JourneyPath = ({ theme }) => {
 
     // Toggle popover on node tap
     const handleNodeTap = useCallback((node) => {
+        track('Element Clicked', { screen: 'journey', element_type: 'button', element: 'node', node_id: node.id, node_type: node.type });
         setSelectedNodeId(prev => {
             const next = prev === node.id ? null : node.id;
             selectedNodeRef.current = next;
@@ -213,11 +215,13 @@ const JourneyPath = ({ theme }) => {
     }, []);
 
     const handleStartLesson = useCallback((_node) => {
+        track('Element Clicked', { screen: 'journey', element_type: 'button', element: 'start_lesson', node_id: _node.id });
         setSelectedNodeId(null);
     }, []);
 
     // Navigate to chapter — find first node of that chapter and scroll to it
     const handleChapterSelect = useCallback((chapterIdx) => {
+        track('Element Clicked', { screen: 'journey', element_type: 'button', element: 'chapter_select', chapter: chapterIdx });
         setMenuOpen(false);
         setSelectedNodeId(null);
         const firstNodeIdx = nodePositions.findIndex(n => n.chapterIdx === chapterIdx);
@@ -278,7 +282,7 @@ const JourneyPath = ({ theme }) => {
             <div style={{ flexShrink: 0, marginLeft: 12, marginRight: 12, marginBottom: 8, position: 'relative', zIndex: 20 }}>
                 {/* Banner (clickable) */}
                 <button
-                    onClick={() => { setMenuOpen(prev => !prev); setSelectedNodeId(null); }}
+                    onClick={() => { track('Element Clicked', { screen: 'journey', element_type: 'button', element: 'chapter_menu' }); setMenuOpen(prev => !prev); setSelectedNodeId(null); }}
                     className="w-full rounded-2xl px-5 py-3 flex items-center justify-between"
                     style={{
                         position: 'relative',

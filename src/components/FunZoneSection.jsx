@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { sendToBubble } from '../utils/bubble';
+import { track } from '../utils/analytics';
 import { BUBBLE_CDN } from '../config';
 import { useDailyQuestion } from '../contexts/DailyQuestionContext';
 
@@ -42,6 +43,7 @@ const DailyQuestionBanner = ({ dailyQuestion, push, theme }) => {
   const isAnswered = dailyQuestion?.selectedAnswer !== undefined && dailyQuestion?.selectedAnswer !== null;
 
   const handleTap = () => {
+    track('Element Clicked', { screen: 'fun', element_type: 'banner', element: 'daily_question' });
     sendToBubble('bubble_fn_fun', 'open_daily_question');
     push('daily-question');
   };
@@ -141,6 +143,7 @@ const DailyQuestionBanner = ({ dailyQuestion, push, theme }) => {
 
 const ActivityCard = ({ activity, index, push, theme, animate }) => {
   const handleTap = () => {
+    track('Element Clicked', { screen: 'fun', element_type: 'card', element: 'activity', activityId: activity.id, activityName: activity.name });
     sendToBubble('bubble_fn_fun', 'open_activity', { activityId: activity.id });
     push('insight-flow', { type: 'activity', activityId: activity.id });
   };
@@ -223,6 +226,7 @@ const FunZoneSection = ({ theme, push }) => {
         </h2>
         <button
           onClick={() => {
+            track('Element Clicked', { screen: 'fun', element_type: 'card', element: 'learn_insight' });
             sendToBubble('bubble_fn_fun', 'open_learn');
             push('insight-flow', { type: 'learn' });
           }}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { track } from '../../utils/analytics';
 import TTS, { TTS_BACKEND } from '../../utils/tts';
 import { useTTS } from '../../hooks/useTTS';
 
@@ -176,17 +177,20 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
   });
 
   const handlePlayPause = () => {
+    track('Element Clicked', { screen: 'simulator_results', element_type: 'button', element: ttsStatus === 'streaming' ? 'pause' : 'play' });
     if (ttsStatus === 'streaming') TTS.pause();
     else if (ttsStatus === 'paused') TTS.resume();
   };
 
   const handleSpeedCycle = () => {
     const next = (speedIndex + 1) % SPEED_OPTIONS.length;
+    track('Element Clicked', { screen: 'simulator_results', element_type: 'button', element: 'speed', speed: SPEED_OPTIONS[next] });
     setSpeedIndex(next);
     TTS.setSpeed(SPEED_OPTIONS[next]);
   };
 
   const handleReplay = () => {
+    track('Element Clicked', { screen: 'simulator_results', element_type: 'button', element: 'replay' });
     try {
       const raw = localStorage.getItem('bonds_simulator_templates');
       const apiKey = raw ? JSON.parse(raw).ttsApiKey : null;
@@ -199,11 +203,13 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
 
   const handleRetry = () => {
     if (!onRetry) return;
+    track('Element Clicked', { screen: 'simulator_results', element_type: 'button', element: 'retry' });
     TTS.stop();
     onRetry();
   };
 
   const handleDone = () => {
+    track('Element Clicked', { screen: 'simulator_results', element_type: 'button', element: 'done' });
     TTS.stop();
     onDone();
   };
@@ -325,7 +331,7 @@ const SimulatorResults = ({ evaluation, theme, onRetry, onDone }) => {
                 {summary}
               </p>
             )}
-            <button onClick={() => setExpanded(!expanded)} className="font-jakarta font-bold text-[13px] underline" style={{ color: sim.readMoreText }}>
+            <button onClick={() => { track('Element Clicked', { screen: 'simulator_results', element_type: 'link', element: expanded ? 'read_less' : 'read_more' }); setExpanded(!expanded); }} className="font-jakarta font-bold text-[13px] underline" style={{ color: sim.readMoreText }}>
               {expanded ? 'Read less' : 'Read more'}
             </button>
           </div>

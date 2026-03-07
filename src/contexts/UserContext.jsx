@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNativelyStorage } from '../hooks/useNativelyStorage';
+import { identifyUser, setUserProperties } from '../utils/analytics';
+import { setFirebaseUser } from '../utils/firebase';
 
 const STORAGE_KEY = 'bonds_user_data';
 
@@ -35,6 +37,7 @@ export const UserProvider = ({ children }) => {
     const { getItem, setItem, removeItem } = useNativelyStorage();
     const userRef = useRef(user);
     userRef.current = user;
+    const identifiedRef = useRef(false);
 
     useEffect(() => {
         getItem(STORAGE_KEY).then(val => {
@@ -56,12 +59,32 @@ export const UserProvider = ({ children }) => {
     }, [setItem]);
 
     const updateUser = useCallback((partial) => {
+        // Bubble still sends "credits" — map to "coins" (cosmetic rename)
+        if ('credits' in partial) {
+            partial = { ...partial, coins: partial.credits };
+            delete partial.credits;
+        }
+
+        // Identity merge: first time we receive a Bubble user ID
+        if (partial.id && !identifiedRef.current) {
+            identifiedRef.current = true;
+            setFirebaseUser(partial.id);
+            identifyUser(partial.id, {
+                name: partial.name,
+                email: partial.email,
+                coins: partial.coins,
+                partner: partial.partner,
+                onboarding_complete: localStorage.getItem('onboarding_complete') === 'true',
+            });
+        } else if (identifiedRef.current) {
+            // Subsequent updates — sync people properties
+            const props = {};
+            if (partial.coins != null) props.coins = partial.coins;
+            if (partial.partner !== undefined) props.partner_connected = !!partial.partner;
+            if (Object.keys(props).length) setUserProperties(props);
+        }
+
         setUser(prev => {
-            // Bubble still sends "credits" — map to "coins" (cosmetic rename)
-            if ('credits' in partial) {
-                partial = { ...partial, coins: partial.credits };
-                delete partial.credits;
-            }
             const next = { ...prev, ...partial };
             persist(next);
             return next;
@@ -69,6 +92,7 @@ export const UserProvider = ({ children }) => {
     }, [persist]);
 
     const clearUser = useCallback(() => {
+        identifiedRef.current = false;
         setUser(DEFAULT_USER);
         localStorage.removeItem(STORAGE_KEY);
         removeItem(STORAGE_KEY);

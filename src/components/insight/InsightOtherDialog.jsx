@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { track } from '../../utils/analytics';
 import MicIcon from './MicIcon';
 
 const InsightOtherDialog = ({ open, questionText, theme, onSubmit, onClose }) => {
@@ -133,6 +134,7 @@ const InsightOtherDialog = ({ open, questionText, theme, onSubmit, onClose }) =>
   }, [createRecognition]);
 
   const toggleMic = useCallback(() => {
+    track('Element Clicked', { screen: 'insight_other', element_type: 'button', element: isRecording ? 'mic_stop' : 'mic_start' });
     if (isRecording) {
       stopRecording();
     } else {
@@ -142,6 +144,7 @@ const InsightOtherDialog = ({ open, questionText, theme, onSubmit, onClose }) =>
 
   const handleSubmit = useCallback(() => {
     if (!text.trim()) return;
+    track('Element Clicked', { screen: 'insight_other', element_type: 'button', element: 'submit' });
     stopRecording();
     onSubmit(text.trim());
   }, [text, onSubmit, stopRecording]);
