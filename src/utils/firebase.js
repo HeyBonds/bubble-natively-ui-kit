@@ -1,8 +1,16 @@
-import { initializeApp } from 'firebase/app';
-import { getAnalytics, logEvent, setUserId } from 'firebase/analytics';
-import { FIREBASE_CONFIG, APP_VERSION } from '../config';
+/**
+ * Crash & Error Tracking via Google Analytics 4 (gtag.js)
+ *
+ * Uses the gtag.js snippet loaded externally in Bubble SEO header.
+ * Events appear in Firebase Analytics console under custom events.
+ *
+ * Two event types:
+ *   app_crash    — fatal: uncaught exceptions, unhandled rejections, React boundary
+ *   app_error    — non-fatal: caught errors in TTS, storage, realtime, bridge
+ */
+import { APP_VERSION, GA_MEASUREMENT_ID } from '../config';
 
-let analytics = null;
+let initialized = false;
 
 // Deduplication: skip identical errors within 60 seconds
 const recentErrors = new Map();
@@ -27,30 +35,40 @@ function truncate(str, max = 100) {
   return s.length > max ? s.slice(0, max) : s;
 }
 
-export function initFirebase() {
-  if (analytics) return;
-  if (!FIREBASE_CONFIG.apiKey) {
-    console.warn('[Firebase] No apiKey configured — crash tracking disabled.');
-    return;
-  }
-  try {
-    const app = initializeApp(FIREBASE_CONFIG);
-    analytics = getAnalytics(app);
-    console.log('[Firebase] Analytics initialized');
-  } catch (err) {
-    console.error('[Firebase] Init failed:', err);
-  }
+function gtagEvent(eventName, params) {
+  if (!initialized || typeof window.gtag !== 'function') return;
+  window.gtag('event', eventName, params);
 }
 
+/**
+ * Initialize crash tracking. Call once at app startup.
+ * Requires gtag.js to be loaded via Bubble SEO header snippet.
+ */
+export function initFirebase() {
+  if (initialized) return;
+  if (!GA_MEASUREMENT_ID) {
+    console.warn('[Analytics] No GA_MEASUREMENT_ID configured — crash tracking disabled.');
+    return;
+  }
+  if (typeof window.gtag !== 'function') {
+    console.warn('[Analytics] gtag.js not loaded — crash tracking disabled.');
+    return;
+  }
+  initialized = true;
+  console.log('[Analytics] Crash tracking initialized');
+}
+
+/**
+ * Log a fatal crash (uncaught exception, unhandled rejection, React boundary).
+ */
 export function logCrash(crashType, error, sourceFile, sourceLine) {
   const message = truncate(error?.message || String(error));
   const stack = truncate(error?.stack || '');
   const key = `crash:${message}`;
   if (isDuplicate(key)) return;
 
-  console.error(`[Firebase] app_crash (${crashType}):`, message);
-  if (!analytics) return;
-  logEvent(analytics, 'app_crash', {
+  console.error(`[Analytics] app_crash (${crashType}):`, message);
+  gtagEvent('app_crash', {
     error_message: message,
     stack_trace: stack,
     source_file: truncate(sourceFile || '', 100),
@@ -60,14 +78,16 @@ export function logCrash(crashType, error, sourceFile, sourceLine) {
   });
 }
 
+/**
+ * Log a non-fatal error (caught in try/catch).
+ */
 export function logError(category, error, context) {
   const message = truncate(error?.message || String(error));
   const key = `error:${category}:${message}`;
   if (isDuplicate(key)) return;
 
-  console.warn(`[Firebase] app_error (${category}):`, message);
-  if (!analytics) return;
-  logEvent(analytics, 'app_error', {
+  console.warn(`[Analytics] app_error (${category}):`, message);
+  gtagEvent('app_error', {
     error_message: message,
     category,
     context: truncate(context || '', 100),
@@ -75,7 +95,10 @@ export function logError(category, error, context) {
   });
 }
 
+/**
+ * Associate a user ID with GA4 (for filtering crashes by user).
+ */
 export function setFirebaseUser(userId) {
-  if (!analytics) return;
-  setUserId(analytics, userId);
+  if (!initialized || typeof window.gtag !== 'function') return;
+  window.gtag('set', { user_id: userId });
 }
