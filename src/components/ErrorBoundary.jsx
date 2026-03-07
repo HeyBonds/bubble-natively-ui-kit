@@ -20,8 +20,11 @@ export default class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div
+          role="button"
+          tabIndex="0"
           className="absolute inset-0 bg-[#1F1A2E] flex flex-col items-center justify-center font-jakarta text-center px-8"
           onClick={() => window.location.reload()}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') window.location.reload(); }}
         >
           <div className="w-16 h-16 rounded-full bg-[#FF2258]/20 flex items-center justify-center mb-6">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF2258" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

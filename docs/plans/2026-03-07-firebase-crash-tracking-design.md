@@ -1,5 +1,10 @@
 # Firebase Crash Tracking Design
 
+> **⚠️ OUTDATED:** This design originally proposed the Firebase modular SDK (~30KB gzipped).
+> The implementation uses **gtag.js** instead — zero bundle impact, loaded externally via
+> the Bubble SEO header snippet. See `src/utils/firebase.js` for the actual implementation.
+> The event schema, deduplication, and instrumentation strategy below are still accurate.
+
 ## Goal
 
 Add crash and error tracking to the app using Firebase Analytics custom events. Track both hard crashes (uncaught JS errors, React render failures) and silent failures (TTS, storage, bridge, realtime errors) to gain full visibility into app health.

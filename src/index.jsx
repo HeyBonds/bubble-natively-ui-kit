@@ -63,6 +63,9 @@ initGlobals();
 initFirebase();
 
 window.addEventListener('error', (event) => {
+  // Note: cross-origin script errors (CORS) yield event.error = null and
+  // event.message = "Script error." with no filename/lineno. This is a
+  // browser security restriction — nothing we can do to get more detail.
   logCrash('uncaught', event.error || event.message, event.filename, String(event.lineno));
 });
 

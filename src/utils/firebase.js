@@ -49,6 +49,10 @@ function truncate(str, max = 100) {
 
 /**
  * Send event to GA4. Returns true if sent, false if skipped.
+ * Note: if not yet initialized (e.g. during startup), events are dropped —
+ * not queued. Errors that fire exactly once during this window and never
+ * recur will be lost. This is acceptable because the gtag shim loads
+ * synchronously before bundle.js, so the window is effectively zero.
  */
 function gtagEvent(eventName, params) {
   if (!initialized || typeof window.gtag !== 'function') return false;
@@ -68,7 +72,10 @@ export function initFirebase() {
     return;
   }
   if (typeof window.gtag !== 'function') {
-    // gtag shim not ready — schedule retry (handles async script race)
+    // Safety net: the SEO header defines a synchronous gtag shim before
+    // bundle.js loads, so this branch should never execute in normal
+    // operation. It exists to self-heal if the header snippet is modified
+    // or removed, or if the loading order changes in a future deployment.
     if (!initRetryTimer) {
       let retries = 0;
       initRetryTimer = setInterval(() => {

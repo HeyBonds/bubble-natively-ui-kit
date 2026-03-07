@@ -1,5 +1,10 @@
 # Firebase Crash Tracking Implementation Plan
 
+> **⚠️ OUTDATED:** This plan originally specified the Firebase JS SDK (`firebase/app` +
+> `firebase/analytics`). The implementation pivoted to **gtag.js** (zero bundle impact)
+> loaded externally via Bubble SEO header. See `src/utils/firebase.js` for the actual code.
+> The goals and instrumentation points below are still accurate — only the SDK approach changed.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add crash and error tracking using Firebase Analytics custom events (`app_crash`, `app_error`) with global error handlers, a React Error Boundary, and instrumented catch blocks across the codebase.
