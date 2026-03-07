@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { track } from '../../utils/analytics';
 import LearnQuiz from './LearnQuiz';
 import { getLearnVideoUrl } from './journeyMocks';
 
@@ -57,6 +58,7 @@ const LearnStep = ({ chapter, theme, onComplete, onClose }) => {
     setVideoEnded(true);
     setIsPlaying(false);
     setHasWatchedOnce(true);
+    track('Journey Video Watched', { chapter: chapter.index });
     try {
       const watched = JSON.parse(localStorage.getItem(WATCHED_KEY) || '[]');
       if (!watched.includes(chapter.index)) {
@@ -72,9 +74,11 @@ const LearnStep = ({ chapter, theme, onComplete, onClose }) => {
     if (isPlaying) {
       v.pause();
       setIsPlaying(false);
+      track('Element Clicked', { screen: 'learn_video', element_type: 'button', element: 'pause' });
     } else {
       v.play().catch(() => {});
       setIsPlaying(true);
+      track('Element Clicked', { screen: 'learn_video', element_type: 'button', element: 'play' });
     }
   }, [isPlaying]);
 
@@ -84,12 +88,14 @@ const LearnStep = ({ chapter, theme, onComplete, onClose }) => {
     if (videoRef.current) {
       videoRef.current.playbackRate = SPEED_OPTIONS[next];
     }
+    track('Element Clicked', { screen: 'learn_video', element_type: 'button', element: 'speed', speed: SPEED_OPTIONS[next] });
   }, [speedIndex]);
 
   const handleRewind = useCallback(() => {
     const v = videoRef.current;
     if (v) {
       v.currentTime = Math.max(0, v.currentTime - 5);
+      track('Element Clicked', { screen: 'learn_video', element_type: 'button', element: 'rewind' });
     }
   }, []);
 
@@ -99,6 +105,7 @@ const LearnStep = ({ chapter, theme, onComplete, onClose }) => {
       videoRef.current.play().catch(() => {});
       setVideoEnded(false);
       setIsPlaying(true);
+      track('Element Clicked', { screen: 'learn_video', element_type: 'button', element: 'replay' });
     }
   }, []);
 
@@ -107,7 +114,8 @@ const LearnStep = ({ chapter, theme, onComplete, onClose }) => {
       videoRef.current.pause();
     }
     setSubPhase('quiz');
-  }, []);
+    track('Element Clicked', { screen: 'learn_video', element_type: 'button', element: hasWatchedOnce ? 'skip_to_questions' : 'continue_to_questions' });
+  }, [hasWatchedOnce]);
 
   const handleQuizComplete = useCallback((correctCount) => {
     if (onComplete) onComplete(correctCount);

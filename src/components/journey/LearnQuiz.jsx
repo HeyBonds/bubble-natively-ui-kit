@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { track } from '../../utils/analytics';
 
 /**
  * LearnQuiz — Multiple-choice question UI for the Learn step.
@@ -31,6 +32,7 @@ const LearnQuiz = ({ questions, theme, onComplete, onClose }) => {
     const correct = answerIdx === q.correctAnswer;
     const newCount = correct ? correctCount + 1 : correctCount;
     if (correct) setCorrectCount(newCount);
+    track('Journey Quiz Answered', { question_index: currentIdx, correct, total_questions: questions.length });
 
     const delay = correct ? 1000 : 2000;
     timerRef.current = setTimeout(() => {

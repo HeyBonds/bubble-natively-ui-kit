@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { track } from '../../utils/analytics';
 
 /**
  * PracticeStep — Guidance screen then mock practice results.
@@ -19,17 +20,18 @@ const PracticeStep = ({ chapter, theme, onComplete, onClose }) => {
   }, []);
 
   const handleStartPractice = useCallback(() => {
+    track('Element Clicked', { screen: 'practice', element_type: 'button', element: 'start_practice', chapter: chapter.index });
     setSubPhase('loading');
     timerRef.current = setTimeout(() => {
       const score = 7 + Math.floor(Math.random() * 3); // 7-9
       setMockScore(score);
       setSubPhase('results');
     }, 2000);
-  }, []);
+  }, [chapter.index]);
 
   const handleDone = useCallback(() => {
-    // Coins: 1-6 -> 1, 7-8 -> 2, 9-10 -> 3
     const coins = mockScore >= 9 ? 3 : mockScore >= 7 ? 2 : 1;
+    track('Element Clicked', { screen: 'practice', element_type: 'button', element: 'continue', score: mockScore });
     if (onComplete) onComplete(coins);
   }, [mockScore, onComplete]);
 

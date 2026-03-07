@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { track } from '../../utils/analytics';
 import Dialog from '../Dialog';
 import LearnStep from './LearnStep';
 import PracticeStep from './PracticeStep';
@@ -24,6 +25,10 @@ import ActStep from './ActStep';
 const ChapterFlow = ({ chapter, nodeType, theme, onStepComplete, onClose }) => {
   const [showCloseDialog, setShowCloseDialog] = useState(false);
 
+  useEffect(() => {
+    track('Journey Step Started', { step_type: nodeType, chapter: chapter.index, chapter_title: chapter.title });
+  }, [nodeType, chapter.index, chapter.title]);
+
   // Same portal target as InsightFlow
   const portalTarget = useMemo(() =>
     document.getElementById('app-content-area')
@@ -40,18 +45,20 @@ const ChapterFlow = ({ chapter, nodeType, theme, onStepComplete, onClose }) => {
   }, [portalTarget]);
 
   const handleStepDone = useCallback((coins) => {
+    track('Journey Step Completed', { step_type: nodeType, chapter: chapter.index, coins });
     if (onStepComplete) onStepComplete(nodeType, coins);
     if (onClose) onClose();
-  }, [nodeType, onStepComplete, onClose]);
+  }, [nodeType, chapter.index, onStepComplete, onClose]);
 
   const handleClose = useCallback(() => {
     setShowCloseDialog(true);
   }, []);
 
   const confirmClose = useCallback(() => {
+    track('Journey Step Abandoned', { step_type: nodeType, chapter: chapter.index });
     setShowCloseDialog(false);
     if (onClose) onClose();
-  }, [onClose]);
+  }, [nodeType, chapter.index, onClose]);
 
   const cancelClose = useCallback(() => {
     setShowCloseDialog(false);

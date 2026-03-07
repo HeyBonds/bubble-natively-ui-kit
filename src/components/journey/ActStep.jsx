@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { track } from '../../utils/analytics';
 
 /**
  * ActStep — Commitment card with "I'm in!" / "Not now".
@@ -19,15 +20,17 @@ const ActStep = ({ chapter, theme, onComplete, onClose }) => {
   }, []);
 
   const handleAccept = useCallback(() => {
+    track('Element Clicked', { screen: 'act', element_type: 'button', element: 'accept', chapter: chapter.index });
     setAccepted(true);
     timerRef.current = setTimeout(() => {
       if (onComplete) onComplete(2);
     }, 2000);
-  }, [onComplete]);
+  }, [chapter.index, onComplete]);
 
   const handleDecline = useCallback(() => {
+    track('Element Clicked', { screen: 'act', element_type: 'button', element: 'decline', chapter: chapter.index });
     if (onComplete) onComplete(0);
-  }, [onComplete]);
+  }, [chapter.index, onComplete]);
 
   return (
     <div className="h-full flex flex-col font-jakarta" style={{ background: theme.bg }}>

@@ -96,6 +96,17 @@ Fires on any UI interaction. Properties provide context.
 | `profile` | `button` | `invite_partner` | — | MainTabs |
 | `profile` | `button` | `delete_account` | — | MainTabs |
 | `profile` | `toggle` | `dark_mode` | `preference` | MainTabs |
+| `learn_video` | `button` | `play` | — | LearnStep |
+| `learn_video` | `button` | `pause` | — | LearnStep |
+| `learn_video` | `button` | `speed` | `speed` | LearnStep |
+| `learn_video` | `button` | `rewind` | — | LearnStep |
+| `learn_video` | `button` | `replay` | — | LearnStep |
+| `learn_video` | `button` | `skip_to_questions` | — | LearnStep |
+| `learn_video` | `button` | `continue_to_questions` | — | LearnStep |
+| `practice` | `button` | `start_practice` | `chapter` | PracticeStep |
+| `practice` | `button` | `continue` | `score` | PracticeStep |
+| `act` | `button` | `accept` | `chapter` | ActStep |
+| `act` | `button` | `decline` | `chapter` | ActStep |
 
 ---
 
@@ -145,11 +156,21 @@ Fires on any UI interaction. Properties provide context.
 
 | Event | Properties | File |
 |-------|------------|------|
-| `Insight Flow Started` | `type` (learn/activity), `activityId` | InsightFlow |
+| `Insight Flow Started` | `type` (learn/activity/journey), `activityId`, `chapter` | InsightFlow, InsightStep |
 | `Insight Question Answered` | `answer` | InsightFlow |
 | `Insight Generated` | `type` | InsightFlow |
 | `Insight Flow Closed` | — | InsightFlow |
 | `Insight Playback Completed` | — | InsightFlow |
+
+### Journey Steps
+
+| Event | Properties | File |
+|-------|------------|------|
+| `Journey Step Started` | `step_type`, `chapter`, `chapter_title` | ChapterFlow |
+| `Journey Step Completed` | `step_type`, `chapter`, `coins` | ChapterFlow |
+| `Journey Step Abandoned` | `step_type`, `chapter` | ChapterFlow |
+| `Journey Video Watched` | `chapter` | LearnStep |
+| `Journey Quiz Answered` | `question_index`, `correct`, `total_questions` | LearnQuiz |
 
 ---
 
