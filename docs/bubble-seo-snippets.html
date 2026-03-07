@@ -353,6 +353,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
   }, 'Full load performance breakdown + auto-copy to clipboard');
 
+  eruda.get('snippets').add('Test Crash', function () {
+    console.log('[Test] Throwing uncaught error in 100ms...');
+    setTimeout(function () { throw new Error('Eruda test crash'); }, 100);
+  }, 'Throw an uncaught error to test Firebase crash tracking');
+
+  eruda.get('snippets').add('Test Error', function () {
+    if (typeof window.appUI._testLogError === 'function') {
+      window.appUI._testLogError();
+    } else {
+      console.warn('[Test] appUI._testLogError not available — call sendToBubble("fake_fn","test") instead');
+    }
+  }, 'Log a non-fatal app_error to test Firebase error tracking');
+
   eruda.get('snippets').add('Storage Dump', function () {
     var keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_dark_mode', 'bonds_user_data', 'bonds_daily_question'];
     console.log('--- localStorage ---');

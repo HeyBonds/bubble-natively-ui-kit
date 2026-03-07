@@ -11,7 +11,7 @@ import RT from './utils/realtime';
 import TTS from './utils/tts';
 import { UserProvider } from './contexts/UserContext';
 import { DailyQuestionProvider } from './contexts/DailyQuestionContext';
-import { initFirebase, logCrash } from './utils/firebase';
+import { initFirebase, logCrash, logError } from './utils/firebase';
 
 // Initialize Global Namespace
 window.appUI = window.appUI || {};
@@ -73,6 +73,9 @@ window.addEventListener('unhandledrejection', (event) => {
   const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
   logCrash('unhandled_rejection', error);
 });
+
+// Debug: test non-fatal error logging from Eruda snippet
+window.appUI._testLogError = () => logError('test', new Error('Eruda test error'), 'manual trigger');
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {
