@@ -261,6 +261,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
   }, 'Nuke SW caches + reload with CDN cache-busting (forces fresh bundle.js + bundle.css)');
 
+  eruda.get('snippets').add('Bundle Headers', function () {
+    fetch('/bundle.js', { method: 'HEAD', cache: 'no-cache' }).then(function (r) {
+      console.log('--- bundle.js response headers ---');
+      r.headers.forEach(function (v, k) { console.log('  ' + k + ':', v); });
+    });
+  }, 'Check what HTTP headers Bubble sends for bundle.js');
+
   eruda.get('snippets').add('Storage Dump', function () {
     var keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_dark_mode', 'bonds_user_data', 'bonds_daily_question'];
     console.log('--- localStorage ---');
