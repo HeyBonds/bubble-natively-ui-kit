@@ -268,6 +268,81 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
   }, 'Check what HTTP headers Bubble sends for bundle.js');
 
+  eruda.get('snippets').add('Load Diagnostics', function () {
+    var lines = [];
+    var _log = function() { var line = Array.prototype.slice.call(arguments).join(' '); lines.push(line); console.log.apply(console, arguments); };
+
+    // 1. Performance timing
+    var t = performance.timing;
+    _log('=== LOAD TIMING ===');
+    _log('DNS:', (t.domainLookupEnd - t.domainLookupStart) + 'ms');
+    _log('TCP:', (t.connectEnd - t.connectStart) + 'ms');
+    _log('TLS:', (t.connectEnd - t.secureConnectionStart) + 'ms');
+    _log('Server (TTFB):', (t.responseStart - t.requestStart) + 'ms');
+    _log('Download:', (t.responseEnd - t.responseStart) + 'ms');
+    _log('DOM Parse:', (t.domInteractive - t.domLoading) + 'ms');
+    _log('Total to interactive:', (t.domInteractive - t.navigationStart) + 'ms');
+    _log('Total to load:', (t.loadEventEnd - t.navigationStart) + 'ms');
+
+    // 2. Resource loading breakdown (full URLs grouped by origin)
+    _log('\n=== RESOURCES ===');
+    var entries = performance.getEntriesByType('resource');
+    entries.sort(function(a, b) { return b.duration - a.duration; });
+    entries.slice(0, 20).forEach(function(e) {
+      var cached = e.transferSize === 0 ? ' [CACHED]' : ' [' + Math.round(e.transferSize/1024) + 'KB]';
+      _log('  ' + Math.round(e.duration) + 'ms' + cached + ' ' + e.name);
+    });
+
+    // 2b. Unique origins (for SW CACHEABLE_ORIGINS)
+    _log('\n=== ORIGINS (for SW caching) ===');
+    var origins = {};
+    performance.getEntriesByType('resource').forEach(function(e) {
+      try { var o = new URL(e.name).origin; origins[o] = (origins[o] || 0) + 1; } catch(x) {}
+    });
+    Object.keys(origins).sort().forEach(function(o) {
+      _log('  ' + origins[o] + 'x ' + o);
+    });
+
+    // 3. HTML page size and dynamic content check
+    _log('\n=== HTML PAGE ===');
+    _log('Doc size:', Math.round(document.documentElement.outerHTML.length / 1024) + 'KB');
+    var scripts = document.querySelectorAll('script[src]');
+    _log('External scripts:', scripts.length);
+    scripts.forEach(function(s) { _log('  ' + s.src.split('/').pop().split('?')[0]); });
+
+    // 4. Check for dynamic Bubble content
+    _log('\n=== BUBBLE DYNAMIC CHECK ===');
+    var bubbleScripts = document.querySelectorAll('script:not([src])');
+    var hasBubbleData = false;
+    bubbleScripts.forEach(function(s) {
+      if (s.textContent.indexOf('bubble_') > -1 || s.textContent.indexOf('appquery') > -1 || s.textContent.indexOf('user_data') > -1) {
+        hasBubbleData = true;
+        _log('  Found Bubble dynamic script:', s.textContent.substring(0, 100) + '...');
+      }
+    });
+    if (!hasBubbleData) _log('  No Bubble dynamic data detected in HTML');
+
+    // 5. SW status
+    _log('\n=== SW ===');
+    _log('Controller:', navigator.serviceWorker.controller ? 'YES' : 'NO');
+
+    // Copy all output to clipboard
+    var text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(function() {
+      console.log('\n--- Copied to clipboard! Paste anywhere. ---');
+    }).catch(function() {
+      // Fallback for older WebViews
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      console.log('\n--- Copied to clipboard! Paste anywhere. ---');
+    });
+  }, 'Full load performance breakdown + auto-copy to clipboard');
+
   eruda.get('snippets').add('Storage Dump', function () {
     var keys = ['bonds_session_active', 'bonds_device_id', 'onboarding_complete', 'onboarding_state', 'credits_intro_seen', 'bonds_dark_mode', 'bonds_user_data', 'bonds_daily_question'];
     console.log('--- localStorage ---');
