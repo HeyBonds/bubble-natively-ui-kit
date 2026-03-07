@@ -21,7 +21,7 @@ function isDuplicate(key) {
   const lastSeen = recentErrors.get(key);
   if (lastSeen && now - lastSeen < DEDUP_WINDOW_MS) return true;
   recentErrors.set(key, now);
-  if (recentErrors.size > 100) {
+  if (recentErrors.size >= 100) {
     for (const [k, ts] of recentErrors) {
       if (now - ts > DEDUP_WINDOW_MS) recentErrors.delete(k);
     }
@@ -64,10 +64,10 @@ export function initFirebase() {
 export function logCrash(crashType, error, sourceFile, sourceLine) {
   const message = truncate(error?.message || String(error));
   const stack = truncate(error?.stack || '');
-  const key = `crash:${message}`;
+  const key = `crash:${crashType}:${message}`;
   if (isDuplicate(key)) return;
 
-  console.error(`[Analytics] app_crash (${crashType}):`, message);
+  if (initialized) console.error(`[Analytics] app_crash (${crashType}):`, message);
   gtagEvent('app_crash', {
     error_message: message,
     stack_trace: stack,
@@ -86,7 +86,7 @@ export function logError(category, error, context) {
   const key = `error:${category}:${message}`;
   if (isDuplicate(key)) return;
 
-  console.warn(`[Analytics] app_error (${category}):`, message);
+  if (initialized) console.warn(`[Analytics] app_error (${category}):`, message);
   gtagEvent('app_error', {
     error_message: message,
     category,

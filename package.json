@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.18",
-    "firebase": "^12.10.0",
     "mixpanel-browser": "^2.74.0",
     "natively": "^2.24.0",
     "preact": "^10.28.3"

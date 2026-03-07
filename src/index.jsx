@@ -1,3 +1,18 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { NativelyStorage } from 'natively';
+import App from './App';
+import WelcomeScreen from './components/WelcomeScreen';
+import DailyQuestion from './components/DailyQuestion';
+import OnboardingFlow from './components/onboarding/OnboardingFlow';
+import mockOnboardingSteps from './data/mockOnboardingSteps';
+import JourneyPath from './components/JourneyPath';
+import RT from './utils/realtime';
+import TTS from './utils/tts';
+import { UserProvider } from './contexts/UserContext';
+import { DailyQuestionProvider } from './contexts/DailyQuestionContext';
+import { initFirebase, logCrash } from './utils/firebase';
+
 // Initialize Global Namespace
 window.appUI = window.appUI || {};
 
@@ -44,7 +59,7 @@ const initGlobals = () => {
 };
 initGlobals();
 
-// --- FIREBASE CRASH TRACKING (Runs before React) ---
+// --- CRASH TRACKING (Runs before React) ---
 initFirebase();
 
 window.addEventListener('error', (event) => {
@@ -55,21 +70,6 @@ window.addEventListener('unhandledrejection', (event) => {
   const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
   logCrash('unhandled_rejection', error);
 });
-
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { NativelyStorage } from 'natively';
-import App from './App';
-import WelcomeScreen from './components/WelcomeScreen';
-import DailyQuestion from './components/DailyQuestion';
-import OnboardingFlow from './components/onboarding/OnboardingFlow';
-import mockOnboardingSteps from './data/mockOnboardingSteps';
-import JourneyPath from './components/JourneyPath';
-import RT from './utils/realtime';
-import TTS from './utils/tts';
-import { UserProvider } from './contexts/UserContext';
-import { DailyQuestionProvider } from './contexts/DailyQuestionContext';
-import { initFirebase, logCrash } from './utils/firebase';
 
 // Expose mount functions for the Previewer / Bubble
 window.appUI.mountMainApp = (container) => {

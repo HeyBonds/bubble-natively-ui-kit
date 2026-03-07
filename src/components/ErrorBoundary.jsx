@@ -12,8 +12,8 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    const componentStack = errorInfo?.componentStack || '';
-    logCrash('react_boundary', error, componentStack);
+    // componentStack is passed as sourceFile — it gets truncated to 100 chars by logCrash
+    logCrash('react_boundary', error, errorInfo?.componentStack || '');
   }
 
   render() {
