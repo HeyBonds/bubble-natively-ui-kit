@@ -10,6 +10,8 @@ import { THEMES, getSystemTheme } from './theme';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { DailyQuestionProvider, useDailyQuestion } from './contexts/DailyQuestionContext';
 import NetworkBanner from './components/NetworkBanner';
+import ErrorBoundary from './components/ErrorBoundary';
+import { setFirebaseUser, logError } from './utils/firebase';
 
 // Transition map: [fromPhase][toPhase] → { exit, enter, exitDuration }
 const TRANSITIONS = {
@@ -127,8 +129,10 @@ const AppInner = () => {
                 }
 
                 setDeviceId(storedId);
+                setFirebaseUser(storedId);
             } catch (err) {
                 console.error('❌ Analytics Init Failed:', err);
+                logError('init', err, 'initializeAnalytics');
             }
         };
 
@@ -165,6 +169,7 @@ const AppInner = () => {
                 }
             } catch (err) {
                 console.error('❌ App: Failed to check session:', err);
+                logError('init', err, 'checkSession');
                 if (displayedPhaseRef.current === 'loading') transitionTo('welcome');
             }
         };
@@ -259,11 +264,13 @@ const AppInner = () => {
 };
 
 const App = () => (
-    <UserProvider>
-        <DailyQuestionProvider>
-            <AppInner />
-        </DailyQuestionProvider>
-    </UserProvider>
+    <ErrorBoundary>
+        <UserProvider>
+            <DailyQuestionProvider>
+                <AppInner />
+            </DailyQuestionProvider>
+        </UserProvider>
+    </ErrorBoundary>
 );
 
 export default App;
