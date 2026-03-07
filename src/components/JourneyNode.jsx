@@ -83,7 +83,7 @@ const themedIcons = (theme) => ({
 });
 
 const SCREEN_WIDTH = 375;
-const POPOVER_WIDTH = 220;
+const POPOVER_WIDTH = 248;
 const POPOVER_PADDING = 12;
 
 // ── Floating "START" label above current node ─────────────────────────
@@ -132,17 +132,17 @@ const NodePopover = ({ node, color, onStart, nodeX }) => {
                 className="absolute -top-[7px] w-0 h-0 border-solid border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px]"
                 style={{ borderBottomColor: color, left: '50%', transform: `translateX(calc(-50% + ${triangleOffset}px))` }}
             />
-            <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: color }}>
-                <p className="font-jakarta font-extrabold text-[15px] text-white leading-tight">
+            <div className="rounded-2xl px-5 py-4" style={{ backgroundColor: color }}>
+                <p className="font-jakarta font-extrabold text-[17px] text-white leading-tight">
                     {node.title}
                 </p>
-                <p className="font-jakarta font-bold text-[11px] text-white/70 mt-0.5">
+                <p className="font-jakarta font-bold text-[12px] text-white/70 mt-1">
                     {node.status === 'paused' ? 'Unlocks tomorrow' : node.status === 'locked' ? 'Locked' : STEP_TYPE_SUBTITLES[node.type] || (node.status === 'completed' ? 'Completed' : 'In progress')}
                 </p>
                 {node.type !== 'milestone' && node.status !== 'locked' && node.status !== 'paused' && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onStart && onStart(node); }}
-                        className="mt-2.5 w-full rounded-xl py-2 font-jakarta font-extrabold text-[13px] uppercase tracking-wide"
+                        className="mt-3 w-full rounded-xl py-2.5 font-jakarta font-extrabold text-[14px] uppercase tracking-wide"
                         style={{
                             backgroundColor: 'white',
                             color: color,
@@ -208,7 +208,7 @@ const JourneyNode = memo(({ node, nodeX, style, isSelected, showFloatingLabel, o
             <div className="relative">
                 <button
                     disabled={isLocked}
-                    onClick={!isLocked ? () => onTap && onTap(node) : undefined}
+                    onClick={!isLocked ? (e) => { e.stopPropagation(); onTap && onTap(node); } : undefined}
                     className={`relative rounded-full flex items-center justify-center overflow-hidden ${
                         isLocked ? 'cursor-default' : isPaused ? 'cursor-pointer animate-paused-clock' : 'cursor-pointer transition-transform duration-100 active:translate-y-[2px]'
                     }`}
@@ -234,7 +234,7 @@ const JourneyNode = memo(({ node, nodeX, style, isSelected, showFloatingLabel, o
             </div>
 
             {!isMilestone && (
-                <span className="mt-2 text-[10px] font-jakarta font-bold text-center leading-tight tracking-wide" style={{
+                <span className="mt-2 text-[12px] font-jakarta font-bold text-center leading-tight tracking-wide" style={{
                     color: isCompleted ? theme.labelCompleted : (isCurrent || isPaused) ? theme.labelCurrent : theme.labelLocked,
                 }}>
                     {title}

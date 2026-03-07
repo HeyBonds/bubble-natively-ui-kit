@@ -244,7 +244,6 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }
           />
           <SettingsRow
             theme={theme}
-            last
             icon={
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
@@ -254,6 +253,35 @@ const ProfileSection = ({ theme, darkModePref, setDarkModePref, onLogout, push }
             right={
               <button onClick={() => sendToBubble('bubble_fn_test', 'add_coins', { amount: 30 })} className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#E44B8E', color: '#E44B8E' }}>
                 Add
+              </button>
+            }
+          />
+          <SettingsRow
+            theme={theme}
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+            }
+            label="Reset Journey Progress"
+            right={
+              <button onClick={() => { localStorage.removeItem('bonds_journey_progress'); localStorage.removeItem('bonds_learn_watched'); window.location.reload(); }} className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#FF4B4B', color: '#FF4B4B' }}>
+                Reset
+              </button>
+            }
+          />
+          <SettingsRow
+            theme={theme}
+            last
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+              </svg>
+            }
+            label="Skip Journey Wait"
+            right={
+              <button onClick={() => { try { const p = JSON.parse(localStorage.getItem('bonds_journey_progress') || '{}'); p.pausedUntil = null; localStorage.setItem('bonds_journey_progress', JSON.stringify(p)); window.location.reload(); } catch { /* ignore */ } }} className="rounded-full px-4 py-1.5 text-[12px] font-bold border border-solid" style={{ borderColor: '#FF9600', color: '#FF9600' }}>
+                Skip
               </button>
             }
           />
@@ -342,10 +370,11 @@ const MainTabs = ({ onLogout }) => {
   const [simulatorActive, setSimulatorActive] = useState(false);
   const [simulatorFullScreen, setSimulatorFullScreen] = useState(false);
   const [insightFullScreen, setInsightFullScreen] = useState(false);
+  const [journeyFullScreen, setJourneyFullScreen] = useState(false);
   const prevFullScreenRef = useRef(false);
   const [tabBarAnim, setTabBarAnim] = useState(''); // '' | 'tab-bar-slide-down' | 'tab-bar-slide-up'
 
-  const anyFullScreen = simulatorFullScreen || insightFullScreen;
+  const anyFullScreen = simulatorFullScreen || insightFullScreen || journeyFullScreen;
 
   useEffect(() => {
     if (anyFullScreen && !prevFullScreenRef.current) {
@@ -439,7 +468,7 @@ const MainTabs = ({ onLogout }) => {
     let content;
     switch (activeTab) {
       case 'journey':
-        content = <JourneyPath {...commonProps} />;
+        content = <JourneyPath {...commonProps} onFullScreenChange={setJourneyFullScreen} />;
         break;
       case 'simulator':
         content = <SimulatorSection theme={t} onSessionChange={setSimulatorActive} onFullScreenChange={setSimulatorFullScreen} />;

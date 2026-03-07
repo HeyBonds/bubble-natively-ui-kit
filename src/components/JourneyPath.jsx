@@ -1,13 +1,15 @@
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { track } from '../utils/analytics';
+import { sendToBubble } from '../utils/bubble';
 import { useUser } from '../contexts/UserContext';
 import JourneyNode from './JourneyNode';
-import mockJourneyData from '../data/mockJourneyData';
+import ChapterFlow from './journey/ChapterFlow';
+import { useJourneyState } from '../hooks/useJourneyState';
 
 const NODE_SPACING = 130;
-const CHAPTER_GAP = 80;
-const PADDING_TOP = 15;
+const CHAPTER_GAP = 100;
+const PADDING_TOP = 50;
 const PADDING_BOTTOM = 80;
 
 // Smooth sine-wave layout — nodes snake left-to-right in a continuous curve
@@ -41,7 +43,7 @@ const getChapterStatus = (chapter) => {
 const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect, theme }) => (
     <button
         onClick={() => onSelect()}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200"
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl"
         style={{
             background: isActive ? theme.menuActive : 'transparent',
         }}
@@ -96,10 +98,29 @@ const ChapterMenuItem = ({ chapter, color, status, isActive, onSelect, theme }) 
     </button>
 );
 
-const JourneyPath = ({ theme }) => {
-    const { coins } = useUser();
-    const { chapters } = mockJourneyData;
+const COIN_BG = 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)';
+const COIN_SHADOW = '0 2px 0 0 #555';
+
+const STEP_LABELS = {
+    learn: 'Learn Complete!',
+    practice: 'Practice Complete!',
+    insight: 'Insight Complete!',
+    act: 'Challenge Accepted!',
+};
+
+const JourneyPath = ({ theme, onFullScreenChange }) => {
+    const { coins, updateUser } = useUser();
+    const { chapters, completeStep } = useJourneyState();
     const scrollRef = useRef(null);
+    const coinRef = useRef(null);
+    const coinNumRef = useRef(null);
+    const timersRef = useRef([]);
+    const overlaysRef = useRef([]);
+    const rafRef = useRef(null);
+    const [displayCoins, setDisplayCoins] = useState(coins || 0);
+    const animatingCoinsRef = useRef(false);
+    const targetCoinsRef = useRef(null);
+    const [activeChapterFlow, setActiveChapterFlow] = useState(null); // { chapterIdx, nodeType }
     const [activeChapterIdx, setActiveChapterIdx] = useState(() => {
         for (let i = 0; i < chapters.length; i++) {
             if (chapters[i].nodes.some(n => n.status === 'current' || n.status === 'paused')) return i;
@@ -108,6 +129,160 @@ const JourneyPath = ({ theme }) => {
     });
     const [selectedNodeId, setSelectedNodeId] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
+
+    // Sync display coins when context updates (unless animation in flight)
+    useEffect(() => {
+        if (!animatingCoinsRef.current) setDisplayCoins(coins || 0);
+    }, [coins]);
+
+    // Cleanup timers/overlays/rAF on unmount
+    useEffect(() => {
+        const timers = timersRef.current;
+        const overlays = overlaysRef.current;
+        return () => {
+            timers.forEach(clearTimeout);
+            overlays.forEach(el => el.remove());
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        };
+    }, []);
+
+    const addTimer = useCallback((fn, ms) => {
+        const id = setTimeout(fn, ms);
+        timersRef.current.push(id);
+        return id;
+    }, []);
+
+    const triggerCoinAnimation = useCallback((earnedCoins, stepType) => {
+        // Dim overlay
+        const dimOverlay = document.createElement('div');
+        dimOverlay.className = 'dim-overlay active';
+        document.body.appendChild(dimOverlay);
+        overlaysRef.current.push(dimOverlay);
+
+        // Coin + label — center pop
+        const overlay = document.createElement('div');
+        overlay.className = 'coin-center-animation';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            pointer-events: none;
+        `;
+
+        overlay.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="overlay-coin" style="width: 80px; height: 80px; border-radius: 50%; background: ${COIN_BG}; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 24px rgba(0,0,0,0.3), ${COIN_SHADOW};">
+                        <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); line-height: 1;">B</span>
+                    </div>
+                    <span class="overlay-plus" style="white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2rem; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.4); opacity: 0; transition: opacity 300ms ease;">+${earnedCoins}</span>
+                </div>
+                <span class="overlay-label" style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1.1rem; color: rgba(255,255,255,0.8); opacity: 0; transition: opacity 400ms ease;">${STEP_LABELS[stepType] || 'Step Complete!'}</span>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        overlaysRef.current.push(overlay);
+
+        // Fade in "+N" label
+        addTimer(() => {
+            const plus = overlay.querySelector('.overlay-plus');
+            if (plus) plus.style.opacity = '1';
+        }, 500);
+
+        // Fade in step label
+        addTimer(() => {
+            const label = overlay.querySelector('.overlay-label');
+            if (label) label.style.opacity = '1';
+        }, 700);
+
+        // Fade out "+N" and label
+        addTimer(() => {
+            const plus = overlay.querySelector('.overlay-plus');
+            const label = overlay.querySelector('.overlay-label');
+            if (plus) plus.style.opacity = '0';
+            if (label) label.style.opacity = '0';
+        }, 1300);
+
+        // Fly coin to target
+        addTimer(() => {
+            const coinEl = overlay.querySelector('.overlay-coin');
+            const coinStartRect = coinEl ? coinEl.getBoundingClientRect() : overlay.getBoundingClientRect();
+
+            overlay.classList.remove('coin-center-animation');
+            overlay.style.top = coinStartRect.top + 'px';
+            overlay.style.left = coinStartRect.left + 'px';
+            overlay.style.transform = 'none';
+            // Hide everything except the coin
+            overlay.innerHTML = '';
+            overlay.appendChild(coinEl);
+
+            overlay.classList.add('coin-move-animation');
+            dimOverlay.classList.remove('active');
+            overlay.offsetHeight; // force reflow
+
+            if (coinRef.current) {
+                const targetRect = coinRef.current.getBoundingClientRect();
+                const dx = targetRect.left - coinStartRect.left;
+                const dy = targetRect.top - coinStartRect.top;
+                overlay.style.transform = `translate(${dx}px, ${dy}px)`;
+
+                if (coinEl) {
+                    coinEl.style.transition = 'transform 600ms cubic-bezier(0.4, 0, 0.2, 1)';
+                    coinEl.style.transformOrigin = 'top left';
+                    coinEl.style.transform = 'scale(0.45)'; // 80px → 36px
+                }
+            }
+        }, 1500);
+
+        // Cleanup, pulse, animate number
+        addTimer(() => {
+            overlay.remove();
+            dimOverlay.remove();
+            const idx1 = overlaysRef.current.indexOf(overlay);
+            if (idx1 !== -1) overlaysRef.current.splice(idx1, 1);
+            const idx2 = overlaysRef.current.indexOf(dimOverlay);
+            if (idx2 !== -1) overlaysRef.current.splice(idx2, 1);
+
+            // Pulse the target coin
+            if (coinRef.current) {
+                coinRef.current.style.transition = 'transform 0.3s ease';
+                coinRef.current.style.transform = 'scale(1.3)';
+                addTimer(() => {
+                    if (coinRef.current) coinRef.current.style.transform = 'scale(1)';
+                }, 300);
+            }
+
+            // Animate number counting up
+            if (coinNumRef.current) {
+                const end = targetCoinsRef.current ?? (coins || 0);
+                const start = end - earnedCoins;
+                const duration = 400;
+                let startTime = null;
+
+                function tick(timestamp) {
+                    if (!coinNumRef.current) { animatingCoinsRef.current = false; return; }
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    const easeOut = 1 - Math.pow(1 - progress, 3);
+                    const current = Math.round(start + (end - start) * easeOut);
+                    coinNumRef.current.textContent = current;
+                    if (progress < 1) {
+                        rafRef.current = requestAnimationFrame(tick);
+                    } else {
+                        animatingCoinsRef.current = false;
+                        setDisplayCoins(end);
+                    }
+                }
+                rafRef.current = requestAnimationFrame(tick);
+            } else {
+                animatingCoinsRef.current = false;
+            }
+        // Clear fired timer IDs to prevent unbounded growth
+            timersRef.current.length = 0;
+        }, 2100);
+    }, [addTimer, coins]);
 
     // Compute all node positions with chapter gaps + pre-baked style objects + slot sizes
     const { nodePositions, chapterYStarts, chapterSeparators, slotSizes, totalHeight } = useMemo(() => {
@@ -214,10 +389,15 @@ const JourneyPath = ({ theme }) => {
         setMenuOpen(false);
     }, []);
 
-    const handleStartLesson = useCallback((_node) => {
-        track('Element Clicked', { screen: 'journey', element_type: 'button', element: 'start_lesson', node_id: _node.id });
+    const handleStartLesson = useCallback((node) => {
+        track('Element Clicked', { screen: 'journey', element_type: 'button', element: 'start_lesson', node_id: node.id, node_type: node.type });
         setSelectedNodeId(null);
-    }, []);
+        const match = nodePositions.find(n => n.node.id === node.id);
+        if (match) {
+            setActiveChapterFlow({ chapterIdx: match.chapterIdx, nodeType: node.type });
+            if (onFullScreenChange) onFullScreenChange(true);
+        }
+    }, [nodePositions, onFullScreenChange]);
 
     // Navigate to chapter — find first node of that chapter and scroll to it
     const handleChapterSelect = useCallback((chapterIdx) => {
@@ -253,10 +433,10 @@ const JourneyPath = ({ theme }) => {
             <div className="flex items-center justify-center gap-7 px-4 pt-3 pb-4" style={{ flexShrink: 0 }}>
                 {/* Coins */}
                 <div className="flex items-center gap-2">
-                    <div className="coin-shimmer" style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 35% 30%, #C8C8C8, #8A8A8A 70%, #6E6E6E)', boxShadow: '0 2px 0 0 #555' }}>
+                    <div ref={coinRef} className="coin-shimmer" style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: COIN_BG, boxShadow: COIN_SHADOW }}>
                         <span className="font-extrabold text-[14px] text-white" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.25)' }}>B</span>
                     </div>
-                    <span className="font-extrabold text-[18px]" style={{ color: theme.coinsText }}>{coins}</span>
+                    <span ref={coinNumRef} className="font-extrabold text-[18px]" style={{ color: theme.coinsText }}>{displayCoins}</span>
                 </div>
 
                 {/* Streak */}
@@ -374,6 +554,12 @@ const JourneyPath = ({ theme }) => {
             <div
                 ref={scrollRef}
                 className="scrollbar-hide"
+                onClick={() => {
+                    if (selectedNodeId) {
+                        setSelectedNodeId(null);
+                        selectedNodeRef.current = null;
+                    }
+                }}
                 style={{
                     flex: 1,
                     minHeight: 0,
@@ -401,7 +587,7 @@ const JourneyPath = ({ theme }) => {
                             }}
                         >
                             <div style={{ flex: 1, height: 1, background: theme.separatorLine }} />
-                            <span className="font-jakarta font-bold" style={{ fontSize: 13, letterSpacing: 0.3, color: theme.separatorText, whiteSpace: 'nowrap' }}>
+                            <span className="font-jakarta font-bold" style={{ fontSize: 14, letterSpacing: 0.3, color: theme.separatorText, whiteSpace: 'nowrap' }}>
                                 {sep.title}
                             </span>
                             <div style={{ flex: 1, height: 1, background: theme.separatorLine }} />
@@ -428,6 +614,33 @@ const JourneyPath = ({ theme }) => {
                     })}
                 </div>
             </div>
+
+            {activeChapterFlow && (
+                <ChapterFlow
+                    chapter={chapters[activeChapterFlow.chapterIdx]}
+                    nodeType={activeChapterFlow.nodeType}
+                    theme={theme}
+                    onStepComplete={(type, earnedCoins) => {
+                        completeStep(activeChapterFlow.chapterIdx, type);
+                        sendToBubble('bubble_fn_journey', 'step_complete', {
+                            chapterIdx: activeChapterFlow.chapterIdx,
+                            nodeType: type,
+                            coins: earnedCoins,
+                        });
+                        if (earnedCoins > 0) {
+                            const newTotal = (coins || 0) + earnedCoins;
+                            targetCoinsRef.current = newTotal;
+                            animatingCoinsRef.current = true;
+                            updateUser({ coins: newTotal });
+                            addTimer(() => triggerCoinAnimation(earnedCoins, type), 300);
+                        }
+                    }}
+                    onClose={() => {
+                        setActiveChapterFlow(null);
+                        if (onFullScreenChange) onFullScreenChange(false);
+                    }}
+                />
+            )}
         </div>
     );
 };

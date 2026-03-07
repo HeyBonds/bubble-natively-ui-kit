@@ -64,14 +64,16 @@
 
   /* Coin Animations */
   @keyframes coinFadeInScale {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-    100% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5) translateZ(0); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1.5) translateZ(0); }
   }
   .coin-center-animation {
     animation: coinFadeInScale 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    will-change: transform, opacity;
   }
   .coin-move-animation {
     transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
   }
 
   /* Coin pop-in — in-flow version (no translate offset) */
@@ -81,6 +83,7 @@
   }
   .coin-pop-in {
     animation: coinPopIn 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    will-change: transform, opacity;
   }
 
   /* Dim Overlay */
@@ -345,9 +348,9 @@
 
   /* Node popover pop-in */
   @keyframes popoverIn {
-    0%   { opacity: 0; transform: translateX(calc(-50% + var(--pop-offset, 0px))) scale(0.85) translateY(-8px); }
-    60%  { opacity: 1; transform: translateX(calc(-50% + var(--pop-offset, 0px))) scale(1.03) translateY(0); }
-    100% { opacity: 1; transform: translateX(calc(-50% + var(--pop-offset, 0px))) scale(1) translateY(0); }
+    0%   { opacity: 0; transform: translateX(calc(-50% + var(--pop-offset, 0px))) scale(0.85) translateY(-8px) translateZ(0); }
+    60%  { opacity: 1; transform: translateX(calc(-50% + var(--pop-offset, 0px))) scale(1.03) translateY(0) translateZ(0); }
+    100% { opacity: 1; transform: translateX(calc(-50% + var(--pop-offset, 0px))) scale(1) translateY(0) translateZ(0); }
   }
   .animate-popover-in {
     animation: popoverIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
@@ -404,19 +407,21 @@
 
   /* Floating bob for journey tooltip */
   @keyframes float-bob {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-6px); }
+    0%, 100% { transform: translateX(-50%) translateY(0) translateZ(0); }
+    50% { transform: translateX(-50%) translateY(-6px) translateZ(0); }
   }
   .animate-float {
     animation: float-bob 2s ease-in-out infinite;
+    will-change: transform;
   }
 
   @keyframes paused-clock {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.12); opacity: 0.8; }
+    0%, 100% { transform: scale(1) translateZ(0); opacity: 1; }
+    50% { transform: scale(1.12) translateZ(0); opacity: 0.8; }
   }
   .animate-paused-clock {
     animation: paused-clock 2.5s ease-in-out infinite;
+    will-change: transform, opacity;
   }
 
   /* Dialog overlay + card */
@@ -618,6 +623,21 @@
   }
   .insight-sheet-out {
     animation: insightSheetOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform;
+  }
+
+  /* ── Journey Step Animations ── */
+
+  /* Wrong answer shake — translateX oscillation */
+  @keyframes wrongShake {
+    0%, 100% { transform: translateX(0) translateZ(0); }
+    20%      { transform: translateX(-6px) translateZ(0); }
+    40%      { transform: translateX(6px) translateZ(0); }
+    60%      { transform: translateX(-4px) translateZ(0); }
+    80%      { transform: translateX(4px) translateZ(0); }
+  }
+  .animate-wrong-shake {
+    animation: wrongShake 0.4s ease-out;
     will-change: transform;
   }
 

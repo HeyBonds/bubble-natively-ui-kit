@@ -233,6 +233,7 @@ function cleanup() {
   // ── Shared ──
   state.timings = [];
   state.totalDuration = 0;
+  state.speed = 1;
   state.status = 'idle';
   state.cleaningUp = false;
   TTS.emit('status', { status: 'idle' });

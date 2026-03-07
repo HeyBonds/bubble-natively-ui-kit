@@ -17,20 +17,25 @@ const InsightPlayback = ({ insightData, ttsApiKey, theme, onDone }) => {
 
   const { title, text, videoUrl, audioUrl } = insightData || {};
 
+  const hasTTS = !!(ttsApiKey && text);
+
   // Start TTS on mount — InsightPlayback owns the TTS lifecycle
   useEffect(() => {
-    if (ttsApiKey && text) {
+    if (hasTTS) {
       TTS.start({ apiKey: ttsApiKey, text });
     }
     return () => { TTS.stop(); };
-  }, [ttsApiKey, text]);
+  }, [hasTTS, ttsApiKey, text]);
 
   // Detect when audio is actually playing (first active sentence = real audio output)
+  // If no TTS, skip the gate entirely
   useEffect(() => {
-    if (!audioReady && sentences.some((s) => s.state === 'active')) {
+    if (!hasTTS) {
+      setAudioReady(true);
+    } else if (!audioReady && sentences.some((s) => s.state === 'active')) {
       setAudioReady(true);
     }
-  }, [audioReady, sentences]);
+  }, [hasTTS, audioReady, sentences]);
 
   // Sync play state when TTS finishes
   useEffect(() => {
